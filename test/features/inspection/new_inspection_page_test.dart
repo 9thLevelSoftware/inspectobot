@@ -127,12 +127,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(store.createCalls, 1);
-    expect(find.text('Required Photos'), findsOneWidget);
+    expect(find.text('Guided Inspection Wizard'), findsOneWidget);
     expect(find.textContaining('Inspection for Jane Doe'), findsOneWidget);
   });
 }
 
-class _TestRepositoryProvider implements InspectionRepositoryProvider {
+class _TestRepositoryProvider implements NewInspectionRepositoryProvider {
   _TestRepositoryProvider(this._repository);
 
   final InspectionRepository _repository;
@@ -159,5 +159,35 @@ class _SpyInspectionStore implements InspectionStore {
     required String userId,
   }) async {
     return null;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchWizardProgress({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return null;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> listInProgressInspections({
+    required String organizationId,
+    required String userId,
+  }) async {
+    return const <Map<String, dynamic>>[];
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateWizardProgress({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required int wizardLastStep,
+    required Map<String, bool> wizardCompletion,
+    required Map<String, dynamic> wizardBranchContext,
+    required String wizardStatus,
+  }) async {
+    throw UnimplementedError();
   }
 }
