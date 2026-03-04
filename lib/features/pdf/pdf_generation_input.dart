@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../inspection/domain/form_type.dart';
 import '../inspection/domain/required_photo_category.dart';
 
@@ -12,6 +14,10 @@ class PdfGenerationInput {
     required this.capturedCategories,
     this.wizardCompletion = const <String, bool>{},
     this.branchContext = const <String, dynamic>{},
+    this.fieldValues = const <String, String>{},
+    this.checkboxValues = const <String, bool>{},
+    this.evidenceMediaPaths = const <String, List<String>>{},
+    this.signatureBytes,
   });
 
   final String inspectionId;
@@ -23,6 +29,10 @@ class PdfGenerationInput {
   final Set<RequiredPhotoCategory> capturedCategories;
   final Map<String, bool> wizardCompletion;
   final Map<String, dynamic> branchContext;
+  final Map<String, String> fieldValues;
+  final Map<String, bool> checkboxValues;
+  final Map<String, List<String>> evidenceMediaPaths;
+  final Uint8List? signatureBytes;
 
   Map<String, dynamic> toCanonicalPayload() {
     final forms = enabledForms.map((form) => form.code).toList(growable: false)
@@ -43,6 +53,28 @@ class PdfGenerationInput {
       canonicalBranchContext[entry.key] = entry.value;
     }
 
+    final fieldEntries = fieldValues.entries.toList(growable: false)
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final canonicalFieldValues = <String, String>{};
+    for (final entry in fieldEntries) {
+      canonicalFieldValues[entry.key] = entry.value;
+    }
+
+    final checkboxEntries = checkboxValues.entries.toList(growable: false)
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final canonicalCheckboxValues = <String, bool>{};
+    for (final entry in checkboxEntries) {
+      canonicalCheckboxValues[entry.key] = entry.value;
+    }
+
+    final evidenceEntries = evidenceMediaPaths.entries.toList(growable: false)
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final canonicalEvidencePaths = <String, List<String>>{};
+    for (final entry in evidenceEntries) {
+      final sortedPaths = List<String>.from(entry.value)..sort();
+      canonicalEvidencePaths[entry.key] = sortedPaths;
+    }
+
     return <String, dynamic>{
       'inspection_id': inspectionId,
       'organization_id': organizationId,
@@ -53,6 +85,9 @@ class PdfGenerationInput {
       'captured_categories': categories,
       'wizard_completion_keys': completionKeys,
       'branch_context': canonicalBranchContext,
+      'field_values': canonicalFieldValues,
+      'checkbox_values': canonicalCheckboxValues,
+      'evidence_media_paths': canonicalEvidencePaths,
     };
   }
 }

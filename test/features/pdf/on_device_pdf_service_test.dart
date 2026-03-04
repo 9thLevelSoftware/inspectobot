@@ -34,6 +34,7 @@ void main() {
           },
         ),
         renderer: renderer,
+        outputDirectoryProvider: () async => Directory.systemTemp,
       );
 
       final photoFile = await _writeTempJpeg(<int>[1, 2, 3, 4, 5]);
@@ -46,7 +47,7 @@ void main() {
         enabledForms: {FormType.fourPoint, FormType.roofCondition},
         capturedCategories: {
           RequiredPhotoCategory.exteriorFront,
-          RequiredPhotoCategory.roofOverview,
+          RequiredPhotoCategory.roofSlopeMain,
         },
         wizardCompletion: const <String, bool>{
           'photo:exterior_front': true,
@@ -99,6 +100,7 @@ void main() {
           },
         ),
         renderer: renderer,
+        outputDirectoryProvider: () async => Directory.systemTemp,
       );
 
       final file = await service.generate(_buildInput());
@@ -128,6 +130,7 @@ void main() {
           },
         ),
         renderer: renderer,
+        outputDirectoryProvider: () async => Directory.systemTemp,
       );
 
       expect(

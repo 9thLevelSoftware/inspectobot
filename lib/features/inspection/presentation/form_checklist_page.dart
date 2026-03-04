@@ -67,7 +67,7 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
     super.initState();
     _pdfOrchestrator = widget.pdfOrchestrator ??
         PdfOrchestrator(
-          onDevice: const OnDevicePdfService(),
+          onDevice: OnDevicePdfService(),
           cloud: const CloudPdfService(),
           readinessLookup: (input) => _repository.fetchReportReadiness(
             inspectionId: input.inspectionId,
