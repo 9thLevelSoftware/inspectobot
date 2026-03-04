@@ -134,10 +134,60 @@ void main() {
     expect(find.text('Wind Permit/Age Document'), findsOneWidget);
     expect(find.text('Upload'), findsWidgets);
   });
+
+  testWidgets('PDF CTA stays blocked when persisted readiness is blocked', (
+    tester,
+  ) async {
+    final store = _ChecklistStore(
+      seededReadiness: const <String, dynamic>{
+        'inspection_id': 'insp-5',
+        'organization_id': 'org-1',
+        'user_id': 'user-1',
+        'status': 'blocked',
+        'missing_items': <String>['Exterior Front'],
+      },
+    );
+    final repository = InspectionRepository(store);
+    final draft = InspectionDraft(
+      inspectionId: 'insp-5',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Blocked Readiness',
+      clientEmail: 'blocked@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '111 Delay Dr',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2002,
+      enabledForms: {FormType.fourPoint},
+      wizardSnapshot: WizardProgressSnapshot(
+        lastStepIndex: 1,
+        completion: {
+          for (final key in FormRequirements.requirementKeysForForm(FormType.fourPoint))
+            key: true,
+        },
+        branchContext: const <String, dynamic>{},
+        status: WizardProgressStatus.complete,
+      ),
+      initialStepIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: FormChecklistPage(draft: draft, repository: repository)),
+    );
+    await tester.pumpAndSettle();
+
+    final button = tester.widget<FilledButton>(find.byType(FilledButton).last);
+    expect(button.onPressed, isNull);
+    expect(find.textContaining('Readiness blocked'), findsOneWidget);
+  });
 }
 
 class _ChecklistStore implements InspectionStore {
+  _ChecklistStore({this.seededReadiness});
+
   int updateCalls = 0;
+  Map<String, dynamic>? readiness;
+  final Map<String, dynamic>? seededReadiness;
 
   @override
   Future<Map<String, dynamic>> create(Map<String, dynamic> inspectionJson) {
@@ -186,6 +236,15 @@ class _ChecklistStore implements InspectionStore {
   }
 
   @override
+  Future<Map<String, dynamic>?> fetchReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return readiness ?? seededReadiness;
+  }
+
+  @override
   Future<Map<String, dynamic>> updateWizardProgress({
     required String inspectionId,
     required String organizationId,
@@ -208,5 +267,25 @@ class _ChecklistStore implements InspectionStore {
       'wizard_branch_context': wizardBranchContext,
       'wizard_status': wizardStatus,
     };
+  }
+
+  @override
+  Future<Map<String, dynamic>> upsertReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String status,
+    required List<String> missingItems,
+    required DateTime computedAt,
+  }) async {
+    readiness = <String, dynamic>{
+      'inspection_id': inspectionId,
+      'organization_id': organizationId,
+      'user_id': userId,
+      'status': status,
+      'missing_items': missingItems,
+      'computed_at': computedAt.toIso8601String(),
+    };
+    return readiness!;
   }
 }
