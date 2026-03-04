@@ -85,4 +85,45 @@ void main() {
     final pending = await pendingStore.listPending();
     expect(pending, isEmpty);
   });
+
+  test('capture still succeeds when outbox enqueue fails', () async {
+    final tempRoot = await Directory.systemTemp.createTemp('inspectobot_capture_enqueue_fail_');
+    addTearDown(() async {
+      if (await tempRoot.exists()) {
+        await tempRoot.delete(recursive: true);
+      }
+    });
+
+    final pickedFile = File('${tempRoot.path}/picked.jpg');
+    await pickedFile.writeAsBytes(<int>[0, 1, 2], flush: true);
+
+    final outputFile = File('${tempRoot.path}/output.jpg');
+    final store = LocalMediaStore(directoryProvider: () async => tempRoot);
+    final failingPendingStore = PendingMediaSyncStore(
+      directoryProvider: () async => throw StateError('disk unavailable'),
+    );
+
+    final service = MediaCaptureService(
+      pickPhoto: () async => pickedFile.path,
+      compressPhoto: (_) async => <int>[1, 2, 3],
+      writeCapture: ({required inspectionId, required category, required bytes}) async {
+        await outputFile.writeAsBytes(bytes, flush: true);
+        return outputFile;
+      },
+      localStore: store,
+      pendingSyncStore: failingPendingStore,
+      operationIdFactory: () => 'op-fail-queue',
+    );
+
+    final result = await service.captureRequiredPhoto(
+      inspectionId: 'inspection-4',
+      category: RequiredPhotoCategory.exteriorFront,
+    );
+
+    expect(result, isNotNull);
+    expect(result!.filePath, outputFile.path);
+
+    final manifest = await store.readCaptures('inspection-4');
+    expect(manifest[RequiredPhotoCategory.exteriorFront], outputFile.path);
+  });
 }

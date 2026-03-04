@@ -75,7 +75,11 @@ class MediaCaptureService {
       filePath: outputFile.path,
       createdAt: DateTime.now().toUtc(),
     );
-    await _pendingSyncStore.enqueue(task);
+    try {
+      await _pendingSyncStore.enqueue(task);
+    } catch (_) {
+      // Local capture continuity is more important than immediate queue persistence.
+    }
 
     return MediaCaptureResult(
       category: category,
