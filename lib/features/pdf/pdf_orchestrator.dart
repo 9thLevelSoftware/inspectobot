@@ -41,6 +41,8 @@ class PdfOrchestrator {
 
     try {
       return await _onDevice.generate(input);
+    } on PdfGenerationSizeBudgetExceeded {
+      rethrow;
     } catch (_) {
       final cloudResult = await _cloud.generate(input);
       if (cloudResult != null) {
