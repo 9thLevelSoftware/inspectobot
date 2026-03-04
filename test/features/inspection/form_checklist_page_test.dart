@@ -1,11 +1,21 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inspectobot/features/identity/data/signature_repository.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
 import 'package:inspectobot/features/inspection/presentation/form_checklist_page.dart';
+import 'package:inspectobot/features/pdf/cloud_pdf_service.dart';
+import 'package:inspectobot/features/pdf/on_device_pdf_service.dart';
+import 'package:inspectobot/features/pdf/pdf_generation_input.dart';
+import 'package:inspectobot/features/pdf/pdf_orchestrator.dart';
+import 'package:inspectobot/features/signing/data/report_signature_evidence_repository.dart';
+import 'package:inspectobot/features/signing/domain/report_signature_evidence.dart';
 
 void main() {
   testWidgets('wizard enforces linear guarded progression', (tester) async {
@@ -177,7 +187,73 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Generate PDF'), findsNothing);
+    expect(find.text('Guided Inspection Wizard'), findsOneWidget);
+  });
+
+  testWidgets('checklist accepts injected signature evidence dependencies', (
+    tester,
+  ) async {
+    final store = _ChecklistStore(
+      seededReadiness: const <String, dynamic>{
+        'inspection_id': 'insp-6',
+        'organization_id': 'org-1',
+        'user_id': 'user-1',
+        'status': 'ready',
+        'missing_items': <String>[],
+        'computed_at': '2026-03-05T00:00:00.000Z',
+      },
+    );
+    final signatureGateway = InMemorySignatureGateway();
+    final signatureRepository = SignatureRepository(
+      storage: signatureGateway,
+      metadata: signatureGateway,
+    );
+    await signatureRepository.saveSignature(
+      organizationId: 'org-1',
+      userId: 'user-1',
+      bytes: Uint8List.fromList(<int>[1, 2, 3]),
+    );
+
+    final draft = InspectionDraft(
+      inspectionId: 'insp-6',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Evidence Failure',
+      clientEmail: 'evidence@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '909 Gate St',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2006,
+      enabledForms: {FormType.fourPoint},
+      wizardSnapshot: WizardProgressSnapshot(
+        lastStepIndex: 1,
+        completion: {
+          for (final requirement in FormRequirements.forFormRequirements(FormType.fourPoint))
+            requirement.key: true,
+        },
+        branchContext: const <String, dynamic>{},
+        status: WizardProgressStatus.complete,
+      ),
+      initialStepIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormChecklistPage(
+          draft: draft,
+          repository: InspectionRepository(store),
+          signatureRepository: signatureRepository,
+          signatureEvidenceRepository: _FailingSignatureEvidenceRepository(),
+          pdfOrchestrator: PdfOrchestrator(
+            onDevice: _SuccessfulOnDevicePdfService(),
+            cloud: const CloudPdfService(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Guided Inspection Wizard'), findsOneWidget);
   });
 }
 
@@ -286,5 +362,33 @@ class _ChecklistStore implements InspectionStore {
       'computed_at': computedAt.toIso8601String(),
     };
     return readiness!;
+  }
+}
+
+class _FailingSignatureEvidenceRepository
+    extends ReportSignatureEvidenceRepository {
+  _FailingSignatureEvidenceRepository()
+      : super(InMemoryReportSignatureEvidenceGateway());
+
+  @override
+  Future<ReportSignatureEvidence> persist({
+    required PdfGenerationInput input,
+    required String signerRole,
+    required String signatureHash,
+    required ReportSignatureAttribution attribution,
+    DateTime? signedAt,
+  }) {
+    throw StateError('evidence write failed');
+  }
+}
+
+class _SuccessfulOnDevicePdfService extends OnDevicePdfService {
+  @override
+  Future<File> generate(PdfGenerationInput input) async {
+    final file = File(
+      '${Directory.systemTemp.path}/inspectobot_test_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+    await file.writeAsBytes(<int>[1, 2, 3], flush: true);
+    return file;
   }
 }

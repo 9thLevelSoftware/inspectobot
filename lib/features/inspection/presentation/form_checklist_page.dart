@@ -6,6 +6,9 @@ import '../../pdf/cloud_pdf_service.dart';
 import '../../pdf/on_device_pdf_service.dart';
 import '../../pdf/pdf_generation_input.dart';
 import '../../pdf/pdf_orchestrator.dart';
+import '../../signing/data/report_signature_evidence_repository.dart';
+import '../../signing/domain/report_signature_evidence.dart';
+import '../../identity/data/signature_repository.dart';
 import '../data/inspection_repository.dart';
 import '../domain/evidence_requirement.dart';
 import '../domain/form_requirements.dart';
@@ -19,10 +22,20 @@ class FormChecklistPage extends StatefulWidget {
     super.key,
     required this.draft,
     InspectionRepository? repository,
-  }) : repository = repository ?? InspectionRepository.live();
+    SignatureRepository? signatureRepository,
+    ReportSignatureEvidenceRepository? signatureEvidenceRepository,
+    PdfOrchestrator? pdfOrchestrator,
+  })  : repository = repository ?? InspectionRepository.live(),
+        signatureRepository = signatureRepository ?? SignatureRepository.live(),
+        signatureEvidenceRepository =
+            signatureEvidenceRepository ?? ReportSignatureEvidenceRepository.live(),
+        pdfOrchestrator = pdfOrchestrator;
 
   final InspectionDraft draft;
   final InspectionRepository repository;
+  final SignatureRepository signatureRepository;
+  final ReportSignatureEvidenceRepository signatureEvidenceRepository;
+  final PdfOrchestrator? pdfOrchestrator;
 
   @override
   State<FormChecklistPage> createState() => _FormChecklistPageState();
@@ -40,6 +53,9 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   ReportReadiness? _persistedReadiness;
 
   InspectionRepository get _repository => widget.repository;
+  SignatureRepository get _signatureRepository => widget.signatureRepository;
+  ReportSignatureEvidenceRepository get _signatureEvidenceRepository =>
+      widget.signatureEvidenceRepository;
 
   InspectionWizardState get _wizardState => InspectionWizardState(
     enabledForms: widget.draft.enabledForms,
@@ -49,15 +65,16 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   @override
   void initState() {
     super.initState();
-    _pdfOrchestrator = PdfOrchestrator(
-      onDevice: const OnDevicePdfService(),
-      cloud: const CloudPdfService(),
-      readinessLookup: (input) => _repository.fetchReportReadiness(
-        inspectionId: input.inspectionId,
-        organizationId: input.organizationId,
-        userId: input.userId,
-      ),
-    );
+    _pdfOrchestrator = widget.pdfOrchestrator ??
+        PdfOrchestrator(
+          onDevice: const OnDevicePdfService(),
+          cloud: const CloudPdfService(),
+          readinessLookup: (input) => _repository.fetchReportReadiness(
+            inspectionId: input.inspectionId,
+            organizationId: input.organizationId,
+            userId: input.userId,
+          ),
+        );
     _snapshot = widget.draft.wizardSnapshot;
     _hydrateCapturedFromSnapshot();
     final requestedStep = widget.draft.initialStepIndex;
@@ -232,17 +249,35 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   Future<void> _generatePdf() async {
     setState(() => _isGenerating = true);
     try {
-      final file = await _pdfOrchestrator.generate(
-        PdfGenerationInput(
-          inspectionId: widget.draft.inspectionId,
-          organizationId: widget.draft.organizationId,
-          userId: widget.draft.userId,
-          clientName: widget.draft.clientName,
-          propertyAddress: widget.draft.propertyAddress,
-          enabledForms: widget.draft.enabledForms,
-          capturedCategories: widget.draft.capturedCategories,
-          wizardCompletion: _snapshot.completion,
-          branchContext: _snapshot.branchContext,
+      final input = PdfGenerationInput(
+        inspectionId: widget.draft.inspectionId,
+        organizationId: widget.draft.organizationId,
+        userId: widget.draft.userId,
+        clientName: widget.draft.clientName,
+        propertyAddress: widget.draft.propertyAddress,
+        enabledForms: widget.draft.enabledForms,
+        capturedCategories: widget.draft.capturedCategories,
+        wizardCompletion: _snapshot.completion,
+        branchContext: _snapshot.branchContext,
+      );
+      final file = await _pdfOrchestrator.generate(input);
+      final signature = await _signatureRepository.loadSignature(
+        organizationId: widget.draft.organizationId,
+        userId: widget.draft.userId,
+      );
+      if (signature == null) {
+        throw StateError('Stored inspector signature metadata is required.');
+      }
+      await _signatureEvidenceRepository.persist(
+        input: input,
+        signerRole: 'inspector',
+        signatureHash: signature.fileHash,
+        signedAt: DateTime.now().toUtc(),
+        attribution: const ReportSignatureAttribution(
+          appVersion: null,
+          device: null,
+          sessionId: null,
+          network: null,
         ),
       );
       final length = await file.length();
@@ -364,6 +399,7 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
           }),
           const SizedBox(height: 16),
           FilledButton.icon(
+            key: const ValueKey('generate-pdf-button'),
             onPressed: isComplete && canGenerate && !_isGenerating
                 ? _generatePdf
                 : null,
