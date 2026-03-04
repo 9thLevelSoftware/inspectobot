@@ -7,10 +7,10 @@ import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/presentation/form_checklist_page.dart';
 
 class NewInspectionPage extends StatefulWidget {
-  const NewInspectionPage({super.key, InspectionRepositoryProvider? repository})
-    : repository = repository ?? const _LazyInspectionRepository();
+  const NewInspectionPage({super.key, NewInspectionRepositoryProvider? repository})
+    : repository = repository ?? const _LazyNewInspectionRepository();
 
-  final InspectionRepositoryProvider repository;
+  final NewInspectionRepositoryProvider repository;
 
   @override
   State<NewInspectionPage> createState() => _NewInspectionPageState();
@@ -130,6 +130,8 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
 
       final draft = InspectionDraft(
         inspectionId: persisted.id,
+        organizationId: persisted.organizationId,
+        userId: persisted.userId,
         clientName: persisted.clientName,
         clientEmail: persisted.clientEmail,
         clientPhone: persisted.clientPhone,
@@ -141,7 +143,7 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
 
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => FormChecklistPage(draft: draft),
+          builder: (_) => FormChecklistPage(draft: draft, repository: _repository),
         ),
       );
     } catch (_) {
@@ -243,12 +245,12 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
   }
 }
 
-abstract class InspectionRepositoryProvider {
+abstract class NewInspectionRepositoryProvider {
   InspectionRepository resolve();
 }
 
-class _LazyInspectionRepository implements InspectionRepositoryProvider {
-  const _LazyInspectionRepository();
+class _LazyNewInspectionRepository implements NewInspectionRepositoryProvider {
+  const _LazyNewInspectionRepository();
 
   @override
   InspectionRepository resolve() => InspectionRepository.live();
