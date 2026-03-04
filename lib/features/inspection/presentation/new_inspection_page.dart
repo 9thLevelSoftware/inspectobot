@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
@@ -17,6 +18,7 @@ class NewInspectionPage extends StatefulWidget {
 }
 
 class _NewInspectionPageState extends State<NewInspectionPage> {
+  static const Uuid _uuid = Uuid();
   final _formKey = GlobalKey<FormState>();
   final _clientNameController = TextEditingController();
   final _clientEmailController = TextEditingController();
@@ -111,7 +113,7 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
     setState(() => _isSaving = true);
     try {
       final setup = InspectionSetup(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: _uuid.v4(),
         organizationId: 'org-local',
         userId: 'user-local',
         clientName: _clientNameController.text.trim(),

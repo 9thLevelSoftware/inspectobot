@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
+import 'package:inspectobot/features/sync/sync_operation.dart';
+import 'package:inspectobot/features/sync/sync_outbox_store.dart';
 
 void main() {
   InspectionSetup buildSetup({
@@ -209,6 +213,121 @@ void main() {
     expect(progress.snapshot.completion, isEmpty);
     expect(progress.snapshot.status, WizardProgressStatus.inProgress);
   });
+
+  test('offline-first create queues inspection upsert operation', () async {
+    final tempRoot = await Directory.systemTemp.createTemp('inspectobot_repo_queue_');
+    addTearDown(() async {
+      if (await tempRoot.exists()) {
+        await tempRoot.delete(recursive: true);
+      }
+    });
+
+    final outbox = SyncOutboxStore(directoryProvider: () async => tempRoot);
+    final repository = InspectionRepository(
+      OfflineFirstInspectionStore(
+        localStore: InMemoryInspectionStore(),
+        remoteStore: _AlwaysFailInspectionStore(),
+      ),
+      outboxStore: outbox,
+      enqueueSyncOperations: true,
+    );
+
+    final created = await repository.createInspection(buildSetup(id: 'insp-offline'));
+    expect(created.id, 'insp-offline');
+
+    final pending = await outbox.listByStatus(SyncOperationStatus.pending);
+    expect(pending.where((op) => op.type == SyncOperationType.inspectionUpsert), hasLength(1));
+    expect(pending.first.aggregateId, 'insp-offline');
+  });
+
+  test('wizard progress updates queue deterministic upsert operation', () async {
+    final tempRoot = await Directory.systemTemp.createTemp('inspectobot_repo_progress_');
+    addTearDown(() async {
+      if (await tempRoot.exists()) {
+        await tempRoot.delete(recursive: true);
+      }
+    });
+
+    final outbox = SyncOutboxStore(directoryProvider: () async => tempRoot);
+    final repository = InspectionRepository(
+      OfflineFirstInspectionStore(
+        localStore: InMemoryInspectionStore(),
+        remoteStore: _AlwaysFailInspectionStore(),
+      ),
+      outboxStore: outbox,
+      enqueueSyncOperations: true,
+    );
+
+    final created = await repository.createInspection(buildSetup(id: 'insp-progress'));
+
+    await repository.updateWizardProgress(
+      inspectionId: created.id,
+      organizationId: created.organizationId,
+      userId: created.userId,
+      snapshot: const WizardProgressSnapshot(
+        lastStepIndex: 3,
+        completion: <String, bool>{'photo:exteriorFront': true},
+        branchContext: <String, dynamic>{'enabled_forms': <String>['four_point']},
+        status: WizardProgressStatus.inProgress,
+      ),
+    );
+
+    final pending = await outbox.listByStatus(SyncOperationStatus.pending);
+    final wizardOps = pending.where(
+      (op) => op.type == SyncOperationType.wizardProgressUpsert,
+    );
+    expect(wizardOps, hasLength(1));
+    expect(
+      wizardOps.single.payload['wizard_last_step'],
+      3,
+    );
+  });
+}
+
+class _AlwaysFailInspectionStore implements InspectionStore {
+  @override
+  Future<Map<String, dynamic>> create(Map<String, dynamic> inspectionJson) async {
+    throw StateError('offline');
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchById({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    throw StateError('offline');
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchWizardProgress({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    throw StateError('offline');
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> listInProgressInspections({
+    required String organizationId,
+    required String userId,
+  }) async {
+    throw StateError('offline');
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateWizardProgress({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required int wizardLastStep,
+    required Map<String, bool> wizardCompletion,
+    required Map<String, dynamic> wizardBranchContext,
+    required String wizardStatus,
+  }) async {
+    throw StateError('offline');
+  }
 }
 
 class _MalformedWizardPayloadStore implements InspectionStore {

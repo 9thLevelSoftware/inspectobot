@@ -2,6 +2,8 @@ import 'package:inspectobot/data/supabase/supabase_client_provider.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
+import 'package:inspectobot/features/sync/sync_operation.dart';
+import 'package:inspectobot/features/sync/sync_outbox_store.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class InspectionStore {
@@ -70,22 +72,36 @@ class InspectionWizardProgress {
 }
 
 class InspectionRepository {
-  InspectionRepository(this._store);
+  InspectionRepository(
+    this._store, {
+    SyncOutboxStore? outboxStore,
+    bool enqueueSyncOperations = false,
+  })  : _outboxStore = outboxStore,
+        _enqueueSyncOperations = enqueueSyncOperations;
 
   factory InspectionRepository.live() {
-    if (SupabaseClientProvider.isConfigured) {
-      return InspectionRepository(
-        SupabaseInspectionStore(SupabaseClientProvider.client),
-      );
-    }
-    return InspectionRepository(InMemoryInspectionStore());
+    final localStore = InMemoryInspectionStore();
+    final remoteStore = SupabaseClientProvider.isConfigured
+        ? SupabaseInspectionStore(SupabaseClientProvider.client)
+        : null;
+    return InspectionRepository(
+      OfflineFirstInspectionStore(
+        localStore: localStore,
+        remoteStore: remoteStore,
+      ),
+      outboxStore: SyncOutboxStore(),
+      enqueueSyncOperations: true,
+    );
   }
 
   final InspectionStore _store;
+  final SyncOutboxStore? _outboxStore;
+  final bool _enqueueSyncOperations;
 
   Future<InspectionSetup> createInspection(InspectionSetup setup) async {
     _validate(setup);
     final created = await _store.create(setup.toJson());
+    await _enqueueInspectionUpsert(InspectionSetup.fromJson(created));
     return InspectionSetup.fromJson(created);
   }
 
@@ -111,6 +127,11 @@ class InspectionRepository {
     required String userId,
     required WizardProgressSnapshot snapshot,
   }) async {
+    final setup = await fetchInspectionById(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+    );
     final payload = await _store.updateWizardProgress(
       inspectionId: inspectionId,
       organizationId: organizationId,
@@ -120,6 +141,12 @@ class InspectionRepository {
       wizardBranchContext: snapshot.branchContext,
       wizardStatus: _encodeStatus(snapshot.status),
     );
+    if (setup != null) {
+      await _enqueueWizardProgressUpsert(
+        setup: setup,
+        snapshot: snapshot,
+      );
+    }
     return InspectionWizardProgress.fromJson(payload);
   }
 
@@ -137,6 +164,61 @@ class InspectionRepository {
       return null;
     }
     return InspectionWizardProgress.fromJson(payload);
+  }
+
+  Future<void> _enqueueInspectionUpsert(InspectionSetup setup) async {
+    if (!_enqueueSyncOperations || _outboxStore == null) {
+      return;
+    }
+    await _outboxStore.enqueue(
+      SyncOperation(
+        operationId: SyncOperation.newId(),
+        type: SyncOperationType.inspectionUpsert,
+        aggregateId: setup.id,
+        organizationId: setup.organizationId,
+        userId: setup.userId,
+        payload: setup.toJson(),
+        createdAt: DateTime.now().toUtc(),
+        updatedAt: DateTime.now().toUtc(),
+      ),
+      replaceWhere: (existing) {
+        return existing.type == SyncOperationType.inspectionUpsert &&
+            existing.aggregateId == setup.id;
+      },
+    );
+  }
+
+  Future<void> _enqueueWizardProgressUpsert({
+    required InspectionSetup setup,
+    required WizardProgressSnapshot snapshot,
+  }) async {
+    if (!_enqueueSyncOperations || _outboxStore == null) {
+      return;
+    }
+    await _outboxStore.enqueue(
+      SyncOperation(
+        operationId: SyncOperation.newId(),
+        type: SyncOperationType.wizardProgressUpsert,
+        aggregateId: setup.id,
+        organizationId: setup.organizationId,
+        userId: setup.userId,
+        payload: <String, dynamic>{
+          'inspection_id': setup.id,
+          'organization_id': setup.organizationId,
+          'user_id': setup.userId,
+          'wizard_last_step': snapshot.lastStepIndex,
+          'wizard_completion': snapshot.completion,
+          'wizard_branch_context': snapshot.branchContext,
+          'wizard_status': _encodeStatus(snapshot.status),
+        },
+        createdAt: DateTime.now().toUtc(),
+        updatedAt: DateTime.now().toUtc(),
+      ),
+      replaceWhere: (existing) {
+        return existing.type == SyncOperationType.wizardProgressUpsert &&
+            existing.aggregateId == setup.id;
+      },
+    );
   }
 
   Future<List<InspectionWizardProgress>> listInProgressInspections({
@@ -316,8 +398,7 @@ class InMemoryInspectionStore implements InspectionStore {
 
   @override
   Future<Map<String, dynamic>> create(Map<String, dynamic> inspectionJson) async {
-    final id = (inspectionJson['id'] as String?) ??
-        DateTime.now().microsecondsSinceEpoch.toString();
+    final id = (inspectionJson['id'] as String?) ?? SyncOperation.newId();
     final payload = Map<String, dynamic>.from(inspectionJson)
       ..['id'] = id
       ..putIfAbsent('wizard_last_step', () => 0)
@@ -399,5 +480,146 @@ class InMemoryInspectionStore implements InspectionStore {
         )
         .map((inspection) => Map<String, dynamic>.from(inspection))
         .toList(growable: false);
+  }
+}
+
+class OfflineFirstInspectionStore implements InspectionStore {
+  OfflineFirstInspectionStore({
+    required InspectionStore localStore,
+    InspectionStore? remoteStore,
+  })  : _localStore = localStore,
+        _remoteStore = remoteStore;
+
+  final InspectionStore _localStore;
+  final InspectionStore? _remoteStore;
+
+  @override
+  Future<Map<String, dynamic>> create(Map<String, dynamic> inspectionJson) async {
+    final local = await _localStore.create(inspectionJson);
+    if (_remoteStore == null) {
+      return local;
+    }
+
+    try {
+      final remote = await _remoteStore.create(inspectionJson);
+      await _localStore.create(remote);
+      return remote;
+    } catch (_) {
+      return local;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchById({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    final local = await _localStore.fetchById(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+    );
+    if (local != null) {
+      return local;
+    }
+    if (_remoteStore == null) {
+      return null;
+    }
+
+    try {
+      final remote = await _remoteStore.fetchById(
+        inspectionId: inspectionId,
+        organizationId: organizationId,
+        userId: userId,
+      );
+      if (remote != null) {
+        await _localStore.create(remote);
+      }
+      return remote;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateWizardProgress({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required int wizardLastStep,
+    required Map<String, bool> wizardCompletion,
+    required Map<String, dynamic> wizardBranchContext,
+    required String wizardStatus,
+  }) async {
+    final local = await _localStore.updateWizardProgress(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+      wizardLastStep: wizardLastStep,
+      wizardCompletion: wizardCompletion,
+      wizardBranchContext: wizardBranchContext,
+      wizardStatus: wizardStatus,
+    );
+
+    if (_remoteStore == null) {
+      return local;
+    }
+
+    try {
+      final remote = await _remoteStore.updateWizardProgress(
+        inspectionId: inspectionId,
+        organizationId: organizationId,
+        userId: userId,
+        wizardLastStep: wizardLastStep,
+        wizardCompletion: wizardCompletion,
+        wizardBranchContext: wizardBranchContext,
+        wizardStatus: wizardStatus,
+      );
+      await _localStore.create(remote);
+      return remote;
+    } catch (_) {
+      return local;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchWizardProgress({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) {
+    return fetchById(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> listInProgressInspections({
+    required String organizationId,
+    required String userId,
+  }) async {
+    final localRows = await _localStore.listInProgressInspections(
+      organizationId: organizationId,
+      userId: userId,
+    );
+    if (_remoteStore == null) {
+      return localRows;
+    }
+
+    try {
+      final remoteRows = await _remoteStore.listInProgressInspections(
+        organizationId: organizationId,
+        userId: userId,
+      );
+      for (final row in remoteRows) {
+        await _localStore.create(row);
+      }
+      return remoteRows;
+    } catch (_) {
+      return localRows;
+    }
   }
 }
