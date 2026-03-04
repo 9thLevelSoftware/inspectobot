@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:inspectobot/data/supabase/supabase_client_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'media_sync_task.dart';
 import '../inspection/domain/required_photo_category.dart';
 
 abstract class MediaStorageGateway {
@@ -20,6 +21,9 @@ abstract class MediaMetadataGateway {
     required String inspectionId,
     required String organizationId,
     required String userId,
+    required String requirementKey,
+    required CapturedMediaType mediaType,
+    required String evidenceInstanceId,
     required RequiredPhotoCategory category,
     required String storagePath,
     required DateTime capturedAt,
@@ -52,8 +56,10 @@ class MediaSyncRemoteStore {
     required String userId,
     required String inspectionId,
     required String mediaId,
+    required CapturedMediaType mediaType,
   }) {
-    return 'org/$organizationId/users/$userId/inspections/$inspectionId/media/$mediaId.jpg';
+    final extension = mediaType == CapturedMediaType.document ? 'pdf' : 'jpg';
+    return 'org/$organizationId/users/$userId/inspections/$inspectionId/media/$mediaId.$extension';
   }
 
   Future<void> upload({
@@ -61,6 +67,9 @@ class MediaSyncRemoteStore {
     required String inspectionId,
     required String organizationId,
     required String userId,
+    required String requirementKey,
+    required CapturedMediaType mediaType,
+    required String evidenceInstanceId,
     required RequiredPhotoCategory category,
     required String filePath,
     DateTime? capturedAt,
@@ -71,6 +80,7 @@ class MediaSyncRemoteStore {
       userId: userId,
       inspectionId: inspectionId,
       mediaId: mediaId,
+      mediaType: mediaType,
     );
 
     await _storage.upload(
@@ -83,6 +93,9 @@ class MediaSyncRemoteStore {
       inspectionId: inspectionId,
       organizationId: organizationId,
       userId: userId,
+      requirementKey: requirementKey,
+      mediaType: mediaType,
+      evidenceInstanceId: evidenceInstanceId,
       category: category,
       storagePath: storagePath,
       capturedAt: (capturedAt ?? DateTime.now()).toUtc(),
@@ -120,6 +133,9 @@ class SupabaseMediaMetadataGateway implements MediaMetadataGateway {
     required String inspectionId,
     required String organizationId,
     required String userId,
+    required String requirementKey,
+    required CapturedMediaType mediaType,
+    required String evidenceInstanceId,
     required RequiredPhotoCategory category,
     required String storagePath,
     required DateTime capturedAt,
@@ -129,9 +145,12 @@ class SupabaseMediaMetadataGateway implements MediaMetadataGateway {
       'inspection_id': inspectionId,
       'organization_id': organizationId,
       'user_id': userId,
+      'requirement_key': requirementKey,
+      'media_type': mediaType.name,
+      'evidence_instance_id': evidenceInstanceId,
       'category': category.name,
       'storage_path': storagePath,
       'captured_at': capturedAt.toIso8601String(),
-    }, onConflict: 'inspection_id,category');
+    }, onConflict: 'inspection_id,requirement_key,evidence_instance_id,media_type');
   }
 }
