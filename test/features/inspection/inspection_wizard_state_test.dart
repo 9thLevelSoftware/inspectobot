@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inspectobot/features/inspection/domain/evidence_requirement.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
@@ -27,8 +28,8 @@ void main() {
 
   test('resolveNextIncompleteStep returns first incomplete form step', () {
     final completion = <String, bool>{};
-    for (final key in FormRequirements.requirementKeysForForm(FormType.fourPoint)) {
-      completion[key] = true;
+    for (final requirement in FormRequirements.forFormRequirements(FormType.fourPoint)) {
+      completion[requirement.key] = true;
     }
     final state = InspectionWizardState(
       enabledForms: {FormType.fourPoint, FormType.roofCondition},
@@ -45,8 +46,8 @@ void main() {
 
   test('wizard is complete when all enabled form requirements are met', () {
     final completion = <String, bool>{};
-    for (final key in FormRequirements.requirementKeysForForm(FormType.fourPoint)) {
-      completion[key] = true;
+    for (final requirement in FormRequirements.forFormRequirements(FormType.fourPoint)) {
+      completion[requirement.key] = true;
     }
     final state = InspectionWizardState(
       enabledForms: {FormType.fourPoint},
@@ -59,5 +60,59 @@ void main() {
     );
 
     expect(state.isComplete, isTrue);
+  });
+
+  test('roof defect requirement appears only when branch context enables it', () {
+    final withoutDefect = InspectionWizardState(
+      enabledForms: {FormType.roofCondition},
+      snapshot: WizardProgressSnapshot.empty,
+    );
+    final withDefect = InspectionWizardState(
+      enabledForms: {FormType.roofCondition},
+      snapshot: WizardProgressSnapshot(
+        lastStepIndex: 0,
+        completion: const <String, bool>{},
+        branchContext: const <String, dynamic>{'roof_defect_present': true},
+        status: WizardProgressStatus.inProgress,
+      ),
+    );
+
+    final roofStepWithout = withoutDefect.steps.firstWhere((step) => step.form == FormType.roofCondition);
+    final roofStepWith = withDefect.steps.firstWhere((step) => step.form == FormType.roofCondition);
+
+    expect(
+      roofStepWithout.requirements.any((requirement) => requirement.key == 'photo:roof_defect'),
+      isFalse,
+    );
+    expect(
+      roofStepWith.requirements.any((requirement) => requirement.key == 'photo:roof_defect'),
+      isTrue,
+    );
+  });
+
+  test('wind mitigation step includes document requirements when triggered', () {
+    final state = InspectionWizardState(
+      enabledForms: {FormType.windMitigation},
+      snapshot: WizardProgressSnapshot(
+        lastStepIndex: 0,
+        completion: const <String, bool>{},
+        branchContext: const <String, dynamic>{
+          'wind_roof_deck_document_required': true,
+          'wind_opening_document_required': true,
+          'wind_permit_document_required': true,
+        },
+        status: WizardProgressStatus.inProgress,
+      ),
+    );
+
+    final windStep = state.steps.firstWhere((step) => step.form == FormType.windMitigation);
+    final docs = windStep.requirements
+        .where((requirement) => requirement.mediaType == EvidenceMediaType.document)
+        .map((requirement) => requirement.key)
+        .toSet();
+
+    expect(docs, contains('document:wind_roof_deck'));
+    expect(docs, contains('document:wind_opening_protection'));
+    expect(docs, contains('document:wind_permit_year'));
   });
 }

@@ -71,6 +71,69 @@ void main() {
 
     expect(find.textContaining('Step 3 of'), findsOneWidget);
   });
+
+  testWidgets('roof defect prompt appears when branch context requires it', (
+    tester,
+  ) async {
+    final draft = InspectionDraft(
+      inspectionId: 'insp-3',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Roof Defect User',
+      clientEmail: 'roof@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '789 Roof Ln',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 1999,
+      enabledForms: {FormType.roofCondition},
+      wizardSnapshot: WizardProgressSnapshot(
+        lastStepIndex: 1,
+        completion: const <String, bool>{},
+        branchContext: const <String, dynamic>{'roof_defect_present': true},
+        status: WizardProgressStatus.inProgress,
+      ),
+      initialStepIndex: 1,
+    );
+
+    await tester.pumpWidget(MaterialApp(home: FormChecklistPage(draft: draft)));
+
+    expect(find.text('Roof Defect'), findsOneWidget);
+  });
+
+  testWidgets('wind mitigation step shows supporting document prompts when required', (
+    tester,
+  ) async {
+    final draft = InspectionDraft(
+      inspectionId: 'insp-4',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Wind User',
+      clientEmail: 'wind@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '321 Breeze St',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2005,
+      enabledForms: {FormType.windMitigation},
+      wizardSnapshot: WizardProgressSnapshot(
+        lastStepIndex: 1,
+        completion: const <String, bool>{},
+        branchContext: const <String, dynamic>{
+          'wind_roof_deck_document_required': true,
+          'wind_opening_document_required': true,
+          'wind_permit_document_required': true,
+        },
+        status: WizardProgressStatus.inProgress,
+      ),
+      initialStepIndex: 1,
+    );
+
+    await tester.pumpWidget(MaterialApp(home: FormChecklistPage(draft: draft)));
+
+    expect(find.text('Wind Roof Deck Supporting Document'), findsOneWidget);
+    expect(find.text('Wind Opening Protection Document'), findsOneWidget);
+    expect(find.text('Wind Permit/Age Document'), findsOneWidget);
+    expect(find.text('Upload'), findsWidgets);
+  });
 }
 
 class _ChecklistStore implements InspectionStore {
@@ -86,8 +149,23 @@ class _ChecklistStore implements InspectionStore {
     required String inspectionId,
     required String organizationId,
     required String userId,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    return <String, dynamic>{
+      'id': inspectionId,
+      'organization_id': organizationId,
+      'user_id': userId,
+      'client_name': 'Jane Doe',
+      'client_email': 'jane@example.com',
+      'client_phone': '555-0100',
+      'property_address': '123 Palm Ave',
+      'inspection_date': '2026-03-04',
+      'year_built': 2004,
+      'forms_enabled': <String>['four_point'],
+      'wizard_last_step': 0,
+      'wizard_completion': <String, bool>{},
+      'wizard_branch_context': <String, dynamic>{},
+      'wizard_status': 'in_progress',
+    };
   }
 
   @override
