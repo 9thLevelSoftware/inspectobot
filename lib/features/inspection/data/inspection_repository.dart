@@ -2,6 +2,7 @@ import 'package:inspectobot/data/supabase/supabase_client_provider.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
+import 'package:inspectobot/features/inspection/domain/report_readiness.dart';
 import 'package:inspectobot/features/sync/sync_operation.dart';
 import 'package:inspectobot/features/sync/sync_outbox_store.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -32,6 +33,21 @@ abstract class InspectionStore {
   });
 
   Future<List<Map<String, dynamic>>> listInProgressInspections({
+    required String organizationId,
+    required String userId,
+  });
+
+  Future<Map<String, dynamic>> upsertReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String status,
+    required List<String> missingItems,
+    required DateTime computedAt,
+  });
+
+  Future<Map<String, dynamic>?> fetchReportReadiness({
+    required String inspectionId,
     required String organizationId,
     required String userId,
   });
@@ -164,6 +180,34 @@ class InspectionRepository {
       return null;
     }
     return InspectionWizardProgress.fromJson(payload);
+  }
+
+  Future<ReportReadiness> upsertReportReadiness(ReportReadiness readiness) async {
+    final payload = await _store.upsertReportReadiness(
+      inspectionId: readiness.inspectionId,
+      organizationId: readiness.organizationId,
+      userId: readiness.userId,
+      status: readiness.status.name,
+      missingItems: readiness.missingItems,
+      computedAt: readiness.computedAt,
+    );
+    return ReportReadiness.fromJson(payload);
+  }
+
+  Future<ReportReadiness?> fetchReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    final payload = await _store.fetchReportReadiness(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+    );
+    if (payload == null) {
+      return null;
+    }
+    return ReportReadiness.fromJson(payload);
   }
 
   Future<void> _enqueueInspectionUpsert(InspectionSetup setup) async {
@@ -397,10 +441,58 @@ class SupabaseInspectionStore implements InspectionStore {
         .map((row) => Map<String, dynamic>.from(row as Map))
         .toList(growable: false);
   }
+
+  @override
+  Future<Map<String, dynamic>?> fetchReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    final result = await _client
+        .from('report_readiness')
+        .select()
+        .eq('inspection_id', inspectionId)
+        .eq('organization_id', organizationId)
+        .eq('user_id', userId)
+        .maybeSingle();
+    if (result == null) {
+      return null;
+    }
+    return Map<String, dynamic>.from(result);
+  }
+
+  @override
+  Future<Map<String, dynamic>> upsertReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String status,
+    required List<String> missingItems,
+    required DateTime computedAt,
+  }) async {
+    final result = await _client
+        .from('report_readiness')
+        .upsert(<String, dynamic>{
+          'inspection_id': inspectionId,
+          'organization_id': organizationId,
+          'user_id': userId,
+          'status': status,
+          'missing_items': missingItems,
+          'computed_at': computedAt.toIso8601String(),
+        }, onConflict: 'inspection_id')
+        .select()
+        .single();
+    return Map<String, dynamic>.from(result);
+  }
 }
 
 class InMemoryInspectionStore implements InspectionStore {
   final Map<String, Map<String, dynamic>> _inspections = {};
+  final Map<String, Map<String, dynamic>> _reportReadiness = {};
+
+  String _readinessKey(String inspectionId, String organizationId, String userId) {
+    return '$inspectionId::$organizationId::$userId';
+  }
 
   @override
   Future<Map<String, dynamic>> create(Map<String, dynamic> inspectionJson) async {
@@ -486,6 +578,36 @@ class InMemoryInspectionStore implements InspectionStore {
         )
         .map((inspection) => Map<String, dynamic>.from(inspection))
         .toList(growable: false);
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return _reportReadiness[_readinessKey(inspectionId, organizationId, userId)];
+  }
+
+  @override
+  Future<Map<String, dynamic>> upsertReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String status,
+    required List<String> missingItems,
+    required DateTime computedAt,
+  }) async {
+    final payload = <String, dynamic>{
+      'inspection_id': inspectionId,
+      'organization_id': organizationId,
+      'user_id': userId,
+      'status': status,
+      'missing_items': List<String>.from(missingItems),
+      'computed_at': computedAt.toIso8601String(),
+    };
+    _reportReadiness[_readinessKey(inspectionId, organizationId, userId)] = payload;
+    return payload;
   }
 }
 
@@ -626,6 +748,87 @@ class OfflineFirstInspectionStore implements InspectionStore {
       return remoteRows;
     } catch (_) {
       return localRows;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    final local = await _localStore.fetchReportReadiness(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+    );
+    if (local != null || _remoteStore == null) {
+      return local;
+    }
+
+    try {
+      final remote = await _remoteStore.fetchReportReadiness(
+        inspectionId: inspectionId,
+        organizationId: organizationId,
+        userId: userId,
+      );
+      if (remote != null) {
+        await _localStore.upsertReportReadiness(
+          inspectionId: inspectionId,
+          organizationId: organizationId,
+          userId: userId,
+          status: remote['status'] as String,
+          missingItems: List<String>.from(remote['missing_items'] as List<dynamic>),
+          computedAt: DateTime.parse(remote['computed_at'] as String).toUtc(),
+        );
+      }
+      return remote;
+    } catch (_) {
+      return local;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> upsertReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String status,
+    required List<String> missingItems,
+    required DateTime computedAt,
+  }) async {
+    final local = await _localStore.upsertReportReadiness(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+      status: status,
+      missingItems: missingItems,
+      computedAt: computedAt,
+    );
+    if (_remoteStore == null) {
+      return local;
+    }
+
+    try {
+      final remote = await _remoteStore.upsertReportReadiness(
+        inspectionId: inspectionId,
+        organizationId: organizationId,
+        userId: userId,
+        status: status,
+        missingItems: missingItems,
+        computedAt: computedAt,
+      );
+      await _localStore.upsertReportReadiness(
+        inspectionId: inspectionId,
+        organizationId: organizationId,
+        userId: userId,
+        status: remote['status'] as String,
+        missingItems: List<String>.from(remote['missing_items'] as List<dynamic>),
+        computedAt: DateTime.parse(remote['computed_at'] as String).toUtc(),
+      );
+      return remote;
+    } catch (_) {
+      return local;
     }
   }
 }

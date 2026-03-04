@@ -189,6 +189,15 @@ class _SpyInspectionStore implements InspectionStore {
   }
 
   @override
+  Future<Map<String, dynamic>?> fetchReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return null;
+  }
+
+  @override
   Future<Map<String, dynamic>> updateWizardProgress({
     required String inspectionId,
     required String organizationId,
@@ -199,5 +208,24 @@ class _SpyInspectionStore implements InspectionStore {
     required String wizardStatus,
   }) async {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<Map<String, dynamic>> upsertReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String status,
+    required List<String> missingItems,
+    required DateTime computedAt,
+  }) async {
+    return <String, dynamic>{
+      'inspection_id': inspectionId,
+      'organization_id': organizationId,
+      'user_id': userId,
+      'status': status,
+      'missing_items': missingItems,
+      'computed_at': computedAt.toIso8601String(),
+    };
   }
 }

@@ -9,6 +9,7 @@ import 'package:inspectobot/features/inspection/domain/required_photo_category.d
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
 import 'package:inspectobot/features/media/media_sync_remote_store.dart';
+import 'package:inspectobot/features/media/media_sync_task.dart';
 import 'package:inspectobot/features/inspection/presentation/dashboard_page.dart';
 import 'package:inspectobot/features/sync/sync_outbox_store.dart';
 import 'package:inspectobot/features/sync/sync_runner.dart';
@@ -129,6 +130,15 @@ class _NoopInspectionStore implements InspectionStore {
   }
 
   @override
+  Future<Map<String, dynamic>?> fetchReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return null;
+  }
+
+  @override
   Future<Map<String, dynamic>> updateWizardProgress({
     required String inspectionId,
     required String organizationId,
@@ -139,6 +149,25 @@ class _NoopInspectionStore implements InspectionStore {
     required String wizardStatus,
   }) async {
     return <String, dynamic>{};
+  }
+
+  @override
+  Future<Map<String, dynamic>> upsertReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String status,
+    required List<String> missingItems,
+    required DateTime computedAt,
+  }) async {
+    return <String, dynamic>{
+      'inspection_id': inspectionId,
+      'organization_id': organizationId,
+      'user_id': userId,
+      'status': status,
+      'missing_items': missingItems,
+      'computed_at': computedAt.toIso8601String(),
+    };
   }
 }
 
@@ -155,6 +184,9 @@ class _NoopMediaRemoteStore extends MediaSyncRemoteStore {
     required String inspectionId,
     required String organizationId,
     required String userId,
+    required String requirementKey,
+    required CapturedMediaType mediaType,
+    required String evidenceInstanceId,
     required RequiredPhotoCategory category,
     required String filePath,
     DateTime? capturedAt,
@@ -177,6 +209,9 @@ class _NoopMetadataGateway implements MediaMetadataGateway {
     required String inspectionId,
     required String organizationId,
     required String userId,
+    required String requirementKey,
+    required CapturedMediaType mediaType,
+    required String evidenceInstanceId,
     required RequiredPhotoCategory category,
     required String storagePath,
     required DateTime capturedAt,

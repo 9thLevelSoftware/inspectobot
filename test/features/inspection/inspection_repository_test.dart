@@ -5,6 +5,7 @@ import 'package:inspectobot/features/inspection/data/inspection_repository.dart'
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
+import 'package:inspectobot/features/inspection/domain/report_readiness.dart';
 import 'package:inspectobot/features/sync/sync_operation.dart';
 import 'package:inspectobot/features/sync/sync_outbox_store.dart';
 
@@ -301,6 +302,41 @@ void main() {
       3,
     );
   });
+
+  test('report readiness can be upserted and fetched by scope', () async {
+    final repository = InspectionRepository(InMemoryInspectionStore());
+    final created = await repository.createInspection(buildSetup(id: 'insp-ready'));
+
+    final written = await repository.upsertReportReadiness(
+      ReportReadiness(
+        inspectionId: created.id,
+        organizationId: created.organizationId,
+        userId: created.userId,
+        status: ReportReadinessStatus.blocked,
+        missingItems: const <String>['Exterior Front'],
+        computedAt: DateTime.utc(2026, 3, 5),
+      ),
+    );
+
+    expect(written.status, ReportReadinessStatus.blocked);
+    expect(written.missingItems, contains('Exterior Front'));
+
+    final fetched = await repository.fetchReportReadiness(
+      inspectionId: created.id,
+      organizationId: created.organizationId,
+      userId: created.userId,
+    );
+    expect(fetched, isNotNull);
+    expect(fetched!.status, ReportReadinessStatus.blocked);
+    expect(fetched.missingItems, contains('Exterior Front'));
+
+    final wrongScope = await repository.fetchReportReadiness(
+      inspectionId: created.id,
+      organizationId: 'org-2',
+      userId: created.userId,
+    );
+    expect(wrongScope, isNull);
+  });
 }
 
 class _AlwaysFailInspectionStore implements InspectionStore {
@@ -328,6 +364,15 @@ class _AlwaysFailInspectionStore implements InspectionStore {
   }
 
   @override
+  Future<Map<String, dynamic>?> fetchReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    throw StateError('offline');
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> listInProgressInspections({
     required String organizationId,
     required String userId,
@@ -344,6 +389,18 @@ class _AlwaysFailInspectionStore implements InspectionStore {
     required Map<String, bool> wizardCompletion,
     required Map<String, dynamic> wizardBranchContext,
     required String wizardStatus,
+  }) async {
+    throw StateError('offline');
+  }
+
+  @override
+  Future<Map<String, dynamic>> upsertReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String status,
+    required List<String> missingItems,
+    required DateTime computedAt,
   }) async {
     throw StateError('offline');
   }
@@ -385,6 +442,15 @@ class _MalformedWizardPayloadStore implements InspectionStore {
   }
 
   @override
+  Future<Map<String, dynamic>?> fetchReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return null;
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> listInProgressInspections({
     required String organizationId,
     required String userId,
@@ -401,6 +467,18 @@ class _MalformedWizardPayloadStore implements InspectionStore {
     required Map<String, bool> wizardCompletion,
     required Map<String, dynamic> wizardBranchContext,
     required String wizardStatus,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Map<String, dynamic>> upsertReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String status,
+    required List<String> missingItems,
+    required DateTime computedAt,
   }) {
     throw UnimplementedError();
   }

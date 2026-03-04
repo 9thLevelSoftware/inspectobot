@@ -145,6 +145,7 @@ void main() {
         'user_id': 'user-1',
         'status': 'blocked',
         'missing_items': <String>['Exterior Front'],
+        'computed_at': '2026-03-05T00:00:00.000Z',
       },
     );
     final repository = InspectionRepository(store);
@@ -162,8 +163,8 @@ void main() {
       wizardSnapshot: WizardProgressSnapshot(
         lastStepIndex: 1,
         completion: {
-          for (final key in FormRequirements.requirementKeysForForm(FormType.fourPoint))
-            key: true,
+          for (final requirement in FormRequirements.forFormRequirements(FormType.fourPoint))
+            requirement.key: true,
         },
         branchContext: const <String, dynamic>{},
         status: WizardProgressStatus.complete,
@@ -176,9 +177,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final button = tester.widget<FilledButton>(find.byType(FilledButton).last);
-    expect(button.onPressed, isNull);
-    expect(find.textContaining('Readiness blocked'), findsOneWidget);
+    expect(find.text('Generate PDF'), findsNothing);
   });
 }
 

@@ -11,6 +11,7 @@ import '../domain/evidence_requirement.dart';
 import '../domain/form_requirements.dart';
 import '../domain/inspection_draft.dart';
 import '../domain/inspection_wizard_state.dart';
+import '../domain/report_readiness.dart';
 import '../domain/required_photo_category.dart';
 
 class FormChecklistPage extends StatefulWidget {
@@ -36,6 +37,7 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   bool _isGenerating = false;
   bool _isSavingProgress = false;
   String? _lastPdfPath;
+  ReportReadiness? _persistedReadiness;
 
   InspectionRepository get _repository => widget.repository;
 
@@ -50,12 +52,58 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
     _pdfOrchestrator = PdfOrchestrator(
       onDevice: const OnDevicePdfService(),
       cloud: const CloudPdfService(),
+      readinessLookup: (input) => _repository.fetchReportReadiness(
+        inspectionId: input.inspectionId,
+        organizationId: input.organizationId,
+        userId: input.userId,
+      ),
     );
     _snapshot = widget.draft.wizardSnapshot;
     _hydrateCapturedFromSnapshot();
     final requestedStep = widget.draft.initialStepIndex;
     final maxStep = _wizardState.steps.length - 1;
     _currentStepIndex = requestedStep.clamp(0, maxStep < 0 ? 0 : maxStep);
+    _loadReadiness();
+  }
+
+  Future<void> _loadReadiness() async {
+    final existing = await _repository.fetchReportReadiness(
+      inspectionId: widget.draft.inspectionId,
+      organizationId: widget.draft.organizationId,
+      userId: widget.draft.userId,
+    );
+    if (existing != null) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _persistedReadiness = existing;
+      });
+      return;
+    }
+    await _syncReadinessFromSnapshot();
+  }
+
+  Future<void> _syncReadinessFromSnapshot() async {
+    final evaluated = _evaluateReadiness();
+    final saved = await _repository.upsertReportReadiness(evaluated);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _persistedReadiness = saved;
+    });
+  }
+
+  ReportReadiness _evaluateReadiness() {
+    return ReportReadiness.evaluate(
+      inspectionId: widget.draft.inspectionId,
+      organizationId: widget.draft.organizationId,
+      userId: widget.draft.userId,
+      enabledForms: widget.draft.enabledForms,
+      completion: _snapshot.completion,
+      branchContext: _snapshot.branchContext,
+    );
   }
 
   void _hydrateCapturedFromSnapshot() {
@@ -109,6 +157,7 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
       widget.draft.capturedEvidencePaths[requirement.key] = <String>[result.filePath];
       _snapshot = _snapshot.copyWith(completion: completion);
     });
+    await _syncReadinessFromSnapshot();
   }
 
   Future<void> _saveProgress({required bool markComplete}) async {
@@ -129,6 +178,7 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
       userId: widget.draft.userId,
       snapshot: updated,
     );
+    await _repository.upsertReportReadiness(_evaluateReadiness());
     _snapshot = updated;
   }
 
@@ -184,10 +234,15 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
     try {
       final file = await _pdfOrchestrator.generate(
         PdfGenerationInput(
+          inspectionId: widget.draft.inspectionId,
+          organizationId: widget.draft.organizationId,
+          userId: widget.draft.userId,
           clientName: widget.draft.clientName,
           propertyAddress: widget.draft.propertyAddress,
           enabledForms: widget.draft.enabledForms,
           capturedCategories: widget.draft.capturedCategories,
+          wizardCompletion: _snapshot.completion,
+          branchContext: _snapshot.branchContext,
         ),
       );
       final length = await file.length();
@@ -257,6 +312,8 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
     final currentStep = wizardState.steps[_currentStepIndex];
     final canContinue = wizardState.canAdvanceFrom(_currentStepIndex);
     final isComplete = wizardState.isComplete;
+    final readiness = _persistedReadiness ?? _evaluateReadiness();
+    final canGenerate = readiness.isReady;
     final isFinalStep = _currentStepIndex >= wizardState.steps.length - 1;
 
     return Scaffold(
@@ -307,7 +364,9 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
           }),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed: isComplete && !_isGenerating ? _generatePdf : null,
+            onPressed: isComplete && canGenerate && !_isGenerating
+                ? _generatePdf
+                : null,
             icon: _isGenerating
                 ? const SizedBox(
                     width: 16,
@@ -316,9 +375,9 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
                   )
                 : const Icon(Icons.picture_as_pdf),
             label: Text(
-              isComplete
+              isComplete && canGenerate
                   ? 'Generate PDF'
-                  : 'Complete all required items before PDF',
+                  : 'Readiness blocked: ${readiness.missingItems.join(', ')}',
             ),
           ),
           if (_lastPdfPath != null) ...[
