@@ -28,11 +28,7 @@ class PdfOrchestrator {
     if (readinessLookup != null) {
       final readiness = await readinessLookup!(input);
       if (readiness == null || !readiness.isReady) {
-        final missing = readiness?.missingItems.join(', ');
-        final suffix = (missing != null && missing.isNotEmpty)
-            ? ' Missing: $missing'
-            : '';
-        throw StateError('Inspection is not generation-ready.$suffix');
+        throw StateError(_buildReadinessMessage(readiness));
       }
     }
 
@@ -52,6 +48,16 @@ class PdfOrchestrator {
       }
       rethrow;
     }
+  }
+
+  String _buildReadinessMessage(ReportReadiness? readiness) {
+    if (readiness == null) {
+      return 'Inspection is not generation-ready. Missing readiness snapshot.';
+    }
+    if (readiness.missingItems.isEmpty) {
+      return 'Inspection is not generation-ready.';
+    }
+    return 'Inspection is not generation-ready. Missing: ${readiness.missingItems.join(', ')}';
   }
 }
 
