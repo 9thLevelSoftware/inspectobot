@@ -61,14 +61,14 @@ void main() {
 
     expect(find.text('Resume In-Progress Inspections'), findsOneWidget);
     expect(find.text('Jane Doe'), findsOneWidget);
-    expect(find.textContaining('last incomplete step 3'), findsOneWidget);
+    expect(find.textContaining('last incomplete step 2'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(FilledButton, 'Resume'));
     await tester.pumpAndSettle();
 
     expect(scheduler.runCalls, 1);
     expect(find.text('Guided Inspection Wizard'), findsOneWidget);
-    expect(find.textContaining('Step 3 of'), findsOneWidget);
+    expect(find.textContaining('Step 2 of'), findsOneWidget);
   });
 }
 
