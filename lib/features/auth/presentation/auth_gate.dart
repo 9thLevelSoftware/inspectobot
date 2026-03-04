@@ -45,7 +45,7 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     if (_isAuthenticated) {
-      return const DashboardPage();
+      return DashboardPage();
     }
     return const _SignedOutShell();
   }

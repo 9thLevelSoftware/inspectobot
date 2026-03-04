@@ -23,7 +23,7 @@ class InspectoBotApp extends StatelessWidget {
       initialRoute: AppRoutes.authGate,
       routes: {
         AppRoutes.authGate: (context) => const AuthGate(),
-        AppRoutes.dashboard: (context) => const DashboardPage(),
+        AppRoutes.dashboard: (context) => DashboardPage(),
         AppRoutes.signIn: (context) => const SignInPage(),
         AppRoutes.signUp: (context) => const SignUpPage(),
         AppRoutes.forgotPassword: (context) => const ForgotPasswordPage(),
