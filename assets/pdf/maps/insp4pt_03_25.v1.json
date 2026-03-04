@@ -1,0 +1,56 @@
+{
+  "form_code": "four_point",
+  "map_version": "v1",
+  "fields": [
+    {
+      "key": "text.client_name",
+      "source_key": "client_name",
+      "type": "text",
+      "page": 1,
+      "x": 42,
+      "y": 706,
+      "width": 220,
+      "height": 14
+    },
+    {
+      "key": "text.property_address",
+      "source_key": "property_address",
+      "type": "text",
+      "page": 1,
+      "x": 42,
+      "y": 688,
+      "width": 320,
+      "height": 14
+    },
+    {
+      "key": "checkbox.photo_exterior_front",
+      "source_key": "photo:exterior_front",
+      "type": "checkbox",
+      "page": 1,
+      "x": 42,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_exterior_front",
+      "source_key": "photo:exterior_front",
+      "type": "image",
+      "page": 1,
+      "x": 42,
+      "y": 520,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "signature.inspector",
+      "source_key": "inspector_signature",
+      "type": "signature",
+      "page": 1,
+      "x": 360,
+      "y": 86,
+      "width": 170,
+      "height": 36
+    }
+  ]
+}
