@@ -210,7 +210,9 @@ class FormRequirements {
     for (final form in forms) {
       merged.addAll(requiredPhotos[form] ?? const []);
     }
-    return merged.toList(growable: false);
+    final categories = merged.toList(growable: false)
+      ..sort((a, b) => a.name.compareTo(b.name));
+    return categories;
   }
 
   static List<RequiredPhotoCategory> forForm(FormType form) {
