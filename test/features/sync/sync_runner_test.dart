@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
 import 'package:inspectobot/features/media/media_sync_remote_store.dart';
+import 'package:inspectobot/features/media/media_sync_task.dart';
 import 'package:inspectobot/features/sync/sync_operation.dart';
 import 'package:inspectobot/features/sync/sync_outbox_store.dart';
 import 'package:inspectobot/features/sync/sync_runner.dart';
@@ -49,6 +50,11 @@ void main() {
         type: SyncOperationType.mediaUpload,
         payload: <String, dynamic>{
           'inspection_id': 'insp-1',
+          'organization_id': 'org-1',
+          'user_id': 'user-1',
+          'requirement_key': 'photo:exteriorFront',
+          'media_type': 'photo',
+          'evidence_instance_id': 'photo:exteriorFront',
           'category': 'exteriorFront',
           'file_path': '/tmp/front.jpg',
         },
@@ -104,6 +110,11 @@ void main() {
         type: SyncOperationType.mediaUpload,
         payload: <String, dynamic>{
           'inspection_id': 'insp-1',
+          'organization_id': 'org-1',
+          'user_id': 'user-1',
+          'requirement_key': 'photo:exteriorFront',
+          'media_type': 'photo',
+          'evidence_instance_id': 'photo:exteriorFront',
           'category': 'exteriorFront',
           'file_path': '/tmp/front.jpg',
         },
@@ -115,6 +126,11 @@ void main() {
         type: SyncOperationType.mediaUpload,
         payload: <String, dynamic>{
           'inspection_id': 'insp-1',
+          'organization_id': 'org-1',
+          'user_id': 'user-1',
+          'requirement_key': 'photo:exteriorRear',
+          'media_type': 'photo',
+          'evidence_instance_id': 'photo:exteriorRear',
           'category': 'exteriorRear',
           'file_path': '/tmp/rear.jpg',
         },
@@ -219,6 +235,9 @@ class _RecordingMediaRemoteStore extends MediaSyncRemoteStore {
     required String inspectionId,
     required String organizationId,
     required String userId,
+    required String requirementKey,
+    required CapturedMediaType mediaType,
+    required String evidenceInstanceId,
     required RequiredPhotoCategory category,
     required String filePath,
     DateTime? capturedAt,
@@ -240,6 +259,9 @@ class _AlwaysFailMediaRemoteStore extends MediaSyncRemoteStore {
     required String inspectionId,
     required String organizationId,
     required String userId,
+    required String requirementKey,
+    required CapturedMediaType mediaType,
+    required String evidenceInstanceId,
     required RequiredPhotoCategory category,
     required String filePath,
     DateTime? capturedAt,
@@ -264,6 +286,9 @@ class _NoopMetadataGateway implements MediaMetadataGateway {
     required String inspectionId,
     required String organizationId,
     required String userId,
+    required String requirementKey,
+    required CapturedMediaType mediaType,
+    required String evidenceInstanceId,
     required RequiredPhotoCategory category,
     required String storagePath,
     required DateTime capturedAt,

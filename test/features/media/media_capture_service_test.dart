@@ -37,6 +37,8 @@ void main() {
 
     final result = await service.captureRequiredPhoto(
       inspectionId: 'inspection-2',
+      organizationId: 'org-1',
+      userId: 'user-1',
       category: RequiredPhotoCategory.exteriorRear,
     );
 
@@ -50,8 +52,12 @@ void main() {
     final pending = await pendingStore.listPending();
     expect(pending.length, 1);
     expect(pending.first.inspectionId, 'inspection-2');
+    expect(pending.first.organizationId, 'org-1');
+    expect(pending.first.userId, 'user-1');
     expect(pending.first.taskId, 'op-123');
     expect(pending.first.category, RequiredPhotoCategory.exteriorRear);
+    expect(pending.first.requirementKey, 'photo:exteriorRear');
+    expect(pending.first.evidenceInstanceId, 'photo:exteriorRear');
     expect(pending.first.filePath, outputFile.path);
   });
 
@@ -78,6 +84,8 @@ void main() {
 
     final result = await service.captureRequiredPhoto(
       inspectionId: 'inspection-3',
+      organizationId: 'org-1',
+      userId: 'user-1',
       category: RequiredPhotoCategory.exteriorRear,
     );
 
@@ -117,6 +125,8 @@ void main() {
 
     final result = await service.captureRequiredPhoto(
       inspectionId: 'inspection-4',
+      organizationId: 'org-1',
+      userId: 'user-1',
       category: RequiredPhotoCategory.exteriorFront,
     );
 
