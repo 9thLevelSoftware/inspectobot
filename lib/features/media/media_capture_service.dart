@@ -4,6 +4,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../inspection/domain/form_requirements.dart';
 import '../inspection/domain/required_photo_category.dart';
 import 'local_media_store.dart';
 import 'media_capture_result.dart';
@@ -44,7 +45,12 @@ class MediaCaptureService {
 
   Future<MediaCaptureResult?> captureRequiredPhoto({
     required String inspectionId,
+    required String organizationId,
+    required String userId,
     required RequiredPhotoCategory category,
+    String? requirementKey,
+    CapturedMediaType mediaType = CapturedMediaType.photo,
+    String? evidenceInstanceId,
   }) async {
     final pickedPath = await _pickPhoto();
     if (pickedPath == null) {
@@ -68,9 +74,18 @@ class MediaCaptureService {
       filePath: outputFile.path,
     );
 
+    final resolvedRequirementKey =
+        requirementKey ?? FormRequirements.requirementKeyForPhoto(category);
+    final resolvedInstanceId = evidenceInstanceId ?? resolvedRequirementKey;
+
     final task = MediaSyncTask(
       taskId: _operationIdFactory(),
       inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+      requirementKey: resolvedRequirementKey,
+      mediaType: mediaType,
+      evidenceInstanceId: resolvedInstanceId,
       category: category,
       filePath: outputFile.path,
       createdAt: DateTime.now().toUtc(),
@@ -89,8 +104,21 @@ class MediaCaptureService {
   }
 
   static Future<String?> _defaultPickPhoto() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.camera);
-    return picked?.path;
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.camera);
+    if (picked != null) {
+      return picked.path;
+    }
+
+    final lostData = await picker.retrieveLostData();
+    if (lostData.isEmpty) {
+      return null;
+    }
+    final recovered = lostData.file ?? (lostData.files?.isNotEmpty == true ? lostData.files!.first : null);
+    if (recovered == null) {
+      return null;
+    }
+    return recovered.path;
   }
 
   static Future<List<int>?> _defaultCompressPhoto(String path) {

@@ -3,6 +3,7 @@ import 'dart:async';
 import '../inspection/domain/required_photo_category.dart';
 import '../inspection/data/inspection_repository.dart';
 import '../media/media_sync_remote_store.dart';
+import '../media/media_sync_task.dart';
 import 'sync_operation.dart';
 import 'sync_outbox_store.dart';
 
@@ -127,8 +128,14 @@ class SyncRunner {
         await _mediaRemoteStore.upload(
           mediaId: operation.operationId,
           inspectionId: operation.payload['inspection_id'].toString(),
-          organizationId: operation.organizationId,
-          userId: operation.userId,
+          organizationId: operation.payload['organization_id']?.toString() ?? operation.organizationId,
+          userId: operation.payload['user_id']?.toString() ?? operation.userId,
+          requirementKey: operation.payload['requirement_key']?.toString() ?? '',
+          mediaType: (operation.payload['media_type']?.toString() ?? '') == CapturedMediaType.document.name
+              ? CapturedMediaType.document
+              : CapturedMediaType.photo,
+          evidenceInstanceId:
+              operation.payload['evidence_instance_id']?.toString() ?? operation.operationId,
           category: category,
           filePath: operation.payload['file_path'].toString(),
           capturedAt: operation.createdAt,

@@ -12,19 +12,20 @@ class PendingMediaSyncStore {
   final SyncOutboxStore _outboxStore;
 
   Future<void> enqueue(MediaSyncTask task) async {
-    final operation = task.toSyncOperation(
-      organizationId: 'org-local',
-      userId: 'user-local',
-    );
+    final operation = task.toSyncOperation();
     await _outboxStore.enqueue(
       operation,
       replaceWhere: (existing) {
         if (existing.type != SyncOperationType.mediaUpload) {
           return false;
         }
-        final category = existing.payload['category']?.toString();
+        final requirementKey = existing.payload['requirement_key']?.toString();
+        final mediaType = existing.payload['media_type']?.toString();
+        final evidenceInstanceId = existing.payload['evidence_instance_id']?.toString();
         return existing.aggregateId == task.inspectionId &&
-            category == task.category.name;
+            requirementKey == task.requirementKey &&
+            mediaType == task.mediaType.name &&
+            evidenceInstanceId == task.evidenceInstanceId;
       },
     );
   }

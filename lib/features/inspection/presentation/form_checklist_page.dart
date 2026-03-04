@@ -85,6 +85,8 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   Future<void> _capture(RequiredPhotoCategory category) async {
     final result = await _mediaCapture.captureRequiredPhoto(
       inspectionId: widget.draft.inspectionId,
+      organizationId: widget.draft.organizationId,
+      userId: widget.draft.userId,
       category: category,
     );
     if (!mounted || result == null) {
