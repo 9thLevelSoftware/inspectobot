@@ -3,6 +3,7 @@ import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
+import 'package:inspectobot/features/sync/sync_scheduler.dart';
 
 import 'form_checklist_page.dart';
 import 'new_inspection_page.dart';
@@ -11,11 +12,14 @@ class DashboardPage extends StatefulWidget {
   DashboardPage({
     super.key,
     InspectionRepository? repository,
+    SyncScheduler? syncScheduler,
     this.organizationId = 'org-local',
     this.userId = 'user-local',
-  }) : repository = repository ?? InspectionRepository.live();
+  })  : repository = repository ?? InspectionRepository.live(),
+        syncScheduler = syncScheduler;
 
   final InspectionRepository repository;
+  final SyncScheduler? syncScheduler;
   final String organizationId;
   final String userId;
 
@@ -32,6 +36,7 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _inProgressFuture = _loadInProgress();
+    _triggerBackgroundSync();
   }
 
   Future<List<InspectionWizardProgress>> _loadInProgress() {
@@ -45,6 +50,19 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() {
       _inProgressFuture = _loadInProgress();
     });
+  }
+
+  Future<void> _triggerBackgroundSync() async {
+    final scheduler = widget.syncScheduler;
+    if (scheduler != null) {
+      await scheduler.runPending();
+      return;
+    }
+    try {
+      await SyncScheduler.instance.runPending();
+    } catch (_) {
+      // Background sync should not block dashboard rendering.
+    }
   }
 
   Future<void> _resumeInspection(InspectionWizardProgress progress) async {
