@@ -1,3 +1,4 @@
+import 'evidence_requirement.dart';
 import 'form_requirements.dart';
 import 'form_type.dart';
 import 'required_photo_category.dart';
@@ -43,32 +44,68 @@ class WizardStepDefinition {
   const WizardStepDefinition({
     required this.id,
     required this.title,
-    required this.requiredRequirementKeys,
-    required this.requiredCategories,
+    required this.requirements,
     this.form,
   });
 
   final String id;
   final String title;
-  final List<String> requiredRequirementKeys;
-  final List<RequiredPhotoCategory> requiredCategories;
+  final List<EvidenceRequirement> requirements;
   final FormType? form;
 
+  List<String> get requiredRequirementKeys {
+    return requirements.map((requirement) => requirement.key).toList(growable: false);
+  }
+
+  List<RequiredPhotoCategory> get requiredCategories {
+    return requirements
+        .where((requirement) => requirement.mediaType == EvidenceMediaType.photo)
+        .map((requirement) => requirement.category)
+        .whereType<RequiredPhotoCategory>()
+        .toList(growable: false);
+  }
+
   bool isComplete(Map<String, bool> completion) {
-    return requiredRequirementKeys.every((key) => completion[key] == true);
+    for (final requirement in requirements) {
+      if (_countCompletions(completion, requirement.key) < requirement.minimumCount) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static int _countCompletions(Map<String, bool> completion, String requirementKey) {
+    var count = 0;
+    for (final entry in completion.entries) {
+      if (entry.value != true) {
+        continue;
+      }
+      if (entry.key == requirementKey || entry.key.startsWith('$requirementKey#')) {
+        count += 1;
+      }
+    }
+    return count;
   }
 }
 
 class FormProgressSummary {
   const FormProgressSummary({
     required this.form,
-    required this.missingCategories,
+    required this.missingRequirements,
   });
 
   final FormType form;
-  final List<RequiredPhotoCategory> missingCategories;
+  final List<EvidenceRequirement> missingRequirements;
 
-  bool get isComplete => missingCategories.isEmpty;
+  List<RequiredPhotoCategory> get missingCategories {
+    return missingRequirements
+        .where((requirement) => requirement.mediaType == EvidenceMediaType.photo)
+        .map((requirement) => requirement.category)
+        .whereType<RequiredPhotoCategory>()
+        .toList(growable: false);
+  }
+
+  bool get isComplete => missingRequirements.isEmpty;
 }
 
 class InspectionWizardState {
@@ -77,7 +114,10 @@ class InspectionWizardState {
     required WizardProgressSnapshot snapshot,
   })  : _enabledForms = enabledForms,
         _snapshot = snapshot,
-        steps = _buildSteps(enabledForms.toList()..sort((a, b) => a.index.compareTo(b.index)));
+        steps = _buildSteps(
+          enabledForms.toList()..sort((a, b) => a.index.compareTo(b.index)),
+          snapshot.branchContext,
+        );
 
   final Set<FormType> _enabledForms;
   final WizardProgressSnapshot _snapshot;
@@ -130,36 +170,43 @@ class InspectionWizardState {
     final sortedForms = _enabledForms.toList()
       ..sort((a, b) => a.index.compareTo(b.index));
     return sortedForms.map((form) {
-      final categories = FormRequirements.forForm(form);
-      final missing = categories
+      final requirements = FormRequirements.forFormRequirements(
+        form,
+        branchContext: _snapshot.branchContext,
+      );
+      final missing = requirements
           .where(
-            (category) => _snapshot
-                .completion[FormRequirements.requirementKeyForPhoto(category)] !=
-            true,
+            (requirement) =>
+                WizardStepDefinition._countCompletions(_snapshot.completion, requirement.key) <
+                requirement.minimumCount,
           )
           .toList(growable: false);
-      return FormProgressSummary(form: form, missingCategories: missing);
+      return FormProgressSummary(form: form, missingRequirements: missing);
     }).toList(growable: false);
   }
 
-  static List<WizardStepDefinition> _buildSteps(List<FormType> forms) {
+  static List<WizardStepDefinition> _buildSteps(
+    List<FormType> forms,
+    Map<String, dynamic> branchContext,
+  ) {
     final steps = <WizardStepDefinition>[
       const WizardStepDefinition(
         id: 'inspection_overview',
         title: 'Inspection Overview',
-        requiredRequirementKeys: <String>[],
-        requiredCategories: <RequiredPhotoCategory>[],
+        requirements: <EvidenceRequirement>[],
       ),
     ];
 
     for (final form in forms) {
-      final requiredCategories = FormRequirements.forForm(form);
+      final requirements = FormRequirements.forFormRequirements(
+        form,
+        branchContext: branchContext,
+      );
       steps.add(
         WizardStepDefinition(
           id: 'form_${form.code}',
           title: form.label,
-          requiredRequirementKeys: FormRequirements.requirementKeysForForm(form),
-          requiredCategories: requiredCategories,
+          requirements: requirements,
           form: form,
         ),
       );

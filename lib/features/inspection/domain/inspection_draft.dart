@@ -36,4 +36,5 @@ class InspectionDraft {
       <RequiredPhotoCategory>{};
   final Map<RequiredPhotoCategory, String> capturedPhotoPaths =
       <RequiredPhotoCategory, String>{};
+  final Map<String, List<String>> capturedEvidencePaths = <String, List<String>>{};
 }
