@@ -305,7 +305,7 @@ class SupabaseInspectionStore implements InspectionStore {
   Future<Map<String, dynamic>> create(Map<String, dynamic> inspectionJson) async {
     final result = await _client
         .from('inspections')
-        .insert(inspectionJson)
+        .upsert(inspectionJson, onConflict: 'id')
         .select()
         .single();
     return Map<String, dynamic>.from(result);
@@ -340,17 +340,23 @@ class SupabaseInspectionStore implements InspectionStore {
     required Map<String, dynamic> wizardBranchContext,
     required String wizardStatus,
   }) async {
+    final current = await fetchById(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+    );
+    if (current == null) {
+      throw StateError('Inspection not found for wizard progress update.');
+    }
+    final merged = Map<String, dynamic>.from(current)
+      ..['wizard_last_step'] = wizardLastStep
+      ..['wizard_completion'] = wizardCompletion
+      ..['wizard_branch_context'] = wizardBranchContext
+      ..['wizard_status'] = wizardStatus;
+
     final result = await _client
         .from('inspections')
-        .update({
-          'wizard_last_step': wizardLastStep,
-          'wizard_completion': wizardCompletion,
-          'wizard_branch_context': wizardBranchContext,
-          'wizard_status': wizardStatus,
-        })
-        .eq('id', inspectionId)
-        .eq('organization_id', organizationId)
-        .eq('user_id', userId)
+        .upsert(merged, onConflict: 'id')
         .select()
         .single();
     return Map<String, dynamic>.from(result);

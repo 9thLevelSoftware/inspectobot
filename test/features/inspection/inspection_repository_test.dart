@@ -214,6 +214,25 @@ void main() {
     expect(progress.snapshot.status, WizardProgressStatus.inProgress);
   });
 
+  test('repeated create with same inspection id stays logically single record', () async {
+    final repository = InspectionRepository(InMemoryInspectionStore());
+
+    final initial = await repository.createInspection(buildSetup(id: 'insp-idempotent'));
+    final second = await repository.createInspection(
+      buildSetup(id: 'insp-idempotent', yearBuilt: 2014),
+    );
+
+    expect(initial.id, second.id);
+
+    final fetched = await repository.fetchInspectionById(
+      inspectionId: 'insp-idempotent',
+      organizationId: 'org-1',
+      userId: 'user-1',
+    );
+    expect(fetched, isNotNull);
+    expect(fetched!.yearBuilt, 2014);
+  });
+
   test('offline-first create queues inspection upsert operation', () async {
     final tempRoot = await Directory.systemTemp.createTemp('inspectobot_repo_queue_');
     addTearDown(() async {
