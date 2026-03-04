@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
+import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
+import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/presentation/form_checklist_page.dart';
 
 class NewInspectionPage extends StatefulWidget {
-  const NewInspectionPage({super.key});
+  const NewInspectionPage({super.key, InspectionRepositoryProvider? repository})
+    : repository = repository ?? const _LazyInspectionRepository();
+
+  final InspectionRepositoryProvider repository;
 
   @override
   State<NewInspectionPage> createState() => _NewInspectionPageState();
@@ -21,6 +26,9 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
   final _yearBuiltController = TextEditingController();
 
   final Set<FormType> _selectedForms = FormType.values.toSet();
+  bool _isSaving = false;
+
+  InspectionRepository get _repository => widget.repository.resolve();
 
   @override
   void dispose() {
@@ -85,7 +93,7 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
     return null;
   }
 
-  void _continue() {
+  Future<void> _continue() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -96,22 +104,58 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
       return;
     }
 
-    final draft = InspectionDraft(
-      inspectionId: DateTime.now().millisecondsSinceEpoch.toString(),
-      clientName: _clientNameController.text.trim(),
-      clientEmail: _clientEmailController.text.trim(),
-      clientPhone: _clientPhoneController.text.trim(),
-      propertyAddress: _propertyAddressController.text.trim(),
-      inspectionDate: DateTime.parse(_inspectionDateController.text.trim()),
-      yearBuilt: int.parse(_yearBuiltController.text.trim()),
-      enabledForms: _selectedForms,
-    );
+    if (_isSaving) {
+      return;
+    }
 
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => FormChecklistPage(draft: draft),
-      ),
-    );
+    setState(() => _isSaving = true);
+    try {
+      final setup = InspectionSetup(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        organizationId: 'org-local',
+        userId: 'user-local',
+        clientName: _clientNameController.text.trim(),
+        clientEmail: _clientEmailController.text.trim(),
+        clientPhone: _clientPhoneController.text.trim(),
+        propertyAddress: _propertyAddressController.text.trim(),
+        inspectionDate: DateTime.parse(_inspectionDateController.text.trim()),
+        yearBuilt: int.parse(_yearBuiltController.text.trim()),
+        enabledForms: _selectedForms,
+      );
+
+      final persisted = await _repository.createInspection(setup);
+      if (!mounted) {
+        return;
+      }
+
+      final draft = InspectionDraft(
+        inspectionId: persisted.id,
+        clientName: persisted.clientName,
+        clientEmail: persisted.clientEmail,
+        clientPhone: persisted.clientPhone,
+        propertyAddress: persisted.propertyAddress,
+        inspectionDate: persisted.inspectionDate,
+        yearBuilt: persisted.yearBuilt,
+        enabledForms: persisted.enabledForms,
+      );
+
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => FormChecklistPage(draft: draft),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to save inspection setup. Please retry.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   @override
@@ -187,12 +231,25 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
             ),
             const SizedBox(height: 12),
             FilledButton(
-              onPressed: _continue,
-              child: const Text('Continue to Required Photos'),
+              onPressed: _isSaving ? null : _continue,
+              child: Text(
+                _isSaving ? 'Saving...' : 'Continue to Required Photos',
+              ),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+abstract class InspectionRepositoryProvider {
+  InspectionRepository resolve();
+}
+
+class _LazyInspectionRepository implements InspectionRepositoryProvider {
+  const _LazyInspectionRepository();
+
+  @override
+  InspectionRepository resolve() => InspectionRepository.live();
 }
