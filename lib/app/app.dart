@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../features/auth/presentation/forgot_password_page.dart';
 import '../features/auth/presentation/auth_gate.dart';
+import '../features/auth/presentation/reset_password_page.dart';
+import '../features/auth/presentation/sign_in_page.dart';
+import '../features/auth/presentation/sign_up_page.dart';
 import '../features/inspection/presentation/dashboard_page.dart';
 import 'routes.dart';
 
@@ -19,25 +23,11 @@ class InspectoBotApp extends StatelessWidget {
       routes: {
         AppRoutes.authGate: (context) => const AuthGate(),
         AppRoutes.dashboard: (context) => const DashboardPage(),
-        AppRoutes.signIn: (context) => const _AuthPlaceholderPage(title: 'Sign In'),
-        AppRoutes.signUp: (context) => const _AuthPlaceholderPage(title: 'Sign Up'),
-        AppRoutes.forgotPassword: (context) => const _AuthPlaceholderPage(title: 'Forgot Password'),
-        AppRoutes.resetPassword: (context) => const _AuthPlaceholderPage(title: 'Reset Password'),
+        AppRoutes.signIn: (context) => const SignInPage(),
+        AppRoutes.signUp: (context) => const SignUpPage(),
+        AppRoutes.forgotPassword: (context) => const ForgotPasswordPage(),
+        AppRoutes.resetPassword: (context) => const ResetPasswordPage(),
       },
-    );
-  }
-}
-
-class _AuthPlaceholderPage extends StatelessWidget {
-  const _AuthPlaceholderPage({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text('$title page is being prepared.')),
     );
   }
 }

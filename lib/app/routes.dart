@@ -7,6 +7,13 @@ class AppRoutes {
   static const resetPassword = '/auth/reset-password';
   static const inspectorIdentity = '/inspector-identity';
 
+  static const authStack = <String>{
+    signIn,
+    signUp,
+    forgotPassword,
+    resetPassword,
+  };
+
   const AppRoutes._();
 }
 
