@@ -124,6 +124,26 @@ void main() {
           ),
         ),
       );
+
+      final invalidOrderStore = PdfSizeBudgetConfigStore(
+        readConfig: () => <String, dynamic>{
+          'max_bytes': 1024,
+          'retry_steps': <Map<String, dynamic>>[
+            <String, dynamic>{'jpeg_quality': 60, 'max_width': 1024},
+            <String, dynamic>{'jpeg_quality': 75, 'max_width': 1280},
+          ],
+        },
+      );
+      expect(
+        invalidOrderStore.load,
+        throwsA(
+          isA<PdfSizeBudgetConfigError>().having(
+            (e) => e.message,
+            'message',
+            contains('least to most aggressive compression'),
+          ),
+        ),
+      );
     });
   });
 }

@@ -55,6 +55,17 @@ class PdfSizeBudgetConfigStore {
       retrySteps.add(PdfSizeRetryStep(jpegQuality: quality, maxWidth: maxWidth));
     }
 
+    for (var index = 1; index < retrySteps.length; index += 1) {
+      final previous = retrySteps[index - 1];
+      final current = retrySteps[index];
+      if (current.jpegQuality > previous.jpegQuality ||
+          current.maxWidth > previous.maxWidth) {
+        throw const PdfSizeBudgetConfigError(
+          'retry_steps must be ordered from least to most aggressive compression',
+        );
+      }
+    }
+
     return PdfSizeBudget(maxBytes: maxBytesRaw, retrySteps: retrySteps);
   }
 }
