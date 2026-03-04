@@ -255,6 +255,77 @@ void main() {
 
     expect(find.text('Guided Inspection Wizard'), findsOneWidget);
   });
+
+  testWidgets('checklist shows deterministic over-budget message when generation fails', (
+    tester,
+  ) async {
+    final store = _ChecklistStore(
+      seededReadiness: const <String, dynamic>{
+        'inspection_id': 'insp-7',
+        'organization_id': 'org-1',
+        'user_id': 'user-1',
+        'status': 'ready',
+        'missing_items': <String>[],
+        'computed_at': '2026-03-05T00:00:00.000Z',
+      },
+    );
+    final signatureGateway = InMemorySignatureGateway();
+    final signatureRepository = SignatureRepository(
+      storage: signatureGateway,
+      metadata: signatureGateway,
+    );
+    await signatureRepository.saveSignature(
+      organizationId: 'org-1',
+      userId: 'user-1',
+      bytes: Uint8List.fromList(<int>[1, 2, 3]),
+    );
+
+    final draft = InspectionDraft(
+      inspectionId: 'insp-7',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Over Budget User',
+      clientEmail: 'over-budget@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '101 Budget St',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2009,
+      enabledForms: {FormType.fourPoint},
+      wizardSnapshot: WizardProgressSnapshot(
+        lastStepIndex: 1,
+        completion: {
+          for (final requirement in FormRequirements.forFormRequirements(FormType.fourPoint))
+            requirement.key: true,
+        },
+        branchContext: const <String, dynamic>{},
+        status: WizardProgressStatus.complete,
+      ),
+      initialStepIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormChecklistPage(
+          draft: draft,
+          repository: InspectionRepository(store),
+          signatureRepository: signatureRepository,
+          pdfOrchestrator: PdfOrchestrator(
+            onDevice: _OverBudgetOnDevicePdfService(),
+            cloud: const CloudPdfService(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('generate-pdf-button')));
+    await tester.pump();
+
+    expect(
+      find.textContaining('PDF exceeded configured size budget'),
+      findsOneWidget,
+    );
+  });
 }
 
 class _ChecklistStore implements InspectionStore {
@@ -390,5 +461,18 @@ class _SuccessfulOnDevicePdfService extends OnDevicePdfService {
     );
     await file.writeAsBytes(<int>[1, 2, 3], flush: true);
     return file;
+  }
+}
+
+class _OverBudgetOnDevicePdfService extends OnDevicePdfService {
+  @override
+  Future<File> generate(PdfGenerationInput input) {
+    throw const PdfGenerationSizeBudgetExceeded(
+      message:
+          'PDF exceeded configured size budget (bytes=2097152, max=1048576, attempts=2).',
+      generatedBytes: 2097152,
+      maxBytes: 1048576,
+      attempts: 2,
+    );
   }
 }
