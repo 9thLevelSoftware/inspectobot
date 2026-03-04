@@ -1,0 +1,30 @@
+name: Set Default Branch to Master
+
+on:
+  workflow_dispatch:
+
+jobs:
+  set-default-branch:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Set master as default branch
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.ADMIN_TOKEN }}
+          script: |
+            const { data: repo } = await github.rest.repos.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            if (repo.default_branch !== 'master') {
+              await github.rest.repos.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                default_branch: 'master',
+              });
+              core.notice('Default branch has been set to master.');
+            } else {
+              core.notice('Default branch is already master. No changes needed.');
+            }
