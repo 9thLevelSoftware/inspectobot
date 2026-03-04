@@ -151,18 +151,21 @@ class FormRequirements {
         key: 'document:wind_roof_deck',
         label: 'Wind Roof Deck Supporting Document',
         form: FormType.windMitigation,
+        category: RequiredPhotoCategory.windRoofDeck,
         when: _boolFlag('wind_roof_deck_document_required'),
       ),
       _document(
         key: 'document:wind_opening_protection',
         label: 'Wind Opening Protection Document',
         form: FormType.windMitigation,
+        category: RequiredPhotoCategory.windOpeningProtection,
         when: _boolFlag('wind_opening_document_required'),
       ),
       _document(
         key: 'document:wind_permit_year',
         label: 'Wind Permit/Age Document',
         form: FormType.windMitigation,
+        category: RequiredPhotoCategory.windPermitYear,
         when: _boolFlag('wind_permit_document_required'),
       ),
     ],
@@ -263,6 +266,7 @@ class FormRequirements {
     required String key,
     required String label,
     required FormType form,
+    required RequiredPhotoCategory category,
     int minimumCount = 1,
     EvidencePredicate? when,
   }) {
@@ -272,6 +276,7 @@ class FormRequirements {
       form: form,
       mediaType: EvidenceMediaType.document,
       minimumCount: minimumCount,
+      category: category,
       isRequired: when ?? _always,
     );
   }

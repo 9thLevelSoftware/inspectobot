@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../media/media_capture_service.dart';
+import '../../media/media_sync_task.dart';
 import '../../pdf/cloud_pdf_service.dart';
 import '../../pdf/on_device_pdf_service.dart';
 import '../../pdf/pdf_generation_input.dart';
 import '../../pdf/pdf_orchestrator.dart';
 import '../data/inspection_repository.dart';
+import '../domain/evidence_requirement.dart';
 import '../domain/form_requirements.dart';
 import '../domain/inspection_draft.dart';
 import '../domain/inspection_wizard_state.dart';
@@ -69,35 +71,42 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   }
 
   RequiredPhotoCategory? _categoryForRequirementKey(String key) {
-    const prefix = 'photo:';
-    if (!key.startsWith(prefix)) {
-      return null;
-    }
-    final categoryName = key.substring(prefix.length);
+    final normalizedKey = key.contains('#') ? key.substring(0, key.indexOf('#')) : key;
     for (final category in RequiredPhotoCategory.values) {
-      if (category.name == categoryName) {
+      final photoKey = FormRequirements.requirementKeyForPhoto(category);
+      if (photoKey == normalizedKey) {
         return category;
       }
     }
     return null;
   }
 
-  Future<void> _capture(RequiredPhotoCategory category) async {
+  Future<void> _capture(EvidenceRequirement requirement) async {
+    final category = requirement.category;
+    if (category == null) {
+      return;
+    }
     final result = await _mediaCapture.captureRequiredPhoto(
       inspectionId: widget.draft.inspectionId,
       organizationId: widget.draft.organizationId,
       userId: widget.draft.userId,
       category: category,
+      requirementKey: requirement.key,
+      mediaType: requirement.mediaType == EvidenceMediaType.document
+          ? CapturedMediaType.document
+          : CapturedMediaType.photo,
+      evidenceInstanceId: requirement.key,
     );
     if (!mounted || result == null) {
       return;
     }
 
     final completion = Map<String, bool>.from(_snapshot.completion)
-      ..[FormRequirements.requirementKeyForPhoto(category)] = true;
+      ..[requirement.key] = true;
     setState(() {
       widget.draft.capturedCategories.add(category);
       widget.draft.capturedPhotoPaths[category] = result.filePath;
+      widget.draft.capturedEvidencePaths[requirement.key] = <String>[result.filePath];
       _snapshot = _snapshot.copyWith(completion: completion);
     });
   }
@@ -130,14 +139,9 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
     final state = _wizardState;
     if (!state.canAdvanceFrom(_currentStepIndex)) {
       final step = state.steps[_currentStepIndex];
-      final missing = step.requiredCategories
-          .where(
-            (category) =>
-                _snapshot
-                    .completion[FormRequirements.requirementKeyForPhoto(category)] !=
-                true,
-          )
-          .map((category) => category.label)
+      final missing = step.requirements
+          .where((requirement) => _snapshot.completion[requirement.key] != true)
+          .map((requirement) => requirement.label)
           .join(', ');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Complete required items before continuing: $missing')),
@@ -213,7 +217,7 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
 
   Widget _buildStepContent(InspectionWizardState state) {
     final step = state.steps[_currentStepIndex];
-    if (step.requiredCategories.isEmpty) {
+    if (step.requirements.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Text(
@@ -223,17 +227,22 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
     }
 
     return Column(
-      children: step.requiredCategories.map((category) {
-        final captured = widget.draft.capturedCategories.contains(category);
+      children: step.requirements.map((requirement) {
+        final category = requirement.category;
+        final captured = _snapshot.completion[requirement.key] == true;
         return Card(
           child: ListTile(
-            title: Text(category.label),
+            title: Text(requirement.label),
             subtitle: Text(captured ? 'Captured' : 'Missing required item'),
             trailing: captured
                 ? const Icon(Icons.check_circle, color: Colors.green)
                 : OutlinedButton(
-                    onPressed: () => _capture(category),
-                    child: const Text('Capture'),
+                    onPressed: category == null ? null : () => _capture(requirement),
+                    child: Text(
+                      requirement.mediaType == EvidenceMediaType.document
+                          ? 'Upload'
+                          : 'Capture',
+                    ),
                   ),
           ),
         );
@@ -285,7 +294,7 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
           ...summaries.map((summary) {
             final missingText = summary.isComplete
                 ? 'Complete'
-                : 'Missing required: ${summary.missingCategories.map((c) => c.label).join(', ')}';
+                : 'Missing required: ${summary.missingRequirements.map((r) => r.label).join(', ')}';
             return Card(
               child: ListTile(
                 title: Text(summary.form.label),
