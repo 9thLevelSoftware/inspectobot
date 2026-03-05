@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -13,30 +14,37 @@ import 'pending_media_sync_store.dart';
 import '../sync/sync_operation.dart';
 
 typedef PickPhoto = Future<String?> Function();
+typedef PickDocument = Future<String?> Function();
 typedef CompressPhoto = Future<List<int>?> Function(String path);
-typedef WriteCapture = Future<File> Function({
-  required String inspectionId,
-  required RequiredPhotoCategory category,
-  required List<int> bytes,
-});
+typedef WriteCapture =
+    Future<File> Function({
+      required String inspectionId,
+      required RequiredPhotoCategory category,
+      required CapturedMediaType mediaType,
+      required String sourcePath,
+      List<int>? bytes,
+    });
 typedef OperationIdFactory = String Function();
 
 class MediaCaptureService {
   MediaCaptureService({
     PickPhoto? pickPhoto,
+    PickDocument? pickDocument,
     CompressPhoto? compressPhoto,
     WriteCapture? writeCapture,
     LocalMediaStore? localStore,
     PendingMediaSyncStore? pendingSyncStore,
     OperationIdFactory? operationIdFactory,
-  })  : _pickPhoto = pickPhoto ?? _defaultPickPhoto,
-        _compressPhoto = compressPhoto ?? _defaultCompressPhoto,
-        _writeCapture = writeCapture ?? _defaultWriteCapture,
-        _localStore = localStore ?? LocalMediaStore(),
-        _pendingSyncStore = pendingSyncStore ?? PendingMediaSyncStore(),
-        _operationIdFactory = operationIdFactory ?? SyncOperation.newId;
+  }) : _pickPhoto = pickPhoto ?? _defaultPickPhoto,
+       _pickDocument = pickDocument ?? _defaultPickDocument,
+       _compressPhoto = compressPhoto ?? _defaultCompressPhoto,
+       _writeCapture = writeCapture ?? _defaultWriteCapture,
+       _localStore = localStore ?? LocalMediaStore(),
+       _pendingSyncStore = pendingSyncStore ?? PendingMediaSyncStore(),
+       _operationIdFactory = operationIdFactory ?? SyncOperation.newId;
 
   final PickPhoto _pickPhoto;
+  final PickDocument _pickDocument;
   final CompressPhoto _compressPhoto;
   final WriteCapture _writeCapture;
   final LocalMediaStore _localStore;
@@ -52,21 +60,40 @@ class MediaCaptureService {
     CapturedMediaType mediaType = CapturedMediaType.photo,
     String? evidenceInstanceId,
   }) async {
-    final pickedPath = await _pickPhoto();
+    final pickedPath = mediaType == CapturedMediaType.document
+        ? await _pickDocument()
+        : await _pickPhoto();
     if (pickedPath == null) {
       return null;
     }
 
-    final compressed = await _compressPhoto(pickedPath);
-    if (compressed == null || compressed.isEmpty) {
-      return null;
+    File outputFile;
+    int byteSize;
+    if (mediaType == CapturedMediaType.document) {
+      if (!_isSupportedDocumentPath(pickedPath)) {
+        return null;
+      }
+      outputFile = await _writeCapture(
+        inspectionId: inspectionId,
+        category: category,
+        mediaType: mediaType,
+        sourcePath: pickedPath,
+      );
+      byteSize = await outputFile.length();
+    } else {
+      final compressed = await _compressPhoto(pickedPath);
+      if (compressed == null || compressed.isEmpty) {
+        return null;
+      }
+      outputFile = await _writeCapture(
+        inspectionId: inspectionId,
+        category: category,
+        mediaType: mediaType,
+        sourcePath: pickedPath,
+        bytes: compressed,
+      );
+      byteSize = compressed.length;
     }
-
-    final outputFile = await _writeCapture(
-      inspectionId: inspectionId,
-      category: category,
-      bytes: compressed,
-    );
 
     await _localStore.saveCapture(
       inspectionId: inspectionId,
@@ -99,7 +126,7 @@ class MediaCaptureService {
     return MediaCaptureResult(
       category: category,
       filePath: outputFile.path,
-      byteSize: compressed.length,
+      byteSize: byteSize,
     );
   }
 
@@ -114,11 +141,22 @@ class MediaCaptureService {
     if (lostData.isEmpty) {
       return null;
     }
-    final recovered = lostData.file ?? (lostData.files?.isNotEmpty == true ? lostData.files!.first : null);
+    final recovered =
+        lostData.file ??
+        (lostData.files?.isNotEmpty == true ? lostData.files!.first : null);
     if (recovered == null) {
       return null;
     }
     return recovered.path;
+  }
+
+  static Future<String?> _defaultPickDocument() async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const <String>['pdf', 'png', 'jpg', 'jpeg'],
+    );
+    final file = picked?.files.isNotEmpty == true ? picked!.files.first : null;
+    return file?.path;
   }
 
   static Future<List<int>?> _defaultCompressPhoto(String path) {
@@ -134,16 +172,45 @@ class MediaCaptureService {
   static Future<File> _defaultWriteCapture({
     required String inspectionId,
     required RequiredPhotoCategory category,
-    required List<int> bytes,
+    required CapturedMediaType mediaType,
+    required String sourcePath,
+    List<int>? bytes,
   }) async {
     final docsDir = await getApplicationDocumentsDirectory();
     final captureDir = Directory('${docsDir.path}/captures/$inspectionId');
     await captureDir.create(recursive: true);
 
-    final filename =
-        '${category.name}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final sourceExtension = _normalizedExtension(sourcePath);
+    final extension = mediaType == CapturedMediaType.document
+        ? (sourceExtension.isEmpty ? '.pdf' : sourceExtension)
+        : '.jpg';
+    final filename = '${category.name}_${timestamp}$extension';
     final output = File('${captureDir.path}/$filename');
+    if (mediaType == CapturedMediaType.document) {
+      await File(sourcePath).copy(output.path);
+      return output;
+    }
+
+    if (bytes == null || bytes.isEmpty) {
+      throw StateError(
+        'Photo capture bytes are required for photo media type.',
+      );
+    }
     await output.writeAsBytes(bytes, flush: true);
     return output;
+  }
+
+  static bool _isSupportedDocumentPath(String path) {
+    const allowed = <String>{'.pdf', '.png', '.jpg', '.jpeg'};
+    return allowed.contains(_normalizedExtension(path));
+  }
+
+  static String _normalizedExtension(String path) {
+    final dotIndex = path.lastIndexOf('.');
+    if (dotIndex < 0 || dotIndex == path.length - 1) {
+      return '';
+    }
+    return path.substring(dotIndex).toLowerCase();
   }
 }
