@@ -5,10 +5,19 @@ import 'package:inspectobot/features/auth/data/auth_repository.dart';
 import 'package:inspectobot/features/inspection/presentation/dashboard_page.dart';
 
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key, AuthRepository? repository})
-    : _repository = repository;
+  const AuthGate({
+    super.key,
+    AuthRepository? repository,
+    this.dashboardBuilder,
+  }) : _repository = repository;
 
   final AuthRepository? _repository;
+  final Widget Function(
+    BuildContext context,
+    String organizationId,
+    String userId,
+  )?
+  dashboardBuilder;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -17,22 +26,44 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   late final AuthRepository _repository;
   StreamSubscription<AuthSession?>? _subscription;
-  bool _isAuthenticated = false;
+  AuthSession? _session;
+  bool _isResolvingTenantContext = false;
 
   @override
   void initState() {
     super.initState();
     _repository = widget._repository ?? AuthRepository.live();
-    _isAuthenticated = _repository.currentSession != null;
+    _session = _repository.currentSession;
+    _isResolvingTenantContext =
+        _session != null && _session!.tenantContext == null;
     _subscription = _repository.authStateChanges.listen(_onAuthStateChange);
+    if (_isResolvingTenantContext) {
+      unawaited(_resolveTenantContext());
+    }
   }
 
   void _onAuthStateChange(AuthSession? session) {
     if (!mounted) {
       return;
     }
+    final requiresResolve = session != null && session.tenantContext == null;
     setState(() {
-      _isAuthenticated = session != null;
+      _session = session;
+      _isResolvingTenantContext = requiresResolve;
+    });
+    if (requiresResolve) {
+      unawaited(_resolveTenantContext());
+    }
+  }
+
+  Future<void> _resolveTenantContext() async {
+    final resolved = await _repository.resolveCurrentSession();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _session = resolved;
+      _isResolvingTenantContext = false;
     });
   }
 
@@ -44,8 +75,23 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isAuthenticated) {
-      return DashboardPage();
+    final tenantContext = _session?.tenantContext;
+    if (tenantContext != null) {
+      final builder = widget.dashboardBuilder;
+      if (builder != null) {
+        return builder(
+          context,
+          tenantContext.organizationId,
+          tenantContext.userId,
+        );
+      }
+      return DashboardPage(
+        organizationId: tenantContext.organizationId,
+        userId: tenantContext.userId,
+      );
+    }
+    if (_isResolvingTenantContext) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return const _SignedOutShell();
   }

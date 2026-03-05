@@ -5,8 +5,6 @@ import '../features/auth/presentation/auth_gate.dart';
 import '../features/auth/presentation/reset_password_page.dart';
 import '../features/auth/presentation/sign_in_page.dart';
 import '../features/auth/presentation/sign_up_page.dart';
-import '../features/identity/presentation/inspector_identity_page.dart';
-import '../features/inspection/presentation/dashboard_page.dart';
 import 'routes.dart';
 
 class InspectoBotApp extends StatelessWidget {
@@ -23,12 +21,12 @@ class InspectoBotApp extends StatelessWidget {
       initialRoute: AppRoutes.authGate,
       routes: {
         AppRoutes.authGate: (context) => const AuthGate(),
-        AppRoutes.dashboard: (context) => DashboardPage(),
+        AppRoutes.dashboard: (context) => const AuthGate(),
         AppRoutes.signIn: (context) => const SignInPage(),
         AppRoutes.signUp: (context) => const SignUpPage(),
         AppRoutes.forgotPassword: (context) => const ForgotPasswordPage(),
         AppRoutes.resetPassword: (context) => const ResetPasswordPage(),
-        AppRoutes.inspectorIdentity: (context) => const InspectorIdentityPage(),
+        AppRoutes.inspectorIdentity: (context) => const AuthGate(),
       },
     );
   }

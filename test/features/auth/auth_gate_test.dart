@@ -29,10 +29,37 @@ void main() {
       MaterialApp(home: AuthGate(repository: repository)),
     );
 
-    gateway.emit(const AuthSession(userId: '123'));
+    gateway.emit(const AuthSession(userId: '123', organizationId: 'org-123'));
     await tester.pumpAndSettle();
 
     expect(find.text('Florida Insurance Inspection Workflow'), findsOneWidget);
+  });
+
+  testWidgets('passes tenant context from resolved session to dashboard builder', (
+    tester,
+  ) async {
+    final repository = AuthRepository(
+      _GateFakeAuthGateway(
+        initialSession: const AuthSession(
+          userId: 'user-42',
+          organizationId: 'org-42',
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AuthGate(
+          repository: repository,
+          dashboardBuilder: (_, organizationId, userId) {
+            return Text('tenant:$organizationId user:$userId');
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.text('tenant:org-42 user:user-42'), findsOneWidget);
   });
 }
 
