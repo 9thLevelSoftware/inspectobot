@@ -27,10 +27,10 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 
 - [ ] **EVID-01**: User can capture required exterior elevation photos (front, rear, left, right) for applicable forms.
 - [ ] **EVID-02**: User can capture required roof evidence including slope-specific photos and defect photos when present.
-- [ ] **EVID-03**: User can capture required plumbing, HVAC, electrical, and hazard photos based on selected form logic.
-- [ ] **EVID-04**: User can capture evidence for all seven wind mitigation categories, including supporting documents when required.
+- [x] **EVID-03**: User can capture required plumbing, HVAC, electrical, and hazard photos based on selected form logic.
+- [x] **EVID-04**: User can capture evidence for all seven wind mitigation categories, including supporting documents when required.
 - [ ] **EVID-05**: System blocks PDF generation when any required field or required evidence category is incomplete.
-- [ ] **EVID-06**: System compresses captured images to mobile-friendly sizes before upload and PDF embedding.
+- [x] **EVID-06**: System compresses captured images to mobile-friendly sizes before upload and PDF embedding.
 
 ### Forms, PDF, Delivery, and Audit
 
@@ -43,10 +43,10 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 ### Security, Offline, and Data Integrity
 
 - [ ] **SEC-01**: System enforces strict tenant isolation so users can only access their own organization data.
-- [ ] **SEC-02**: System stores signature evidence metadata (timestamp, signer role, hash linkage, attribution metadata) with each signed report.
+- [x] **SEC-02**: System stores signature evidence metadata (timestamp, signer role, hash linkage, attribution metadata) with each signed report.
 - [x] **OFF-01**: User can complete core inspection capture workflows offline and queue sync operations for later.
 - [x] **OFF-02**: System performs idempotent sync to prevent duplicate or orphaned inspection/media records.
-- [ ] **DATA-01**: System supports retention controls consistent with minimum 5-year record retention baseline.
+- [x] **DATA-01**: System supports retention controls consistent with minimum 5-year record retention baseline.
 
 ## v2 Requirements
 
@@ -93,20 +93,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FLOW-05 | Phase 16 | Pending |
 | EVID-01 | Phase 16 | Pending |
 | EVID-02 | Phase 18 | Pending |
-| EVID-03 | Phase 16 | Pending |
-| EVID-04 | Phase 16 | Pending |
+| EVID-03 | Phase 16 | Complete |
+| EVID-04 | Phase 16 | Complete |
 | EVID-05 | Phase 16 | Pending |
-| EVID-06 | Phase 16 | Pending |
+| EVID-06 | Phase 16 | Complete |
 | PDF-01 | Phase 11 | Complete |
 | PDF-02 | Phase 14 | Complete |
 | PDF-03 | Phase 7 | Complete |
 | DLV-01 | Phase 12 | Complete |
 | DLV-02 | Phase 12 | Complete |
 | SEC-01 | Phase 17 | Pending |
-| SEC-02 | Phase 16 | Pending |
+| SEC-02 | Phase 16 | Complete |
 | OFF-01 | Phase 14 | Complete |
 | OFF-02 | Phase 12 | Complete |
-| DATA-01 | Phase 16 | Pending |
+| DATA-01 | Phase 16 | Complete |
 
 **Coverage:**
 - v1 requirements: 26 total
