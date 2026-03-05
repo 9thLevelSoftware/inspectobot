@@ -79,7 +79,7 @@ begin
     perform cron.schedule(
       'retention_cleanup_expired_artifacts_daily',
       '0 3 * * *',
-      $$select public.retention_cleanup_expired_artifacts();$$
+      'select public.retention_cleanup_expired_artifacts();'
     );
   end if;
 end;
