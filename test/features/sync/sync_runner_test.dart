@@ -395,6 +395,7 @@ class _NoopMetadataGateway implements MediaMetadataGateway {
     required String evidenceInstanceId,
     required RequiredPhotoCategory category,
     required String storagePath,
+    required String contentType,
     required DateTime capturedAt,
   }) async {}
 }

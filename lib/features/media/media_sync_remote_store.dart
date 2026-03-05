@@ -27,6 +27,7 @@ abstract class MediaMetadataGateway {
     required String evidenceInstanceId,
     required RequiredPhotoCategory category,
     required String storagePath,
+    required String contentType,
     required DateTime capturedAt,
   });
 }
@@ -89,12 +90,15 @@ class MediaSyncRemoteStore {
       mediaType: mediaType,
     );
 
+    final contentType = _resolveContentType(
+      mediaType: mediaType,
+      filePath: filePath,
+    );
+
     await _storage.upload(
       path: storagePath,
       bytes: bytes,
-      contentType: mediaType == CapturedMediaType.document
-          ? 'application/pdf'
-          : 'image/jpeg',
+      contentType: contentType,
     );
     await _metadata.upsertMetadata(
       mediaId: mediaId,
@@ -106,8 +110,30 @@ class MediaSyncRemoteStore {
       evidenceInstanceId: evidenceInstanceId,
       category: category,
       storagePath: storagePath,
+      contentType: contentType,
       capturedAt: (capturedAt ?? DateTime.now()).toUtc(),
     );
+  }
+
+  static String _resolveContentType({
+    required CapturedMediaType mediaType,
+    required String filePath,
+  }) {
+    if (mediaType == CapturedMediaType.photo) {
+      return 'image/jpeg';
+    }
+
+    final lowerPath = filePath.toLowerCase();
+    if (lowerPath.endsWith('.png')) {
+      return 'image/png';
+    }
+    if (lowerPath.endsWith('.jpg') || lowerPath.endsWith('.jpeg')) {
+      return 'image/jpeg';
+    }
+    if (lowerPath.endsWith('.pdf')) {
+      return 'application/pdf';
+    }
+    return 'application/octet-stream';
   }
 }
 
@@ -148,6 +174,7 @@ class SupabaseMediaMetadataGateway implements MediaMetadataGateway {
     required String evidenceInstanceId,
     required RequiredPhotoCategory category,
     required String storagePath,
+    required String contentType,
     required DateTime capturedAt,
   }) {
     return _client.from('inspection_media_assets').upsert(
@@ -161,6 +188,7 @@ class SupabaseMediaMetadataGateway implements MediaMetadataGateway {
         'evidence_instance_id': evidenceInstanceId,
         'category': category.name,
         'storage_path': storagePath,
+        'content_type': contentType,
         'captured_at': capturedAt.toIso8601String(),
       },
       onConflict:

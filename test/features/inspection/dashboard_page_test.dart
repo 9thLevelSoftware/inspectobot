@@ -37,7 +37,9 @@ void main() {
     );
     final created = await repository.createInspection(setup);
     final completion = <String, bool>{};
-    for (final key in FormRequirements.requirementKeysForForm(FormType.fourPoint)) {
+    for (final key in FormRequirements.requirementKeysForForm(
+      FormType.fourPoint,
+    )) {
       completion[key] = true;
     }
     await repository.updateWizardProgress(
@@ -188,32 +190,36 @@ class _ScopeSpyInspectionStore implements InspectionStore {
 
 class _TestSyncScheduler extends SyncScheduler {
   _TestSyncScheduler()
-      : super(
-          runner: _NoopSyncRunner(),
-          connectivityChanges: null,
-        );
+    : super(runner: _NoopSyncRunner(), connectivityChanges: null);
 
   int runCalls = 0;
 
   @override
   Future<SyncRunResult> runPending() async {
     runCalls += 1;
-    return const SyncRunResult(attempted: 0, succeeded: 0, failed: 0, skipped: 0);
+    return const SyncRunResult(
+      attempted: 0,
+      succeeded: 0,
+      failed: 0,
+      skipped: 0,
+    );
   }
 }
 
 class _NoopSyncRunner extends SyncRunner {
   _NoopSyncRunner()
-      : super(
-          outboxStore: SyncOutboxStore(),
-          inspectionRemoteStore: _NoopInspectionStore(),
-          mediaRemoteStore: _NoopMediaRemoteStore(),
-        );
+    : super(
+        outboxStore: SyncOutboxStore(),
+        inspectionRemoteStore: _NoopInspectionStore(),
+        mediaRemoteStore: _NoopMediaRemoteStore(),
+      );
 }
 
 class _NoopInspectionStore implements InspectionStore {
   @override
-  Future<Map<String, dynamic>> create(Map<String, dynamic> inspectionJson) async {
+  Future<Map<String, dynamic>> create(
+    Map<String, dynamic> inspectionJson,
+  ) async {
     return inspectionJson;
   }
 
@@ -287,10 +293,7 @@ class _NoopInspectionStore implements InspectionStore {
 
 class _NoopMediaRemoteStore extends MediaSyncRemoteStore {
   _NoopMediaRemoteStore()
-      : super(
-          storage: _NoopStorageGateway(),
-          metadata: _NoopMetadataGateway(),
-        );
+    : super(storage: _NoopStorageGateway(), metadata: _NoopMetadataGateway());
 
   @override
   Future<void> upload({
@@ -328,6 +331,7 @@ class _NoopMetadataGateway implements MediaMetadataGateway {
     required String evidenceInstanceId,
     required RequiredPhotoCategory category,
     required String storagePath,
+    required String contentType,
     required DateTime capturedAt,
   }) async {}
 }
