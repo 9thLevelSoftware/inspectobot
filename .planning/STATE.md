@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** An inspector can complete a Florida insurance inspection workflow quickly and generate compliant, underwriter-ready PDFs with all required data and photos enforced.
-**Current focus:** Phase 17 tenant auth and isolation validation closure is in progress; next focus is executing live validation evidence in plan 02.
+**Current focus:** Phase 17 tenant auth and isolation validation closure is in progress; next focus is phase 17 plan 03 milestone/requirements reconciliation.
 
 ## Current Position
 
 Phase: 17 of 18 (Tenant Auth and Isolation Validation Closure)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: Phase 17 in progress
-Last activity: 2026-03-05 - Executed 17-01 to create canonical verification scaffold, deterministic preflight gates, and anti-fallback live evidence guardrails.
+Last activity: 2026-03-05 - Executed 17-02 live Supabase validation, transitioned phase-17 requirement rows to passed, and reconciled phase-9 human-needed verification debt.
 
-Progress: [██████████] 97%
+Progress: [██████████] 98%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [██████████] 97%
 | Phase 16 P01 | 3 min | 2 tasks | 5 files |
 | Phase 16 P03 | 4 min | 3 tasks | 3 files |
 | Phase 17 P01 | 1 min | 2 tasks | 2 files |
+| Phase 17 P02 | 15 min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,9 @@ Recent decisions affecting current work:
 - [Phase 17]: Initialize phase 17 as scaffold-only with all mapped requirements left at human_needed until live evidence is captured.
 - [Phase 17]: Require deterministic preflight command outputs before and after live validation to separate regressions from environment failures.
 - [Phase 17]: Disallow org-local-* fallback IDs as valid evidence for requirement closure.
+- [Phase 17]: Used one controlled Supabase environment run for AUTH-01/AUTH-02/FLOW-01/SEC-01 evidence consistency.
+- [Phase 17]: Requirement rows were marked passed only after concrete command output contained tenant IDs and RLS status proof.
+- [Phase 17]: Closed phase-9 human_needed debt by linking to phase-17 live evidence instead of duplicating scenario execution.
 
 ### Pending Todos
 
@@ -122,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05 21:43
-Stopped at: Completed 17-01-PLAN.md
+Last session: 2026-03-05 22:02
+Stopped at: Completed 17-02-PLAN.md
 Resume file: None
