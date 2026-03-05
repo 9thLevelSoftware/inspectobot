@@ -312,10 +312,12 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
         ),
       );
       final signatureHash = loadedSignature.record.fileHash;
-      final length = await file.length();
+      final bytes = await file.readAsBytes();
+      final length = bytes.length;
       final artifact = await _deliveryService.persistGeneratedArtifact(
         input: input,
         localFilePath: file.path,
+        bytes: bytes,
         sizeBytes: length,
         signatureHash: signatureHash,
         payloadHash: payloadHash,
