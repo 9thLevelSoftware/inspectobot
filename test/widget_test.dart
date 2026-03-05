@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:inspectobot/app/app.dart';
+import 'package:inspectobot/app/routes.dart';
 
 void main() {
   testWidgets('auth gate starts signed-out user in auth flow', (
@@ -32,9 +33,9 @@ void main() {
     await tester.tap(find.text('Forgot password?'));
     await tester.pumpAndSettle();
     expect(find.text('Send Recovery Link'), findsOneWidget);
+  });
 
-    await tester.tap(find.text('Already have a recovery link? Reset password'));
-    await tester.pumpAndSettle();
-    expect(find.text('Update Password'), findsOneWidget);
+  test('recovery callback URI matches reset-password deep-link contract', () {
+    expect(AppRoutes.recoveryCallbackUri, 'inspectobot://auth/reset-password');
   });
 }
