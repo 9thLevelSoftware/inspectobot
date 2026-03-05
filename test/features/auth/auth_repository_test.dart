@@ -42,7 +42,7 @@ void main() {
   test('sign-in and sign-out state changes update repository stream', () async {
     final gateway = _FakeAuthGateway();
     final repository = AuthRepository(gateway);
-    final events = <AuthSession?>[];
+    final events = <AuthStateChange>[];
     final subscription = repository.authStateChanges.listen(events.add);
 
     await repository.signInWithPassword(
@@ -52,9 +52,11 @@ void main() {
     await repository.signOut();
     await Future<void>.delayed(Duration.zero);
 
-    expect(events.first?.userId, 'fake-user');
-    expect(events.first?.organizationId, 'fake-org');
-    expect(events.last, isNull);
+    expect(events.first.event, AuthChangeEvent.signedIn);
+    expect(events.first.session?.userId, 'fake-user');
+    expect(events.first.session?.organizationId, 'fake-org');
+    expect(events.last.event, AuthChangeEvent.signedOut);
+    expect(events.last.session, isNull);
 
     await subscription.cancel();
   });
@@ -79,15 +81,15 @@ class _FakeAuthGateway implements AuthGateway {
   _FakeAuthGateway({this.signInError});
 
   final AuthException? signInError;
-  final StreamController<AuthSession?> _controller =
-      StreamController<AuthSession?>.broadcast();
+  final StreamController<AuthStateChange> _controller =
+      StreamController<AuthStateChange>.broadcast();
   AuthSession? _session;
 
   @override
   AuthSession? get currentSession => _session;
 
   @override
-  Stream<AuthSession?> get onAuthStateChange => _controller.stream;
+  Stream<AuthStateChange> get onAuthStateChange => _controller.stream;
 
   @override
   Future<AuthSession?> resolveCurrentSession() async => _session;
@@ -110,13 +112,17 @@ class _FakeAuthGateway implements AuthGateway {
       userId: 'fake-user',
       organizationId: 'fake-org',
     );
-    _controller.add(_session);
+    _controller.add(
+      AuthStateChange(event: AuthChangeEvent.signedIn, session: _session),
+    );
   }
 
   @override
   Future<void> signOut() async {
     _session = null;
-    _controller.add(null);
+    _controller.add(
+      const AuthStateChange(event: AuthChangeEvent.signedOut, session: null),
+    );
   }
 
   @override

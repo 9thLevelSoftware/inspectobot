@@ -39,10 +39,17 @@ class AuthSession {
   }
 }
 
+class AuthStateChange {
+  const AuthStateChange({required this.event, required this.session});
+
+  final AuthChangeEvent event;
+  final AuthSession? session;
+}
+
 abstract class AuthGateway {
   AuthSession? get currentSession;
 
-  Stream<AuthSession?> get onAuthStateChange;
+  Stream<AuthStateChange> get onAuthStateChange;
 
   Future<AuthSession?> resolveCurrentSession();
 
@@ -77,7 +84,7 @@ class AuthRepository {
 
   AuthSession? get currentSession => _gateway.currentSession;
 
-  Stream<AuthSession?> get authStateChanges => _gateway.onAuthStateChange;
+  Stream<AuthStateChange> get authStateChanges => _gateway.onAuthStateChange;
 
   Future<AuthSession?> resolveCurrentSession() =>
       _gateway.resolveCurrentSession();
@@ -201,13 +208,28 @@ class SupabaseAuthGateway implements AuthGateway {
   }
 
   @override
-  Stream<AuthSession?> get onAuthStateChange {
+  Stream<AuthStateChange> get onAuthStateChange {
     return _client.auth.onAuthStateChange.asyncMap((event) async {
       final session = event.session;
       if (session == null) {
-        return null;
+        return AuthStateChange(event: event.event, session: null);
       }
-      return _resolveSession(session.user.id);
+      if (event.event == AuthChangeEvent.passwordRecovery) {
+        final cachedTenantContext = _tenantContextResolver.getCachedForUser(
+          session.user.id,
+        );
+        return AuthStateChange(
+          event: event.event,
+          session: AuthSession(
+            userId: session.user.id,
+            organizationId: cachedTenantContext?.organizationId,
+          ),
+        );
+      }
+      return AuthStateChange(
+        event: event.event,
+        session: await _resolveSession(session.user.id),
+      );
     });
   }
 
@@ -261,15 +283,15 @@ class SupabaseAuthGateway implements AuthGateway {
 }
 
 class InMemoryAuthGateway implements AuthGateway {
-  final StreamController<AuthSession?> _controller =
-      StreamController<AuthSession?>.broadcast();
+  final StreamController<AuthStateChange> _controller =
+      StreamController<AuthStateChange>.broadcast();
   AuthSession? _session;
 
   @override
   AuthSession? get currentSession => _session;
 
   @override
-  Stream<AuthSession?> get onAuthStateChange => _controller.stream;
+  Stream<AuthStateChange> get onAuthStateChange => _controller.stream;
 
   @override
   Future<AuthSession?> resolveCurrentSession() async => _session;
@@ -289,13 +311,17 @@ class InMemoryAuthGateway implements AuthGateway {
       userId: 'local-user',
       organizationId: 'org-local-local-user',
     );
-    _controller.add(_session);
+    _controller.add(
+      AuthStateChange(event: AuthChangeEvent.signedIn, session: _session),
+    );
   }
 
   @override
   Future<void> signOut() async {
     _session = null;
-    _controller.add(null);
+    _controller.add(
+      const AuthStateChange(event: AuthChangeEvent.signedOut, session: null),
+    );
   }
 
   @override
@@ -304,7 +330,9 @@ class InMemoryAuthGateway implements AuthGateway {
       userId: 'local-user',
       organizationId: 'org-local-local-user',
     );
-    _controller.add(_session);
+    _controller.add(
+      AuthStateChange(event: AuthChangeEvent.signedIn, session: _session),
+    );
   }
 
   @override

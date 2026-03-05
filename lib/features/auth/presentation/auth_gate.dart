@@ -1,15 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
 import 'package:inspectobot/features/inspection/presentation/dashboard_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthGate extends StatefulWidget {
-  const AuthGate({
-    super.key,
-    AuthRepository? repository,
-    this.dashboardBuilder,
-  }) : _repository = repository;
+  const AuthGate({super.key, AuthRepository? repository, this.dashboardBuilder})
+    : _repository = repository;
 
   final AuthRepository? _repository;
   final Widget Function(
@@ -25,9 +24,10 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   late final AuthRepository _repository;
-  StreamSubscription<AuthSession?>? _subscription;
+  StreamSubscription<AuthStateChange>? _subscription;
   AuthSession? _session;
   bool _isResolvingTenantContext = false;
+  bool _isHandlingRecovery = false;
 
   @override
   void initState() {
@@ -42,18 +42,40 @@ class _AuthGateState extends State<AuthGate> {
     }
   }
 
-  void _onAuthStateChange(AuthSession? session) {
+  void _onAuthStateChange(AuthStateChange change) {
     if (!mounted) {
       return;
     }
+    if (change.event == AuthChangeEvent.passwordRecovery) {
+      _routeToResetPassword();
+    }
+    final session = change.session;
     final requiresResolve = session != null && session.tenantContext == null;
     setState(() {
       _session = session;
-      _isResolvingTenantContext = requiresResolve;
+      _isResolvingTenantContext =
+          change.event == AuthChangeEvent.passwordRecovery
+          ? false
+          : requiresResolve;
     });
-    if (requiresResolve) {
+    if (requiresResolve && change.event != AuthChangeEvent.passwordRecovery) {
       unawaited(_resolveTenantContext());
     }
+  }
+
+  void _routeToResetPassword() {
+    if (_isHandlingRecovery) {
+      return;
+    }
+    _isHandlingRecovery = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.resetPassword, (route) => false);
+      }
+      _isHandlingRecovery = false;
+    });
   }
 
   Future<void> _resolveTenantContext() async {
@@ -114,7 +136,7 @@ class _SignedOutShell extends StatelessWidget {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () {
-                  Navigator.of(context).pushNamed('/auth/sign-in');
+                  Navigator.of(context).pushNamed(AppRoutes.signIn);
                 },
                 child: const Text('Sign In'),
               ),
