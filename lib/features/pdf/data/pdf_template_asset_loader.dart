@@ -24,6 +24,11 @@ class PdfTemplateAssetBundle {
 }
 
 class PdfTemplateAssetLoader {
+  static const Set<String> inspectorLicenseSourceKeys = <String>{
+    'license_type',
+    'license_number',
+  };
+
   PdfTemplateAssetLoader({
     PdfTemplateManifest? manifest,
     PdfMapAssetReader? readMapAsset,
@@ -33,16 +38,18 @@ class PdfTemplateAssetLoader {
         _readMapAsset = readMapAsset ?? rootBundle.loadString,
         _readTemplateAsset = readTemplateAsset ?? rootBundle.load,
         _allowedSourceKeys =
-            allowedSourceKeys ??
-            <String>{
-              ...FormRequirements.canonicalSourceKeys(),
-              'inspection_id',
-              'organization_id',
-              'user_id',
-              'client_name',
-              'property_address',
-              'inspector_signature',
-            };
+            Set<String>.from(
+              allowedSourceKeys ??
+                  <String>{
+                    ...FormRequirements.canonicalSourceKeys(),
+                    'inspection_id',
+                    'organization_id',
+                    'user_id',
+                    'client_name',
+                    'property_address',
+                    'inspector_signature',
+                  },
+            )..removeAll(inspectorLicenseSourceKeys);
 
   final PdfTemplateManifest manifest;
   final PdfMapAssetReader _readMapAsset;

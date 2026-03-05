@@ -24,7 +24,7 @@ void main() {
 
   test('inspector license source keys are explicitly documented by map audit', () async {
     final sourceKeys = await _loadPinnedMapSourceKeys();
-    const licenseKeys = <String>{'license_type', 'license_number'};
+    const licenseKeys = PdfTemplateAssetLoader.inspectorLicenseSourceKeys;
     final requiredLicenseKeys = sourceKeys.intersection(licenseKeys);
 
     expect(
@@ -32,7 +32,23 @@ void main() {
       isEmpty,
       reason:
           'Pinned maps now require inspector license keys: $requiredLicenseKeys. '
-          'Implement profile/license mapping into PDF generation and update loader allowlist.',
+          'Intentional policy change required: update loader policy + runtime '
+          'text mapping in lib/features/pdf/data/pdf_media_resolver.dart and '
+          'keep map/contract changes in the same PR.',
+    );
+  });
+
+  test('loader allowlist keeps license keys non-required by default policy', () {
+    final allowlist = PdfTemplateAssetLoader().allowedSourceKeys;
+    const licenseKeys = PdfTemplateAssetLoader.inspectorLicenseSourceKeys;
+
+    expect(
+      allowlist.intersection(licenseKeys),
+      isEmpty,
+      reason:
+          'Default loader policy drifted: license keys moved into allowlist. '
+          'If this is intentional, update explicit policy and runtime mapping '
+          'contracts in the same PR.',
     );
   });
 }

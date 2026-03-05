@@ -188,6 +188,10 @@ void main() {
 
       expect(sourceKeys.difference(allowlist), isEmpty);
       expect(allowlist, contains('inspector_signature'));
+      expect(
+        allowlist.intersection(PdfTemplateAssetLoader.inspectorLicenseSourceKeys),
+        isEmpty,
+      );
     });
   });
 }
