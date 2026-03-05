@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/pdf/data/pdf_template_asset_loader.dart';
@@ -169,7 +171,34 @@ void main() {
         ),
       );
     });
+
+    test('exposes allowlist surface that stays compatible with pinned maps', () async {
+      final loader = PdfTemplateAssetLoader();
+      final allowlist = loader.allowedSourceKeys;
+      final mapPaths = <String>[
+        'assets/pdf/maps/insp4pt_03_25.v1.json',
+        'assets/pdf/maps/rcf1_03_25.v1.json',
+        'assets/pdf/maps/oir_b1_1802_rev_04_26.v1.json',
+      ];
+
+      final sourceKeys = <String>{};
+      for (final path in mapPaths) {
+        sourceKeys.addAll(await _loadSourceKeys(path));
+      }
+
+      expect(sourceKeys.difference(allowlist), isEmpty);
+      expect(allowlist, contains('inspector_signature'));
+    });
   });
+}
+
+Future<Set<String>> _loadSourceKeys(String assetPath) async {
+  final raw = await rootBundle.loadString(assetPath);
+  final dynamic decoded = jsonDecode(raw);
+  final fields = (decoded as Map<String, dynamic>)['fields'] as List<dynamic>;
+  return fields
+      .map((field) => (field as Map<String, dynamic>)['source_key'] as String)
+      .toSet();
 }
 
 const List<int> _pdfStubBytes = <int>[

@@ -49,6 +49,9 @@ class PdfTemplateAssetLoader {
   final PdfTemplateAssetReader _readTemplateAsset;
   final Set<String> _allowedSourceKeys;
 
+  Set<String> get allowedSourceKeys =>
+      Set<String>.unmodifiable(_allowedSourceKeys);
+
   Future<PdfTemplateAssetBundle> load(FormType formType) async {
     final entry = manifest.requireForForm(formType);
     final decoded = await _readAndParseMap(entry, formType);
