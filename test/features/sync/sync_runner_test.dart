@@ -16,6 +16,7 @@ void main() {
     required String id,
     required SyncOperationType type,
     required Map<String, dynamic> payload,
+    String? dependencyOperationId,
     int retryCount = 0,
     SyncOperationStatus status = SyncOperationStatus.pending,
     int maxRetries = 3,
@@ -33,6 +34,7 @@ void main() {
       retryCount: retryCount,
       status: status,
       maxRetries: maxRetries,
+      dependencyOperationId: dependencyOperationId,
     );
   }
 
@@ -61,6 +63,7 @@ void main() {
           'category': 'exteriorFront',
           'file_path': '/tmp/front.jpg',
         },
+        dependencyOperationId: 'insp-1',
       ),
     );
     await outbox.enqueue(
@@ -96,12 +99,79 @@ void main() {
         organizationId: 'org-1',
       ),
     );
-    expect(result.attempted, 2);
-    expect(result.succeeded, 2);
+    expect(result.attempted, 1);
+    expect(result.succeeded, 1);
     expect(result.failed, 0);
+    expect(result.skipped, 1);
     expect(inspectionStore.events.first, 'inspection:create:insp-1');
+    expect(mediaStore.events, isEmpty);
+
+    final secondRun = await runner.runPending(
+      activeTenantContext: const TenantContext(
+        userId: 'user-1',
+        organizationId: 'org-1',
+      ),
+    );
+    expect(secondRun.attempted, 1);
+    expect(secondRun.succeeded, 1);
     expect(mediaStore.events.first, 'media:upload:media-1');
   });
+
+  test(
+    'runner marks missing dependencies as failed with explicit error',
+    () async {
+      final tempRoot = await Directory.systemTemp.createTemp(
+        'inspectobot_sync_missing_dep_',
+      );
+      addTearDown(() async {
+        if (await tempRoot.exists()) {
+          await tempRoot.delete(recursive: true);
+        }
+      });
+
+      final outbox = SyncOutboxStore(directoryProvider: () async => tempRoot);
+      await outbox.enqueue(
+        buildOp(
+          id: 'wizard-1',
+          type: SyncOperationType.wizardProgressUpsert,
+          payload: <String, dynamic>{
+            'inspection_id': 'insp-missing',
+            'organization_id': 'org-1',
+            'user_id': 'user-1',
+            'wizard_last_step': 1,
+            'wizard_completion': <String, bool>{'photo:exteriorFront': true},
+            'wizard_branch_context': <String, dynamic>{},
+            'wizard_status': 'in_progress',
+          },
+          dependencyOperationId: 'missing-op',
+        ),
+      );
+
+      final inspectionStore = _RecordingInspectionStore();
+      final mediaStore = _RecordingMediaRemoteStore();
+      final runner = SyncRunner(
+        outboxStore: outbox,
+        inspectionRemoteStore: inspectionStore,
+        mediaRemoteStore: mediaStore,
+      );
+
+      final result = await runner.runPending(
+        activeTenantContext: const TenantContext(
+          userId: 'user-1',
+          organizationId: 'org-1',
+        ),
+      );
+
+      expect(result.attempted, 0);
+      expect(result.succeeded, 0);
+      expect(result.failed, 1);
+      final operations = await outbox.listAll();
+      expect(operations.single.status, SyncOperationStatus.failed);
+      expect(operations.single.lastError, contains('Dependency operation not found'));
+      expect(inspectionStore.events, isEmpty);
+      expect(mediaStore.events, isEmpty);
+    },
+  );
 
   test(
     'runner increments retry metadata and skips exhausted failures',
@@ -384,6 +454,15 @@ class _NoopStorageGateway implements MediaStorageGateway {
 }
 
 class _NoopMetadataGateway implements MediaMetadataGateway {
+  @override
+  Future<List<Map<String, dynamic>>> listByInspection({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return const <Map<String, dynamic>>[];
+  }
+
   @override
   Future<void> upsertMetadata({
     required String mediaId,

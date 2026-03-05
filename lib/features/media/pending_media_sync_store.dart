@@ -12,7 +12,10 @@ class PendingMediaSyncStore {
   final SyncOutboxStore _outboxStore;
 
   Future<void> enqueue(MediaSyncTask task) async {
-    final operation = task.toSyncOperation();
+    final dependencyOperationId = await _resolveInspectionDependency(task);
+    final operation = task.toSyncOperation(
+      dependencyOperationId: dependencyOperationId,
+    );
     await _outboxStore.enqueue(
       operation,
       replaceWhere: (existing) {
@@ -28,6 +31,25 @@ class PendingMediaSyncStore {
             evidenceInstanceId == task.evidenceInstanceId;
       },
     );
+  }
+
+  Future<String?> _resolveInspectionDependency(MediaSyncTask task) async {
+    final operations = await _outboxStore.listAll();
+    final inspectionOp = operations
+        .where(
+          (operation) =>
+              operation.type == SyncOperationType.inspectionUpsert &&
+              operation.aggregateId == task.inspectionId &&
+              operation.organizationId == task.organizationId &&
+              operation.userId == task.userId &&
+              operation.status != SyncOperationStatus.completed,
+        )
+        .toList(growable: false);
+    if (inspectionOp.isEmpty) {
+      return null;
+    }
+    inspectionOp.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return inspectionOp.first.operationId;
   }
 
   Future<List<MediaSyncTask>> listPending() async {

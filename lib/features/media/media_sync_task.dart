@@ -56,6 +56,7 @@ class MediaSyncTask {
   SyncOperation toSyncOperation({
     String? organizationId,
     String? userId,
+    String? dependencyOperationId,
   }) {
     final org = organizationId ?? this.organizationId;
     final user = userId ?? this.userId;
@@ -83,6 +84,7 @@ class MediaSyncTask {
       },
       retryCount: retryCount,
       lastError: lastError,
+      dependencyOperationId: dependencyOperationId,
     );
   }
 

@@ -298,9 +298,17 @@ void main() {
       (op) => op.type == SyncOperationType.wizardProgressUpsert,
     );
     expect(wizardOps, hasLength(1));
+    final inspectionOps = pending.where(
+      (op) => op.type == SyncOperationType.inspectionUpsert,
+    );
+    expect(inspectionOps, hasLength(1));
     expect(
       wizardOps.single.payload['wizard_last_step'],
       3,
+    );
+    expect(
+      wizardOps.single.dependencyOperationId,
+      inspectionOps.single.operationId,
     );
   });
 

@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
 import 'package:inspectobot/features/media/media_sync_task.dart';
 import 'package:inspectobot/features/media/pending_media_sync_store.dart';
+import 'package:inspectobot/features/sync/sync_operation.dart';
+import 'package:inspectobot/features/sync/sync_outbox_store.dart';
 
 void main() {
   test('enqueue and listPending keep only latest task per category', () async {
@@ -77,6 +79,57 @@ void main() {
 
     final pending = await store.listPending();
     expect(pending, isEmpty);
+  });
+
+  test('enqueue attaches inspection dependency when prerequisite exists', () async {
+    final tempRoot = await Directory.systemTemp.createTemp(
+      'inspectobot_sync_dependency_',
+    );
+    addTearDown(() async {
+      if (await tempRoot.exists()) {
+        await tempRoot.delete(recursive: true);
+      }
+    });
+
+    final outbox = SyncOutboxStore(directoryProvider: () async => tempRoot);
+    await outbox.enqueue(
+      SyncOperation(
+        operationId: 'insp-op-1',
+        type: SyncOperationType.inspectionUpsert,
+        aggregateId: 'i3',
+        organizationId: 'org-1',
+        userId: 'user-1',
+        payload: <String, dynamic>{
+          'id': 'i3',
+          'organization_id': 'org-1',
+          'user_id': 'user-1',
+        },
+        createdAt: DateTime.utc(2026, 3, 5),
+        updatedAt: DateTime.utc(2026, 3, 5),
+      ),
+    );
+
+    final store = PendingMediaSyncStore(outboxStore: outbox);
+    await store.enqueue(
+      MediaSyncTask(
+        taskId: 't3',
+        inspectionId: 'i3',
+        organizationId: 'org-1',
+        userId: 'user-1',
+        requirementKey: 'photo:exteriorFront',
+        mediaType: CapturedMediaType.photo,
+        evidenceInstanceId: 'photo:exteriorFront',
+        category: RequiredPhotoCategory.exteriorFront,
+        filePath: '/tmp/front_3.jpg',
+        createdAt: DateTime.utc(2026, 3, 6),
+      ),
+    );
+
+    final operations = await outbox.listAll();
+    final mediaOp = operations.firstWhere(
+      (operation) => operation.operationId == 't3',
+    );
+    expect(mediaOp.dependencyOperationId, 'insp-op-1');
   });
 }
 

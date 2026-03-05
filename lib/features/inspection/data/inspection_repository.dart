@@ -259,6 +259,7 @@ class InspectionRepository {
     if (!_enqueueSyncOperations || _outboxStore == null) {
       return;
     }
+    final dependencyOperationId = await _resolveInspectionDependency(setup);
     await _outboxStore.enqueue(
       SyncOperation(
         operationId: SyncOperation.newId(),
@@ -277,12 +278,35 @@ class InspectionRepository {
         },
         createdAt: DateTime.now().toUtc(),
         updatedAt: DateTime.now().toUtc(),
+        dependencyOperationId: dependencyOperationId,
       ),
       replaceWhere: (existing) {
         return existing.type == SyncOperationType.wizardProgressUpsert &&
             existing.aggregateId == setup.id;
       },
     );
+  }
+
+  Future<String?> _resolveInspectionDependency(InspectionSetup setup) async {
+    if (_outboxStore == null) {
+      return null;
+    }
+    final operations = await _outboxStore!.listAll();
+    final inspectionOps = operations
+        .where(
+          (operation) =>
+              operation.type == SyncOperationType.inspectionUpsert &&
+              operation.aggregateId == setup.id &&
+              operation.organizationId == setup.organizationId &&
+              operation.userId == setup.userId &&
+              operation.status != SyncOperationStatus.completed,
+        )
+        .toList(growable: false);
+    if (inspectionOps.isEmpty) {
+      return null;
+    }
+    inspectionOps.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return inspectionOps.first.operationId;
   }
 
   Future<List<InspectionWizardProgress>> listInProgressInspections({

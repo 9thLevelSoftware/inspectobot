@@ -56,15 +56,29 @@ class SyncRunner {
 
   Future<SyncRunResult> _drain({TenantContext? activeTenantContext}) async {
     final all = await _outboxStore.listAll();
+    final unresolvedDependencyFailures = await _failUnresolvedDependencies(
+      all,
+      activeTenantContext,
+    );
+    final refreshed = await _outboxStore.listAll();
+    final operationsById = <String, SyncOperation>{
+      for (final operation in refreshed) operation.operationId: operation,
+    };
     final runnable =
-        all
-            .where((operation) => _isRunnable(operation, activeTenantContext))
+        refreshed
+            .where(
+              (operation) =>
+                  _isRunnable(operation, activeTenantContext, operationsById),
+            )
             .toList(growable: true)
           ..sort(_operationComparator);
 
     var succeeded = 0;
-    var failed = 0;
-    var skipped = all.length - runnable.length;
+    var failed = unresolvedDependencyFailures;
+    var skipped = refreshed.length - runnable.length - unresolvedDependencyFailures;
+    if (skipped < 0) {
+      skipped = 0;
+    }
 
     for (final operation in runnable) {
       try {
@@ -92,6 +106,7 @@ class SyncRunner {
   bool _isRunnable(
     SyncOperation operation,
     TenantContext? activeTenantContext,
+    Map<String, SyncOperation> operationsById,
   ) {
     if (operation.status == SyncOperationStatus.completed) {
       return false;
@@ -100,10 +115,51 @@ class SyncRunner {
         operation.retryCount >= operation.maxRetries) {
       return false;
     }
-    if (operation.dependencyOperationId == null) {
-      return _matchesActiveTenant(operation, activeTenantContext);
+    if (!_matchesActiveTenant(operation, activeTenantContext)) {
+      return false;
     }
-    return _matchesActiveTenant(operation, activeTenantContext);
+    final dependencyId = operation.dependencyOperationId;
+    if (dependencyId == null) {
+      return true;
+    }
+    final dependency = operationsById[dependencyId];
+    if (dependency == null) {
+      return false;
+    }
+    return dependency.status == SyncOperationStatus.completed;
+  }
+
+  Future<int> _failUnresolvedDependencies(
+    List<SyncOperation> operations,
+    TenantContext? activeTenantContext,
+  ) async {
+    final byId = <String, SyncOperation>{
+      for (final operation in operations) operation.operationId: operation,
+    };
+    var failedCount = 0;
+    for (final operation in operations) {
+      final dependencyId = operation.dependencyOperationId;
+      if (dependencyId == null) {
+        continue;
+      }
+      if (!_matchesActiveTenant(operation, activeTenantContext)) {
+        continue;
+      }
+      if (operation.status == SyncOperationStatus.completed) {
+        continue;
+      }
+      final dependency = byId[dependencyId];
+      if (dependency != null) {
+        continue;
+      }
+      await _outboxStore.markFailed(
+        operation.operationId,
+        error:
+            'Dependency operation not found: $dependencyId for ${operation.operationId}',
+      );
+      failedCount += 1;
+    }
+    return failedCount;
   }
 
   bool _matchesActiveTenant(
