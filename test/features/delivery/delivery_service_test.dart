@@ -126,6 +126,14 @@ void main() {
             userId: 'user-1',
           );
       expect(deliveryActions, isEmpty);
+      expect(
+        deliveryActions.map((action) => action.actionType),
+        isNot(containsAll(<String>[
+          'artifact_saved',
+          'download_started',
+          'share_started',
+        ])),
+      );
       final auditEvents = await AuditEventRepository(auditGateway)
           .listByInspection(
             inspectionId: 'insp-1',
@@ -133,6 +141,14 @@ void main() {
             userId: 'user-1',
           );
       expect(auditEvents, isEmpty);
+      expect(
+        auditEvents.map((event) => event.eventType),
+        isNot(containsAll(<String>[
+          'delivery_artifact_saved',
+          'delivery_download_started',
+          'delivery_share_started',
+        ])),
+      );
     },
   );
 

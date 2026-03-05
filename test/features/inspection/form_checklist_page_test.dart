@@ -802,6 +802,8 @@ void main() {
       final store = _ChecklistStore(seededReadiness: _readyReadiness('insp-cloud-terminal'));
       final signatureRepository = await _seededSignatureRepository();
       final pendingStore = _pendingStoreFor(requirements);
+      final deliveryGateway = InMemoryDeliveryActionGateway();
+      final auditGateway = InMemoryAuditEventGateway();
 
       await tester.pumpWidget(
         MaterialApp(
@@ -813,9 +815,11 @@ void main() {
               InMemoryReportSignatureEvidenceGateway(),
             ),
             deliveryService: DeliveryService(
-              artifactRepository: ReportArtifactRepository(InMemoryReportArtifactGateway()),
-              deliveryRepository: DeliveryRepository(InMemoryDeliveryActionGateway()),
-              auditRepository: AuditEventRepository(InMemoryAuditEventGateway()),
+              artifactRepository: ReportArtifactRepository(
+                InMemoryReportArtifactGateway(),
+              ),
+              deliveryRepository: DeliveryRepository(deliveryGateway),
+              auditRepository: AuditEventRepository(auditGateway),
               signedUrlGateway: _TestSignedUrlGateway(),
               shareGateway: _TestShareGateway(),
             ),
@@ -849,6 +853,23 @@ void main() {
           'Cloud PDF generation failed and on-device fallback was not attempted.',
         ),
         findsOneWidget,
+      );
+
+      final actions = await DeliveryRepository(deliveryGateway).listByInspection(
+        inspectionId: 'insp-cloud-terminal',
+        organizationId: 'org-1',
+        userId: 'user-1',
+      );
+      expect(actions, isEmpty);
+
+      final events = await AuditEventRepository(auditGateway).listByInspection(
+        inspectionId: 'insp-cloud-terminal',
+        organizationId: 'org-1',
+        userId: 'user-1',
+      );
+      expect(
+        events.where((event) => event.eventType.startsWith('delivery_')),
+        isEmpty,
       );
     },
   );
