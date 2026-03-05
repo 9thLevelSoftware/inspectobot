@@ -115,4 +115,29 @@ void main() {
     expect(docs, contains('document:wind_opening_protection'));
     expect(docs, contains('document:wind_permit_year'));
   });
+
+  test('form summaries keep conditional wind docs after resume', () {
+    final resumed = InspectionWizardState(
+      enabledForms: {FormType.windMitigation},
+      snapshot: WizardProgressSnapshot(
+        lastStepIndex: 1,
+        completion: const <String, bool>{
+          'photo:wind_roof_deck': true,
+        },
+        branchContext: const <String, dynamic>{
+          'wind_roof_deck_document_required': true,
+          'wind_opening_document_required': true,
+        },
+        status: WizardProgressStatus.inProgress,
+      ),
+    );
+
+    final summary = resumed.buildFormSummaries().single;
+    final missingKeys = summary.missingRequirements
+        .map((requirement) => requirement.key)
+        .toSet();
+
+    expect(missingKeys, contains('document:wind_roof_deck'));
+    expect(missingKeys, contains('document:wind_opening_protection'));
+  });
 }

@@ -149,6 +149,44 @@ void main() {
     expect(find.text('Upload'), findsWidgets);
   });
 
+  testWidgets('save progress preserves persisted branch flags', (tester) async {
+    final store = _ChecklistStore();
+    final repository = InspectionRepository(store);
+    final draft = InspectionDraft(
+      inspectionId: 'insp-branch-1',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Branch Context User',
+      clientEmail: 'branch@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '987 Context Ct',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2000,
+      enabledForms: {FormType.windMitigation},
+      wizardSnapshot: WizardProgressSnapshot(
+        lastStepIndex: 0,
+        completion: const <String, bool>{},
+        branchContext: const <String, dynamic>{
+          'wind_roof_deck_document_required': true,
+          'wind_opening_document_required': true,
+        },
+        status: WizardProgressStatus.inProgress,
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: FormChecklistPage(draft: draft, repository: repository)),
+    );
+
+    await tester.tap(find.text('Continue to Next Step'));
+    await tester.pumpAndSettle();
+
+    expect(store.lastWizardBranchContext, isNotNull);
+    expect(store.lastWizardBranchContext!['wind_roof_deck_document_required'], isTrue);
+    expect(store.lastWizardBranchContext!['wind_opening_document_required'], isTrue);
+    expect(store.lastWizardBranchContext!['enabled_forms'], contains('wind_mitigation'));
+  });
+
   testWidgets('PDF CTA stays blocked when persisted readiness is blocked', (
     tester,
   ) async {
@@ -415,6 +453,7 @@ class _ChecklistStore implements InspectionStore {
   _ChecklistStore({this.seededReadiness});
 
   int updateCalls = 0;
+  Map<String, dynamic>? lastWizardBranchContext;
   Map<String, dynamic>? readiness;
   final Map<String, dynamic>? seededReadiness;
 
@@ -484,6 +523,7 @@ class _ChecklistStore implements InspectionStore {
     required String wizardStatus,
   }) async {
     updateCalls += 1;
+    lastWizardBranchContext = Map<String, dynamic>.from(wizardBranchContext);
     return <String, dynamic>{
       'id': inspectionId,
       'organization_id': organizationId,
