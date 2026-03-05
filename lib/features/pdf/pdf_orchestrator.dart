@@ -33,23 +33,43 @@ class PdfOrchestrator {
     }
 
     if (primaryStrategy == PdfStrategy.cloudFallback) {
-      final cloudResult = await _cloud.generate(input);
-      if (cloudResult != null) {
-        return cloudResult;
-      }
+      return _generateUsingCloudFallbackStrategy(input);
     }
 
     try {
       return await _onDevice.generate(input);
     } on PdfGenerationSizeBudgetExceeded {
       rethrow;
-    } catch (_) {
-      final cloudResult = await _cloud.generate(input);
-      if (cloudResult != null) {
-        return cloudResult;
+    } catch (error) {
+      final cloudOutcome = await _cloud.generate(input);
+      if (cloudOutcome.type == CloudPdfGenerationOutcomeType.generated) {
+        return cloudOutcome.file!;
       }
-      rethrow;
+      if (cloudOutcome.type == CloudPdfGenerationOutcomeType.terminalFailure) {
+        throw PdfCloudGenerationTerminalFailure(
+          message:
+              cloudOutcome.reason ??
+              'Cloud PDF generation failed with terminal outcome.',
+          cause: cloudOutcome.error,
+        );
+      }
+      throw error;
     }
+  }
+
+  Future<File> _generateUsingCloudFallbackStrategy(PdfGenerationInput input) async {
+    final cloudOutcome = await _cloud.generate(input);
+    if (cloudOutcome.type == CloudPdfGenerationOutcomeType.generated) {
+      return cloudOutcome.file!;
+    }
+    if (cloudOutcome.type == CloudPdfGenerationOutcomeType.unavailable) {
+      return _onDevice.generate(input);
+    }
+    throw PdfCloudGenerationTerminalFailure(
+      message:
+          cloudOutcome.reason ?? 'Cloud PDF generation failed with terminal outcome.',
+      cause: cloudOutcome.error,
+    );
   }
 
   String _buildReadinessMessage(ReportReadiness? readiness) {
@@ -60,6 +80,24 @@ class PdfOrchestrator {
       return 'Inspection is not generation-ready.';
     }
     return 'Inspection is not generation-ready. Missing: ${readiness.missingItems.join(', ')}';
+  }
+}
+
+class PdfCloudGenerationTerminalFailure implements Exception {
+  const PdfCloudGenerationTerminalFailure({
+    required this.message,
+    this.cause,
+  });
+
+  final String message;
+  final Object? cause;
+
+  @override
+  String toString() {
+    if (cause == null) {
+      return message;
+    }
+    return '$message cause=$cause';
   }
 }
 
