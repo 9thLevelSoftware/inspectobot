@@ -78,6 +78,9 @@ void main() {
         renderCall.forms.expand((form) => form.resolved.signatureByFieldKey.keys),
         contains('signature.inspector'),
       );
+      for (final form in renderCall.forms) {
+        expect(form.templateBytes, isNotEmpty);
+      }
     });
 
     test('retries rendering with deterministic budget policy before succeeding', () async {
@@ -144,6 +147,38 @@ void main() {
         ),
       );
     });
+
+    test('fails closed when template asset bytes are missing', () async {
+      final service = OnDevicePdfService(
+        templateAssetLoader: _EmptyTemplateLoader(),
+        mediaResolver: const PdfMediaResolver(),
+        sizeBudgetStore: PdfSizeBudgetConfigStore(
+          readConfig: () => <String, dynamic>{
+            'max_bytes': 1024,
+            'retry_steps': <Map<String, dynamic>>[
+              <String, dynamic>{'jpeg_quality': 75, 'max_width': 1280},
+            ],
+          },
+        ),
+        renderer: _RecordingRenderer(
+          bytesByAttempt: <List<int>>[
+            List<int>.filled(128, 3),
+          ],
+        ),
+        outputDirectoryProvider: () async => Directory.systemTemp,
+      );
+
+      expect(
+        () => service.generate(_buildInput()),
+        throwsA(
+          isA<PdfTemplateAssetLoaderError>().having(
+            (e) => e.message,
+            'message',
+            contains('Template asset is empty'),
+          ),
+        ),
+      );
+    });
   });
 }
 
@@ -178,6 +213,23 @@ class _FakeTemplateLoader extends PdfTemplateAssetLoader {
           }
           return _fourPointMap;
         },
+        readTemplateAsset: (assetPath) async {
+          return ByteData.view(Uint8List.fromList(_pdfStubBytes).buffer);
+        },
+      );
+}
+
+class _EmptyTemplateLoader extends PdfTemplateAssetLoader {
+  _EmptyTemplateLoader()
+    : super(
+        manifest: PdfTemplateManifest.standard(),
+        readMapAsset: (assetPath) async {
+          if (assetPath.contains('rcf1')) {
+            return _roofMap;
+          }
+          return _fourPointMap;
+        },
+        readTemplateAsset: (assetPath) async => ByteData(0),
       );
 }
 
@@ -218,3 +270,15 @@ const String _roofMap = '''
   ]
 }
 ''';
+
+const List<int> _pdfStubBytes = <int>[
+  0x25,
+  0x50,
+  0x44,
+  0x46,
+  0x2D,
+  0x31,
+  0x2E,
+  0x34,
+  0x0A,
+];

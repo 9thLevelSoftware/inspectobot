@@ -55,6 +55,7 @@ class OnDevicePdfService {
             manifestEntry: templateBundle.manifestEntry,
             fieldMap: templateBundle.fieldMap,
             resolved: resolved,
+            templateBytes: templateBundle.templateBytes,
           ),
         );
       }

@@ -13,11 +13,13 @@ class PdfRenderFormRequest {
     required this.manifestEntry,
     required this.fieldMap,
     required this.resolved,
+    required this.templateBytes,
   });
 
   final PdfTemplateManifestEntry manifestEntry;
   final PdfFieldMap fieldMap;
   final ResolvedPdfFieldData resolved;
+  final Uint8List templateBytes;
 }
 
 class PdfRenderRequest {
@@ -34,6 +36,11 @@ class PdfRenderer {
     final document = pw.Document();
 
     for (final form in request.forms) {
+      if (form.templateBytes.isEmpty) {
+        throw StateError(
+          'Template bytes missing for form ${form.manifestEntry.formType.code}',
+        );
+      }
       final pageNumbers = form.fieldMap.fields
           .map((field) => field.page)
           .toSet()
