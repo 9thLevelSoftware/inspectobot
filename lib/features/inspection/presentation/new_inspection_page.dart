@@ -8,9 +8,16 @@ import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/presentation/form_checklist_page.dart';
 
 class NewInspectionPage extends StatefulWidget {
-  const NewInspectionPage({super.key, NewInspectionRepositoryProvider? repository})
+  const NewInspectionPage({
+    super.key,
+    required this.organizationId,
+    required this.userId,
+    NewInspectionRepositoryProvider? repository,
+  })
     : repository = repository ?? const _LazyNewInspectionRepository();
 
+  final String organizationId;
+  final String userId;
   final NewInspectionRepositoryProvider repository;
 
   @override
@@ -114,8 +121,8 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
     try {
       final setup = InspectionSetup(
         id: _uuid.v4(),
-        organizationId: 'org-local',
-        userId: 'user-local',
+        organizationId: widget.organizationId,
+        userId: widget.userId,
         clientName: _clientNameController.text.trim(),
         clientEmail: _clientEmailController.text.trim(),
         clientPhone: _clientPhoneController.text.trim(),

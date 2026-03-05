@@ -4,13 +4,20 @@ import 'package:inspectobot/features/inspection/data/inspection_repository.dart'
 import 'package:inspectobot/features/inspection/presentation/new_inspection_page.dart';
 
 void main() {
+  const organizationId = 'org-session';
+  const userId = 'user-session';
+
   Future<void> pumpPage(
     WidgetTester tester, {
     required _TestRepositoryProvider provider,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: NewInspectionPage(repository: provider),
+        home: NewInspectionPage(
+          organizationId: organizationId,
+          userId: userId,
+          repository: provider,
+        ),
       ),
     );
   }
@@ -127,6 +134,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(store.createCalls, 1);
+    expect(store.lastOrganizationId, organizationId);
+    expect(store.lastUserId, userId);
     expect(
       store.lastCreatedId,
       matches(
@@ -152,12 +161,16 @@ class _TestRepositoryProvider implements NewInspectionRepositoryProvider {
 class _SpyInspectionStore implements InspectionStore {
   int createCalls = 0;
   String? lastCreatedId;
+  String? lastOrganizationId;
+  String? lastUserId;
 
   @override
   Future<Map<String, dynamic>> create(Map<String, dynamic> inspectionJson) async {
     createCalls += 1;
     final payload = Map<String, dynamic>.from(inspectionJson);
     lastCreatedId = payload['id']?.toString();
+    lastOrganizationId = payload['organization_id']?.toString();
+    lastUserId = payload['user_id']?.toString();
     payload['id'] = payload['id'] ?? 'generated-id';
     return payload;
   }

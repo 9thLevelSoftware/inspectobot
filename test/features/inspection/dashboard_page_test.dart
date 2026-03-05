@@ -19,12 +19,14 @@ void main() {
   testWidgets('dashboard lists in-progress inspections with resume action', (
     tester,
   ) async {
-    final store = InMemoryInspectionStore();
+    const organizationId = 'org-session';
+    const userId = 'user-session';
+    final store = _ScopeSpyInspectionStore(InMemoryInspectionStore());
     final repository = InspectionRepository(store);
     final setup = InspectionSetup(
       id: 'insp-1',
-      organizationId: 'org-local',
-      userId: 'user-local',
+      organizationId: organizationId,
+      userId: userId,
       clientName: 'Jane Doe',
       clientEmail: 'jane@example.com',
       clientPhone: '555-0100',
@@ -54,7 +56,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: DashboardPage(repository: repository, syncScheduler: scheduler),
+        home: DashboardPage(
+          repository: repository,
+          syncScheduler: scheduler,
+          organizationId: organizationId,
+          userId: userId,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -66,10 +73,117 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Resume'));
     await tester.pumpAndSettle();
 
+    expect(store.lastListOrganizationId, organizationId);
+    expect(store.lastListUserId, userId);
     expect(scheduler.runCalls, 1);
     expect(find.text('Guided Inspection Wizard'), findsOneWidget);
     expect(find.textContaining('Step 2 of'), findsOneWidget);
   });
+}
+
+class _ScopeSpyInspectionStore implements InspectionStore {
+  _ScopeSpyInspectionStore(this._delegate);
+
+  final InMemoryInspectionStore _delegate;
+  String? lastListOrganizationId;
+  String? lastListUserId;
+
+  @override
+  Future<Map<String, dynamic>> create(Map<String, dynamic> inspectionJson) {
+    return _delegate.create(inspectionJson);
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchById({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) {
+    return _delegate.fetchById(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchWizardProgress({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) {
+    return _delegate.fetchWizardProgress(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> listInProgressInspections({
+    required String organizationId,
+    required String userId,
+  }) {
+    lastListOrganizationId = organizationId;
+    lastListUserId = userId;
+    return _delegate.listInProgressInspections(
+      organizationId: organizationId,
+      userId: userId,
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) {
+    return _delegate.fetchReportReadiness(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateWizardProgress({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required int wizardLastStep,
+    required Map<String, bool> wizardCompletion,
+    required Map<String, dynamic> wizardBranchContext,
+    required String wizardStatus,
+  }) {
+    return _delegate.updateWizardProgress(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+      wizardLastStep: wizardLastStep,
+      wizardCompletion: wizardCompletion,
+      wizardBranchContext: wizardBranchContext,
+      wizardStatus: wizardStatus,
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> upsertReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String status,
+    required List<String> missingItems,
+    required DateTime computedAt,
+  }) {
+    return _delegate.upsertReportReadiness(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+      status: status,
+      missingItems: missingItems,
+      computedAt: computedAt,
+    );
+  }
 }
 
 class _TestSyncScheduler extends SyncScheduler {

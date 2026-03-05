@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:inspectobot/app/routes.dart';
+import 'package:inspectobot/features/identity/presentation/inspector_identity_page.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
@@ -11,10 +11,10 @@ import 'new_inspection_page.dart';
 class DashboardPage extends StatefulWidget {
   DashboardPage({
     super.key,
+    required this.organizationId,
+    required this.userId,
     InspectionRepository? repository,
     SyncScheduler? syncScheduler,
-    this.organizationId = 'org-local',
-    this.userId = 'user-local',
   })  : repository = repository ?? InspectionRepository.live(),
         syncScheduler = syncScheduler;
 
@@ -122,6 +122,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 await Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => NewInspectionPage(
+                      organizationId: widget.organizationId,
+                      userId: widget.userId,
                       repository: _StaticDashboardRepositoryProvider(
                         widget.repository,
                       ),
@@ -139,7 +141,14 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () {
-                Navigator.of(context).pushNamed(AppRoutes.inspectorIdentity);
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => InspectorIdentityPage(
+                      organizationId: widget.organizationId,
+                      userId: widget.userId,
+                    ),
+                  ),
+                );
               },
               icon: const Icon(Icons.badge_outlined),
               label: const Text('Inspector Identity'),

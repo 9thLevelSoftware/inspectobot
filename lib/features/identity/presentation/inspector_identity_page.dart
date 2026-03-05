@@ -8,8 +8,8 @@ import 'package:inspectobot/features/identity/domain/inspector_profile.dart';
 class InspectorIdentityPage extends StatefulWidget {
   const InspectorIdentityPage({
     super.key,
-    this.organizationId = 'org-local',
-    this.userId = 'user-local',
+    required this.organizationId,
+    required this.userId,
     InspectorProfileRepository? profileRepository,
     SignatureRepository? signatureRepository,
   }) : _profileRepository = profileRepository,
