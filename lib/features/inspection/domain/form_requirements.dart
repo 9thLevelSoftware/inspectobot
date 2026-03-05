@@ -265,6 +265,16 @@ class FormRequirements {
     return _categoryByRequirementKey[key];
   }
 
+  static Set<String> canonicalSourceKeys() {
+    final keys = <String>{};
+    for (final requirements in _requirementsByForm.values) {
+      for (final requirement in requirements) {
+        keys.add(requirement.key);
+      }
+    }
+    return keys;
+  }
+
   static void _assertUniqueKeys(List<EvidenceRequirement> requirements) {
     final keys = <String>{};
     for (final requirement in requirements) {

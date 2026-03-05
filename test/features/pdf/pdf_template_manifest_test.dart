@@ -120,5 +120,31 @@ void main() {
         ),
       );
     });
+
+    test('rejects map fields with unknown source_key values', () async {
+      final loader = PdfTemplateAssetLoader(
+        manifest: PdfTemplateManifest.standard(),
+        readMapAsset: (_) async => '''
+{
+  "form_code": "four_point",
+  "map_version": "v1",
+  "fields": [
+    {"key": "image.bad", "source_key": "photo:roof_overview", "type": "image", "page": 1, "x": 10, "y": 10, "width": 20, "height": 20}
+  ]
+}
+''',
+      );
+
+      expect(
+        () => loader.load(FormType.fourPoint),
+        throwsA(
+          isA<PdfTemplateAssetLoaderError>().having(
+            (e) => e.message,
+            'message',
+            contains('Unknown source_key'),
+          ),
+        ),
+      );
+    });
   });
 }

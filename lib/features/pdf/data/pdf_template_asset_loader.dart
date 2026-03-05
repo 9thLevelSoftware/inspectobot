@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import '../../inspection/domain/form_requirements.dart';
 import '../../inspection/domain/form_type.dart';
 import '../models/pdf_field_map.dart';
 import '../models/pdf_template_manifest.dart';
@@ -22,11 +23,24 @@ class PdfTemplateAssetLoader {
   PdfTemplateAssetLoader({
     PdfTemplateManifest? manifest,
     PdfMapAssetReader? readMapAsset,
+    Set<String>? allowedSourceKeys,
   })  : manifest = manifest ?? PdfTemplateManifest.standard(),
-        _readMapAsset = readMapAsset ?? rootBundle.loadString;
+        _readMapAsset = readMapAsset ?? rootBundle.loadString,
+        _allowedSourceKeys =
+            allowedSourceKeys ??
+            <String>{
+              ...FormRequirements.canonicalSourceKeys(),
+              'inspection_id',
+              'organization_id',
+              'user_id',
+              'client_name',
+              'property_address',
+              'inspector_signature',
+            };
 
   final PdfTemplateManifest manifest;
   final PdfMapAssetReader _readMapAsset;
+  final Set<String> _allowedSourceKeys;
 
   Future<PdfTemplateAssetBundle> load(FormType formType) async {
     final entry = manifest.requireForForm(formType);
@@ -90,7 +104,7 @@ class PdfTemplateAssetLoader {
       fields.add(
         PdfFieldDefinition(
           key: _requiredString(rawField, 'key'),
-          sourceKey: _requiredString(rawField, 'source_key'),
+          sourceKey: _validatedSourceKey(rawField, formType),
           type: PdfFieldType.fromWireValue(_requiredString(rawField, 'type')),
           page: _requiredInt(rawField, 'page'),
           x: _requiredDouble(rawField, 'x'),
@@ -101,6 +115,19 @@ class PdfTemplateAssetLoader {
       );
     }
     return fields;
+  }
+
+  String _validatedSourceKey(
+    Map<String, dynamic> source,
+    FormType formType,
+  ) {
+    final sourceKey = _requiredString(source, 'source_key');
+    if (_allowedSourceKeys.contains(sourceKey)) {
+      return sourceKey;
+    }
+    throw PdfTemplateAssetLoaderError(
+      'Unknown source_key "$sourceKey" in map for ${formType.code}',
+    );
   }
 
   String _requiredString(Map<String, dynamic> source, String key) {
