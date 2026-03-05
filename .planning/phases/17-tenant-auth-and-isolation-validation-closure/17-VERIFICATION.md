@@ -52,13 +52,13 @@ score: 3/3 must-haves verified
 Use environment variables only (never commit secrets):
 
 ```bash
-LIVE_EMAIL_A="<tenant-a-email>" LIVE_EMAIL_B="<tenant-b-email>" LIVE_PASSWORD="<rotated-password>" node .planning/phases/17-tenant-auth-and-isolation-validation-closure/live_validation_runner.mjs --mode verify
+node .planning/phases/17-tenant-auth-and-isolation-validation-closure/live_validation_runner.mjs --mode verify
 ```
 
 Optional exposed-credential invalidation assertion:
 
 ```bash
-LIVE_OLD_PASSWORD="<previous-exposed-password>" LIVE_EMAIL_A="<tenant-a-email>" LIVE_EMAIL_B="<tenant-b-email>" LIVE_PASSWORD="<rotated-password>" node .planning/phases/17-tenant-auth-and-isolation-validation-closure/live_validation_runner.mjs --mode verify
+node .planning/phases/17-tenant-auth-and-isolation-validation-closure/live_validation_runner.mjs --mode verify
 ```
 
 Expected output schema (sanitized JSON):
@@ -148,7 +148,7 @@ Requirement ID accounting check:
 ### Credential Hygiene
 
 - User confirmed credential rotation at checkpoint task 2 and resumed execution.
-- Verification artifact contains no plaintext `LIVE_PASSWORD=` assignments.
+- Verification artifact contains no plaintext secret assignments.
 - Replay instructions require env vars and avoid hardcoded secrets.
 
 ### Gaps Summary
