@@ -185,16 +185,16 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   }
 
   Future<void> _saveProgress({required bool markComplete}) async {
+    final branchContext = Map<String, dynamic>.from(_snapshot.branchContext)
+      ..['enabled_forms'] = widget.draft.enabledForms
+          .map((form) => form.code)
+          .toList(growable: false);
     final updated = _snapshot.copyWith(
       lastStepIndex: _currentStepIndex,
       status: markComplete
           ? WizardProgressStatus.complete
           : WizardProgressStatus.inProgress,
-      branchContext: <String, dynamic>{
-        'enabled_forms': widget.draft.enabledForms
-            .map((form) => form.code)
-            .toList(growable: false),
-      },
+      branchContext: branchContext,
     );
     await _repository.updateWizardProgress(
       inspectionId: widget.draft.inspectionId,
