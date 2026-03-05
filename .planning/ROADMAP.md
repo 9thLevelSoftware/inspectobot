@@ -28,7 +28,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 14: Resume-to-PDF Media Rehydration Hardening** - Resumed/offline-synced inspections reliably resolve media references for deterministic PDF embedding and generation. (Completed: 2026-03-05)
 - [x] **Phase 15: Debt Closure for Audit Visibility and PDF Resilience** - Deferred milestone debt is closed by exposing audit timelines in UI, replacing PDF cloud fallback placeholder behavior, and validating profile/license-to-PDF mapping coverage. (Planned debt closure) (completed 2026-03-05)
 - [x] **Phase 16: Verification Traceability Closure** - Requirement evidence traceability is normalized so completion claims in plans and summaries are backed by phase-level verification requirement coverage. (completed 2026-03-05)
-- [ ] **Phase 17: Tenant Auth and Isolation Validation Closure** - Tenant-scoped auth/bootstrap behavior is validated end-to-end in live-backed flows and verification artifacts move from `human_needed` to passed.
+- [x] **Phase 17: Tenant Auth and Isolation Validation Closure** - Tenant-scoped auth/bootstrap behavior is validated end-to-end in live-backed flows and verification artifacts move from `human_needed` to passed. (completed 2026-03-05)
 - [ ] **Phase 18: PDF/Delivery Resilience and Identity Contract Closure** - PDF fallback/delivery resilience and identity-to-PDF contract gaps are closed with executable integration coverage.
 
 ## Phase Details
@@ -328,5 +328,5 @@ Phases execute in numeric order: 1 -> 1.1 -> 2 -> ... -> 18
 | 14. Resume-to-PDF Media Rehydration Hardening | 3/3 | Complete | 2026-03-05 |
 | 15. Debt Closure for Audit Visibility and PDF Resilience | 0/0 | Complete    | 2026-03-05 |
 | 16. Verification Traceability Closure | 3/3 | Complete    | 2026-03-05 |
-| 17. Tenant Auth and Isolation Validation Closure | 2/3 | In Progress|  |
+| 17. Tenant Auth and Isolation Validation Closure | 3/3 | Complete   | 2026-03-05 |
 | 18. PDF/Delivery Resilience and Identity Contract Closure | 0/0 | Planned | - |

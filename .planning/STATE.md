@@ -9,12 +9,16 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 
 ## Current Position
 
-Phase: 18 of 18 (PDF/Delivery Resilience and Identity Contract Closure)
-Plan: 0 of 0 in current phase
-Status: Phase 17 complete; Phase 18 pending execution
-Last activity: 2026-03-05 - Completed 17-03 milestone/requirements/state reconciliation, closing tenant auth/isolation validation debt across planning ledgers.
+**Current Phase:** 17
+**Total Phases:** 18
+**Current Phase Name:** Tenant Auth and Isolation Validation Closure
+**Current Plan:** 3
+**Total Plans in Phase:** 3
+**Status:** Phase complete — ready for verification
+**Last Activity:** 2026-03-05
+**Last Activity Description:** Completed 17-03 milestone/requirements/state reconciliation, closing tenant auth/isolation validation debt across planning ledgers.
 
-Progress: [██████████] 100%
+**Progress:** [██████████] 100%
 
 ## Performance Metrics
 
@@ -67,6 +71,7 @@ Progress: [██████████] 100%
 | Phase 16 P03 | 4 min | 3 tasks | 3 files |
 | Phase 17 P01 | 1 min | 2 tasks | 2 files |
 | Phase 17 P02 | 15 min | 3 tasks | 2 files |
+| Phase 17 P03 | 2 min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -111,6 +116,8 @@ Recent decisions affecting current work:
 - [Phase 17]: Used one controlled Supabase environment run for AUTH-01/AUTH-02/FLOW-01/SEC-01 evidence consistency.
 - [Phase 17]: Requirement rows were marked passed only after concrete command output contained tenant IDs and RLS status proof.
 - [Phase 17]: Closed phase-9 human_needed debt by linking to phase-17 live evidence instead of duplicating scenario execution.
+- [Phase 17]: Used phase-17 verification evidence as canonical source for AUTH-01/AUTH-02/FLOW-01/SEC-01 final status.
+- [Phase 17]: Kept unresolved FLOW-03 and EVID-02 findings explicitly out-of-scope during phase-17 closure reconciliation.
 
 ### Pending Todos
 
@@ -126,6 +133,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05 22:12
-Stopped at: Completed 17-03-PLAN.md
-Resume file: None
+**Last session:** 2026-03-05T22:10:01.517Z
+**Stopped At:** Completed 17-03-PLAN.md
+**Resume File:** None
