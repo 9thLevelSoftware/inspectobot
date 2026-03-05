@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** An inspector can complete a Florida insurance inspection workflow quickly and generate compliant, underwriter-ready PDFs with all required data and photos enforced.
-**Current focus:** Phase 17 tenant auth and isolation validation closure is in progress; next focus is phase 17 plan 03 milestone/requirements reconciliation.
+**Current focus:** Phase 17 tenant auth/isolation closure is complete; next focus is Phase 18 PDF/delivery resilience and identity contract closure planning/execution.
 
 ## Current Position
 
-Phase: 17 of 18 (Tenant Auth and Isolation Validation Closure)
-Plan: 2 of 3 in current phase
-Status: Phase 17 in progress
-Last activity: 2026-03-05 - Executed 17-02 live Supabase validation, transitioned phase-17 requirement rows to passed, and reconciled phase-9 human-needed verification debt.
+Phase: 18 of 18 (PDF/Delivery Resilience and Identity Contract Closure)
+Plan: 0 of 0 in current phase
+Status: Phase 17 complete; Phase 18 pending execution
+Last activity: 2026-03-05 - Completed 17-03 milestone/requirements/state reconciliation, closing tenant auth/isolation validation debt across planning ledgers.
 
-Progress: [██████████] 98%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -126,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05 22:02
-Stopped at: Completed 17-02-PLAN.md
+Last session: 2026-03-05 22:12
+Stopped at: Completed 17-03-PLAN.md
 Resume file: None
