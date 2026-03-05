@@ -9,6 +9,7 @@ import 'package:inspectobot/features/delivery/data/report_artifact_repository.da
 import 'package:inspectobot/features/delivery/services/delivery_service.dart';
 import 'package:inspectobot/features/identity/data/signature_repository.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
+import 'package:inspectobot/features/inspection/domain/evidence_requirement.dart';
 import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
@@ -21,6 +22,7 @@ import 'package:inspectobot/features/pdf/cloud_pdf_service.dart';
 import 'package:inspectobot/features/pdf/on_device_pdf_service.dart';
 import 'package:inspectobot/features/pdf/pdf_generation_input.dart';
 import 'package:inspectobot/features/pdf/pdf_orchestrator.dart';
+import 'package:inspectobot/features/pdf/pdf_strategy.dart';
 import 'package:inspectobot/features/signing/data/report_signature_evidence_repository.dart';
 import 'package:inspectobot/features/signing/domain/report_signature_evidence.dart';
 
@@ -306,7 +308,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(gateway.lastInspectionId, 'insp-audit-1');
       expect(gateway.lastOrganizationId, 'org-1');
@@ -347,7 +350,8 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('No audit events recorded yet'), findsOneWidget);
   });
@@ -646,7 +650,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       await tester.scrollUntilVisible(
         find.byKey(const ValueKey('generate-pdf-button')),
@@ -666,6 +671,273 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'production checklist wiring uses cloud-fallback strategy with terminal cloud outcome',
+    (tester) async {
+      final requirements = FormRequirements.forFormRequirements(
+        FormType.fourPoint,
+      );
+      final store = _ChecklistStore(
+        seededReadiness: _readyReadiness('insp-cloud-generated'),
+      );
+      final signatureRepository = await _seededSignatureRepository();
+      final pendingStore = _pendingStoreFor(requirements);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FormChecklistPage(
+            draft: _readyDraft('insp-cloud-generated'),
+            repository: InspectionRepository(store),
+            signatureRepository: signatureRepository,
+            signatureEvidenceRepository: ReportSignatureEvidenceRepository(
+              InMemoryReportSignatureEvidenceGateway(),
+            ),
+            deliveryService: DeliveryService(
+              artifactRepository: ReportArtifactRepository(
+                InMemoryReportArtifactGateway(),
+              ),
+              deliveryRepository: DeliveryRepository(
+                InMemoryDeliveryActionGateway(),
+              ),
+              auditRepository: AuditEventRepository(InMemoryAuditEventGateway()),
+              signedUrlGateway: _TestSignedUrlGateway(),
+              shareGateway: _TestShareGateway(),
+            ),
+            pendingMediaSyncStore: pendingStore,
+            cloudPdfService: CloudPdfService(
+              runtimeGateway: _StaticCloudPdfRuntimeGateway(
+                CloudPdfGenerationOutcome.terminalFailure(
+                  error: StateError('terminal cloud failure'),
+                  reason: 'terminal cloud failure',
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('generate-pdf-button')),
+        400,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const ValueKey('generate-pdf-button')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(
+        find.text(
+          'Cloud PDF generation failed and on-device fallback was not attempted.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('checklist falls back to on-device when cloud is unavailable', (
+    tester,
+  ) async {
+    final requirements = FormRequirements.forFormRequirements(FormType.fourPoint);
+    final store = _ChecklistStore(seededReadiness: _readyReadiness('insp-cloud-unavailable'));
+    final signatureRepository = await _seededSignatureRepository();
+    final pendingStore = _pendingStoreFor(requirements);
+    final cloud = _FixedOutcomeCloudPdfService(
+      const CloudPdfGenerationOutcome.unavailable(reason: 'cloud disabled'),
+    );
+    final onDevice = _SuccessfulOnDevicePdfService();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormChecklistPage(
+          draft: _readyDraft('insp-cloud-unavailable'),
+          repository: InspectionRepository(store),
+          signatureRepository: signatureRepository,
+          signatureEvidenceRepository: ReportSignatureEvidenceRepository(
+            InMemoryReportSignatureEvidenceGateway(),
+          ),
+          deliveryService: DeliveryService(
+            artifactRepository: ReportArtifactRepository(InMemoryReportArtifactGateway()),
+            deliveryRepository: DeliveryRepository(InMemoryDeliveryActionGateway()),
+            auditRepository: AuditEventRepository(InMemoryAuditEventGateway()),
+            signedUrlGateway: _TestSignedUrlGateway(),
+            shareGateway: _TestShareGateway(),
+          ),
+          pendingMediaSyncStore: pendingStore,
+          pdfOrchestrator: PdfOrchestrator(
+            onDevice: onDevice,
+            cloud: cloud,
+            primaryStrategy: PdfStrategy.cloudFallback,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('generate-pdf-button')),
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const ValueKey('generate-pdf-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(cloud.callCount, 1);
+    expect(
+      find.text(
+        'Cloud PDF generation failed and on-device fallback was not attempted.',
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets(
+    'checklist surfaces deterministic message on terminal cloud generation failure',
+    (tester) async {
+      final requirements = FormRequirements.forFormRequirements(FormType.fourPoint);
+      final store = _ChecklistStore(seededReadiness: _readyReadiness('insp-cloud-terminal'));
+      final signatureRepository = await _seededSignatureRepository();
+      final pendingStore = _pendingStoreFor(requirements);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FormChecklistPage(
+            draft: _readyDraft('insp-cloud-terminal'),
+            repository: InspectionRepository(store),
+            signatureRepository: signatureRepository,
+            signatureEvidenceRepository: ReportSignatureEvidenceRepository(
+              InMemoryReportSignatureEvidenceGateway(),
+            ),
+            deliveryService: DeliveryService(
+              artifactRepository: ReportArtifactRepository(InMemoryReportArtifactGateway()),
+              deliveryRepository: DeliveryRepository(InMemoryDeliveryActionGateway()),
+              auditRepository: AuditEventRepository(InMemoryAuditEventGateway()),
+              signedUrlGateway: _TestSignedUrlGateway(),
+              shareGateway: _TestShareGateway(),
+            ),
+            pendingMediaSyncStore: pendingStore,
+            pdfOrchestrator: PdfOrchestrator(
+              onDevice: _SuccessfulOnDevicePdfService(),
+              cloud: _FixedOutcomeCloudPdfService(
+                CloudPdfGenerationOutcome.terminalFailure(
+                  error: StateError('terminal cloud failure'),
+                  reason: 'terminal cloud failure',
+                ),
+              ),
+              primaryStrategy: PdfStrategy.cloudFallback,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('generate-pdf-button')),
+        400,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const ValueKey('generate-pdf-button')));
+      await tester.pump();
+
+      expect(
+        find.text(
+          'Cloud PDF generation failed and on-device fallback was not attempted.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+}
+
+InspectionDraft _readyDraft(String inspectionId) {
+  return InspectionDraft(
+    inspectionId: inspectionId,
+    organizationId: 'org-1',
+    userId: 'user-1',
+    clientName: 'Cloud Branch User',
+    clientEmail: 'cloud@example.com',
+    clientPhone: '555-0100',
+    propertyAddress: '131 Branch St',
+    inspectionDate: DateTime.utc(2026, 3, 4),
+    yearBuilt: 2004,
+    enabledForms: {FormType.fourPoint},
+    wizardSnapshot: WizardProgressSnapshot(
+      lastStepIndex: 1,
+      completion: {
+        for (final requirement in FormRequirements.forFormRequirements(
+          FormType.fourPoint,
+        ))
+          requirement.key: true,
+      },
+      branchContext: const <String, dynamic>{},
+      status: WizardProgressStatus.complete,
+    ),
+    initialStepIndex: 1,
+  );
+}
+
+Map<String, dynamic> _readyReadiness(String inspectionId) {
+  return <String, dynamic>{
+    'inspection_id': inspectionId,
+    'organization_id': 'org-1',
+    'user_id': 'user-1',
+    'status': 'ready',
+    'missing_items': <String>[],
+    'computed_at': '2026-03-05T00:00:00.000Z',
+  };
+}
+
+_FakePendingMediaSyncStore _pendingStoreFor(
+  List<EvidenceRequirement> requirements,
+) {
+  return _FakePendingMediaSyncStore(
+    byRequirement: {
+      for (final requirement in requirements)
+        requirement.key: <String>[
+          '/tmp/${requirement.key.replaceAll(':', '_')}.jpg',
+        ],
+    },
+  );
+}
+
+Future<SignatureRepository> _seededSignatureRepository() async {
+  final gateway = InMemorySignatureGateway();
+  final repository = SignatureRepository(storage: gateway, metadata: gateway);
+  await repository.saveSignature(
+    organizationId: 'org-1',
+    userId: 'user-1',
+    bytes: Uint8List.fromList(<int>[1, 2, 3]),
+  );
+  return repository;
+}
+
+class _StaticCloudPdfRuntimeGateway implements CloudPdfRuntimeGateway {
+  _StaticCloudPdfRuntimeGateway(this.outcome);
+
+  final CloudPdfGenerationOutcome outcome;
+
+  @override
+  Future<CloudPdfGenerationOutcome> generate(PdfGenerationInput input) async {
+    return outcome;
+  }
+}
+
+class _FixedOutcomeCloudPdfService extends CloudPdfService {
+  _FixedOutcomeCloudPdfService(this.outcome);
+
+  final CloudPdfGenerationOutcome outcome;
+  int callCount = 0;
+
+  @override
+  Future<CloudPdfGenerationOutcome> generate(PdfGenerationInput input) async {
+    callCount += 1;
+    return outcome;
+  }
 }
 
 class _ChecklistStore implements InspectionStore {

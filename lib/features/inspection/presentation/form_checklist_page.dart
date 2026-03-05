@@ -15,6 +15,7 @@ import '../../pdf/data/pdf_media_resolver.dart';
 import '../../pdf/on_device_pdf_service.dart';
 import '../../pdf/pdf_generation_input.dart';
 import '../../pdf/pdf_orchestrator.dart';
+import '../../pdf/pdf_strategy.dart';
 import '../../signing/data/report_signature_evidence_repository.dart';
 import '../../signing/domain/report_signature_evidence.dart';
 import '../../identity/data/signature_repository.dart';
@@ -37,6 +38,7 @@ class FormChecklistPage extends StatefulWidget {
     MediaSyncRemoteStore? mediaSyncRemoteStore,
     PendingMediaSyncStore? pendingMediaSyncStore,
     PdfOrchestrator? pdfOrchestrator,
+    CloudPdfService? cloudPdfService,
     AuditEventRepository? auditRepository,
   }) : repository = repository ?? InspectionRepository.live(),
         signatureRepository = signatureRepository ?? SignatureRepository.live(),
@@ -47,7 +49,8 @@ class FormChecklistPage extends StatefulWidget {
         auditRepository = auditRepository ?? AuditEventRepository.live(),
         mediaSyncRemoteStore = mediaSyncRemoteStore,
         pendingMediaSyncStore = pendingMediaSyncStore ?? PendingMediaSyncStore(),
-        pdfOrchestrator = pdfOrchestrator;
+        pdfOrchestrator = pdfOrchestrator,
+        cloudPdfService = cloudPdfService;
 
   final InspectionDraft draft;
   final InspectionRepository repository;
@@ -57,6 +60,7 @@ class FormChecklistPage extends StatefulWidget {
   final MediaSyncRemoteStore? mediaSyncRemoteStore;
   final PendingMediaSyncStore pendingMediaSyncStore;
   final PdfOrchestrator? pdfOrchestrator;
+  final CloudPdfService? cloudPdfService;
   final AuditEventRepository auditRepository;
 
   @override
@@ -107,10 +111,11 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
                   : (storagePath) =>
                         remoteStore.readBytesByStoragePath(
                           storagePath: storagePath,
-                        ),
+              ),
             ),
           ),
-          cloud: const CloudPdfService(),
+          cloud: widget.cloudPdfService ?? const CloudPdfService(),
+          primaryStrategy: PdfStrategy.cloudFallback,
           readinessLookup: (input) => _repository.fetchReportReadiness(
             inspectionId: input.inspectionId,
             organizationId: input.organizationId,
@@ -404,6 +409,17 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('PDF generated (${sizeKb}KB) and delivery saved.'),
+        ),
+      );
+    } on PdfCloudGenerationTerminalFailure {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Cloud PDF generation failed and on-device fallback was not attempted.',
+          ),
         ),
       );
     } catch (error) {
