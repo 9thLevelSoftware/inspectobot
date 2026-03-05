@@ -39,7 +39,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     try {
       await _repository.resetPasswordForEmail(
         email: _emailController.text,
-        redirectTo: 'inspectobot://auth/reset',
+        redirectTo: AppRoutes.recoveryCallbackUri,
       );
       if (!mounted) {
         return;
@@ -98,7 +98,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           TextButton(
             onPressed: _submitting
                 ? null
-                : () => Navigator.of(context).pushNamed(AppRoutes.resetPassword),
+                : () =>
+                      Navigator.of(context).pushNamed(AppRoutes.resetPassword),
             child: const Text('Already have a recovery link? Reset password'),
           ),
         ],

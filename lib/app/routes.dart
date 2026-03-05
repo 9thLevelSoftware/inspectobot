@@ -5,6 +5,11 @@ class AppRoutes {
   static const signUp = '/auth/sign-up';
   static const forgotPassword = '/auth/forgot-password';
   static const resetPassword = '/auth/reset-password';
+  static const recoveryScheme = 'inspectobot';
+  static const recoveryHost = 'auth';
+  static const recoveryPath = '/reset-password';
+  static const recoveryCallbackUri =
+      '$recoveryScheme://$recoveryHost$recoveryPath';
   static const inspectorIdentity = '/inspector-identity';
 
   static const authStack = <String>{
@@ -16,4 +21,3 @@ class AppRoutes {
 
   const AppRoutes._();
 }
-
