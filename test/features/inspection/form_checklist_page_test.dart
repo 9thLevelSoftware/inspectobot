@@ -257,6 +257,71 @@ void main() {
     expect(find.text('Guided Inspection Wizard'), findsOneWidget);
   });
 
+  testWidgets(
+    'checklist renders inspection-scoped audit timeline in deterministic order',
+    (tester) async {
+      final gateway = _RecordingAuditEventGateway(
+        events: <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'evt-1',
+            'inspection_id': 'insp-audit-1',
+            'organization_id': 'org-1',
+            'user_id': 'user-1',
+            'event_type': 'inspection_progress_updated',
+            'occurred_at': '2026-03-05T09:00:00.000Z',
+            'created_at': '2026-03-05T09:00:01.000Z',
+            'payload': <String, dynamic>{},
+          },
+          <String, dynamic>{
+            'id': 'evt-2',
+            'inspection_id': 'insp-audit-1',
+            'organization_id': 'org-1',
+            'user_id': 'user-1',
+            'event_type': 'delivery_artifact_saved',
+            'occurred_at': '2026-03-05T11:00:00.000Z',
+            'created_at': '2026-03-05T11:00:02.000Z',
+            'payload': <String, dynamic>{},
+          },
+        ],
+      );
+
+      final draft = InspectionDraft(
+        inspectionId: 'insp-audit-1',
+        organizationId: 'org-1',
+        userId: 'user-1',
+        clientName: 'Audit User',
+        clientEmail: 'audit@example.com',
+        clientPhone: '555-0100',
+        propertyAddress: '303 Audit Way',
+        inspectionDate: DateTime.utc(2026, 3, 4),
+        yearBuilt: 2007,
+        enabledForms: {FormType.fourPoint},
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FormChecklistPage(
+            draft: draft,
+            auditRepository: AuditEventRepository(gateway),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(gateway.lastInspectionId, 'insp-audit-1');
+      expect(gateway.lastOrganizationId, 'org-1');
+      expect(gateway.lastUserId, 'user-1');
+      expect(find.text('Audit Timeline'), findsOneWidget);
+
+      final savedFinder = find.text('Report artifact saved');
+      final progressFinder = find.text('Inspection progress updated');
+      expect(savedFinder, findsOneWidget);
+      expect(progressFinder, findsOneWidget);
+      expect(tester.getTopLeft(savedFinder).dy, lessThan(tester.getTopLeft(progressFinder).dy));
+    },
+  );
+
+
   testWidgets('checklist accepts injected signature evidence dependencies', (
     tester,
   ) async {
@@ -517,14 +582,13 @@ void main() {
           ),
         ),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       await tester.scrollUntilVisible(
         find.byKey(const ValueKey('generate-pdf-button')),
-        250,
+        400,
         scrollable: find.byType(Scrollable).first,
       );
-
       await tester.tap(find.byKey(const ValueKey('generate-pdf-button')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
@@ -734,4 +798,46 @@ class _TestSignedUrlGateway implements SignedUrlGateway {
 class _TestShareGateway implements ShareGateway {
   @override
   Future<void> shareUri(String uri) async {}
+}
+
+class _RecordingAuditEventGateway implements AuditEventGateway {
+  _RecordingAuditEventGateway({required this.events});
+
+  final List<Map<String, dynamic>> events;
+  String? lastInspectionId;
+  String? lastOrganizationId;
+  String? lastUserId;
+
+  @override
+  Future<Map<String, dynamic>> append(Map<String, dynamic> payload) async {
+    return payload;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> listByInspection({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    lastInspectionId = inspectionId;
+    lastOrganizationId = organizationId;
+    lastUserId = userId;
+    return events;
+  }
+}
+
+class _FailingAuditEventGateway implements AuditEventGateway {
+  @override
+  Future<Map<String, dynamic>> append(Map<String, dynamic> payload) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> listByInspection({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) {
+    throw StateError('audit load failed');
+  }
 }

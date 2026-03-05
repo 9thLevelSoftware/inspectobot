@@ -8,6 +8,8 @@ import '../../media/media_sync_remote_store.dart';
 import '../../media/media_sync_task.dart';
 import '../../delivery/domain/report_artifact.dart';
 import '../../delivery/services/delivery_service.dart';
+import '../../audit/data/audit_event_repository.dart';
+import '../../audit/domain/audit_event.dart';
 import '../../pdf/cloud_pdf_service.dart';
 import '../../pdf/data/pdf_media_resolver.dart';
 import '../../pdf/on_device_pdf_service.dart';
@@ -35,12 +37,14 @@ class FormChecklistPage extends StatefulWidget {
     MediaSyncRemoteStore? mediaSyncRemoteStore,
     PendingMediaSyncStore? pendingMediaSyncStore,
     PdfOrchestrator? pdfOrchestrator,
+    AuditEventRepository? auditRepository,
   }) : repository = repository ?? InspectionRepository.live(),
         signatureRepository = signatureRepository ?? SignatureRepository.live(),
         signatureEvidenceRepository =
             signatureEvidenceRepository ??
              ReportSignatureEvidenceRepository.live(),
-        deliveryService = deliveryService ?? DeliveryService.live(),
+         deliveryService = deliveryService ?? DeliveryService.live(),
+        auditRepository = auditRepository ?? AuditEventRepository.live(),
         mediaSyncRemoteStore = mediaSyncRemoteStore,
         pendingMediaSyncStore = pendingMediaSyncStore ?? PendingMediaSyncStore(),
         pdfOrchestrator = pdfOrchestrator;
@@ -53,6 +57,7 @@ class FormChecklistPage extends StatefulWidget {
   final MediaSyncRemoteStore? mediaSyncRemoteStore;
   final PendingMediaSyncStore pendingMediaSyncStore;
   final PdfOrchestrator? pdfOrchestrator;
+  final AuditEventRepository auditRepository;
 
   @override
   State<FormChecklistPage> createState() => _FormChecklistPageState();
@@ -69,12 +74,16 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   String? _lastPdfPath;
   ReportReadiness? _persistedReadiness;
   ReportArtifact? _lastArtifact;
+  List<AuditEvent> _auditEvents = const <AuditEvent>[];
+  bool _isLoadingAuditEvents = false;
+  String? _auditTimelineError;
 
   InspectionRepository get _repository => widget.repository;
   SignatureRepository get _signatureRepository => widget.signatureRepository;
   ReportSignatureEvidenceRepository get _signatureEvidenceRepository =>
       widget.signatureEvidenceRepository;
   DeliveryService get _deliveryService => widget.deliveryService;
+  AuditEventRepository get _auditRepository => widget.auditRepository;
 
   MediaSyncRemoteStore? get _mediaSyncRemoteStore => widget.mediaSyncRemoteStore;
   PendingMediaSyncStore get _pendingMediaSyncStore => widget.pendingMediaSyncStore;
@@ -114,6 +123,52 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
     final maxStep = _wizardState.steps.length - 1;
     _currentStepIndex = requestedStep.clamp(0, maxStep < 0 ? 0 : maxStep);
     _loadReadiness();
+    _loadAuditEvents();
+  }
+
+  Future<void> _loadAuditEvents() async {
+    setState(() {
+      _isLoadingAuditEvents = true;
+      _auditTimelineError = null;
+    });
+    try {
+      final events = await _auditRepository.listByInspection(
+        inspectionId: widget.draft.inspectionId,
+        organizationId: widget.draft.organizationId,
+        userId: widget.draft.userId,
+      );
+      events.sort((a, b) {
+        final occurredComparison = b.occurredAt.compareTo(a.occurredAt);
+        if (occurredComparison != 0) {
+          return occurredComparison;
+        }
+        final createdComparison = b.createdAt.compareTo(a.createdAt);
+        if (createdComparison != 0) {
+          return createdComparison;
+        }
+        return b.id.compareTo(a.id);
+      });
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _auditEvents = events;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _auditTimelineError =
+            'Unable to load audit timeline right now. Please retry shortly.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingAuditEvents = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadReadiness() async {
@@ -520,6 +575,70 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
     );
   }
 
+  String _formatAuditTimestamp(DateTime value) {
+    final local = value.toLocal();
+    String twoDigits(int number) => number.toString().padLeft(2, '0');
+    return '${local.year}-${twoDigits(local.month)}-${twoDigits(local.day)} '
+        '${twoDigits(local.hour)}:${twoDigits(local.minute)}';
+  }
+
+  Widget _buildAuditTimelineSection() {
+    const sectionTitle = Text(
+      'Audit Timeline',
+      style: TextStyle(fontWeight: FontWeight.w600),
+    );
+
+    if (_isLoadingAuditEvents) {
+      return const Card(
+        child: ListTile(
+          title: Text('Loading audit timeline...'),
+          subtitle: Text('Fetching immutable inspection events.'),
+        ),
+      );
+    }
+
+    if (_auditTimelineError != null) {
+      return Card(
+        child: ListTile(
+          leading: const Icon(Icons.error_outline, color: Colors.redAccent),
+          title: const Text('Audit timeline unavailable'),
+          subtitle: Text(_auditTimelineError!),
+        ),
+      );
+    }
+
+    if (_auditEvents.isEmpty) {
+      return const Card(
+        child: ListTile(
+          leading: Icon(Icons.timeline_outlined),
+          title: Text('No audit events recorded yet'),
+          subtitle: Text(
+            'Timeline entries appear after progress, signing, or delivery actions.',
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        sectionTitle,
+        const SizedBox(height: 8),
+        ..._auditEvents
+            .take(12)
+            .map(
+              (event) => Card(
+                child: ListTile(
+                  leading: const Icon(Icons.history),
+                  title: Text(event.timelineLabel),
+                  subtitle: Text(_formatAuditTimestamp(event.occurredAt)),
+                ),
+              ),
+            ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final wizardState = _wizardState;
@@ -577,6 +696,8 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
               ),
             );
           }),
+          const SizedBox(height: 16),
+          _buildAuditTimelineSection(),
           const SizedBox(height: 16),
           FilledButton.icon(
             key: const ValueKey('generate-pdf-button'),

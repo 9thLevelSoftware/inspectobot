@@ -45,3 +45,22 @@ class AuditEvent {
     );
   }
 }
+
+extension AuditEventPresentation on AuditEvent {
+  String get timelineLabel {
+    switch (eventType) {
+      case 'inspection_progress_updated':
+        return 'Inspection progress updated';
+      case 'signature_persisted':
+        return 'Inspector signature captured';
+      case 'delivery_artifact_saved':
+        return 'Report artifact saved';
+      case 'delivery_download_started':
+        return 'Download link generated';
+      case 'delivery_share_started':
+        return 'Secure share link generated';
+      default:
+        return 'Audit event: ${eventType.replaceAll('_', ' ')}';
+    }
+  }
+}
