@@ -43,7 +43,7 @@ class PdfOrchestrator {
     } catch (error) {
       final cloudOutcome = await _cloud.generate(input);
       if (cloudOutcome.type == CloudPdfGenerationOutcomeType.generated) {
-        return cloudOutcome.file!;
+        return _requireGeneratedFile(cloudOutcome);
       }
       if (cloudOutcome.type == CloudPdfGenerationOutcomeType.terminalFailure) {
         throw PdfCloudGenerationTerminalFailure(
@@ -60,7 +60,7 @@ class PdfOrchestrator {
   Future<File> _generateUsingCloudFallbackStrategy(PdfGenerationInput input) async {
     final cloudOutcome = await _cloud.generate(input);
     if (cloudOutcome.type == CloudPdfGenerationOutcomeType.generated) {
-      return cloudOutcome.file!;
+      return _requireGeneratedFile(cloudOutcome);
     }
     if (cloudOutcome.type == CloudPdfGenerationOutcomeType.unavailable) {
       return _onDevice.generate(input);
@@ -70,6 +70,16 @@ class PdfOrchestrator {
           cloudOutcome.reason ?? 'Cloud PDF generation failed with terminal outcome.',
       cause: cloudOutcome.error,
     );
+  }
+
+  File _requireGeneratedFile(CloudPdfGenerationOutcome outcome) {
+    final file = outcome.file;
+    if (file == null) {
+      throw const PdfCloudGenerationTerminalFailure(
+        message: 'Cloud PDF generation produced no artifact file.',
+      );
+    }
+    return file;
   }
 
   String _buildReadinessMessage(ReportReadiness? readiness) {
