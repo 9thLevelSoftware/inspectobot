@@ -5,20 +5,20 @@
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** An inspector can complete a Florida insurance inspection workflow quickly and generate compliant, underwriter-ready PDFs with all required data and photos enforced.
-**Current focus:** Phase 17 tenant auth/isolation closure is complete; next focus is Phase 18 PDF/delivery resilience and identity contract closure planning/execution.
+**Current focus:** Phase 18 PDF/delivery resilience and identity contract closure planning/execution.
 
 ## Current Position
 
-**Current Phase:** 17
+**Current Phase:** 18
 **Total Phases:** 18
-**Current Phase Name:** Tenant Auth and Isolation Validation Closure
-**Current Plan:** 3
-**Total Plans in Phase:** 3
-**Status:** Phase complete — ready for verification
+**Current Phase Name:** PDF/Delivery Resilience and Identity Contract Closure
+**Current Plan:** 1
+**Total Plans in Phase:** 0
+**Status:** Ready to plan phase 18
 **Last Activity:** 2026-03-05
-**Last Activity Description:** Completed 17-03 milestone/requirements/state reconciliation, closing tenant auth/isolation validation debt across planning ledgers.
+**Last Activity Description:** Completed 17-04 replay harness + sanitized live evidence closure; phase 17 verification now passed for AUTH-01/AUTH-02/FLOW-01/SEC-01.
 
-**Progress:** [██████████] 100%
+**Progress:** [██████████] 100% (phase 17 complete)
 
 ## Performance Metrics
 
@@ -118,6 +118,8 @@ Recent decisions affecting current work:
 - [Phase 17]: Closed phase-9 human_needed debt by linking to phase-17 live evidence instead of duplicating scenario execution.
 - [Phase 17]: Used phase-17 verification evidence as canonical source for AUTH-01/AUTH-02/FLOW-01/SEC-01 final status.
 - [Phase 17]: Kept unresolved FLOW-03 and EVID-02 findings explicitly out-of-scope during phase-17 closure reconciliation.
+- [Phase 17]: Added a committed `live_validation_runner.mjs` harness so live tenant-auth evidence is replayable from source-controlled artifacts.
+- [Phase 17]: Replayed live Supabase validation after credential rotation checkpoint and closed AUTH-01/AUTH-02/FLOW-01/SEC-01 rows to passed using sanitized output.
 
 ### Pending Todos
 
@@ -134,5 +136,5 @@ None yet.
 ## Session Continuity
 
 **Last session:** 2026-03-05T22:10:01.517Z
-**Stopped At:** Completed 17-03-PLAN.md
+**Stopped At:** Completed 17-04-PLAN.md
 **Resume File:** None
