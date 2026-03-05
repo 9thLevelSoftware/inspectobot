@@ -62,7 +62,7 @@ Each task was committed atomically:
 
 1. **task 1: add the missing phase-17 live validation runner and wire reproducible replay instructions** - `6a8b064` (docs)
 2. **task 2: rotate exposed Supabase credential and provide non-secret rotation confirmation** - checkpoint completed via user confirmation (no code diff)
-3. **task 3: regenerate sanitized live evidence and close requirement rows with reproducible outputs** - `c51473d` (docs)
+3. **task 3: regenerate sanitized live evidence and close requirement rows with reproducible outputs** - `c51473d`, `9001d97` (docs)
 
 ## Files Created/Modified
 - `.planning/phases/17-tenant-auth-and-isolation-validation-closure/live_validation_runner.mjs` - Committed executable harness for live requirement replay.
@@ -80,6 +80,7 @@ None - plan executed exactly as written.
 
 ## Issues Encountered
 - Initial commit attempt for `.planning/**` files was blocked by `.gitignore`; resolved by force-adding only the intended phase artifacts.
+- Post-replay sanitization removed credential-style assignment literals from verification markdown while keeping rerun instructions intact.
 
 ## User Setup Required
 
