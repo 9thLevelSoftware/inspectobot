@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inspectobot/features/audit/data/audit_event_repository.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
@@ -303,6 +304,59 @@ void main() {
     );
   });
 
+  test('wizard progress update appends scoped immutable audit event', () async {
+    final auditGateway = InMemoryAuditEventGateway();
+    final repository = InspectionRepository(
+      InMemoryInspectionStore(),
+      auditRepository: AuditEventRepository(auditGateway),
+    );
+    final created = await repository.createInspection(buildSetup(id: 'insp-audit'));
+
+    await repository.updateWizardProgress(
+      inspectionId: created.id,
+      organizationId: created.organizationId,
+      userId: created.userId,
+      snapshot: const WizardProgressSnapshot(
+        lastStepIndex: 2,
+        completion: <String, bool>{'photo:exteriorFront': true},
+        branchContext: <String, dynamic>{},
+        status: WizardProgressStatus.inProgress,
+      ),
+    );
+
+    final events = await AuditEventRepository(auditGateway).listByInspection(
+      inspectionId: created.id,
+      organizationId: created.organizationId,
+      userId: created.userId,
+    );
+    expect(events, hasLength(1));
+    expect(events.single.eventType, 'inspection_progress_updated');
+    expect(events.single.payload['step_index'], 2);
+  });
+
+  test('wizard progress update fails closed when audit append fails', () async {
+    final repository = InspectionRepository(
+      InMemoryInspectionStore(),
+      auditRepository: AuditEventRepository(_AlwaysFailAuditGateway()),
+    );
+    final created = await repository.createInspection(buildSetup(id: 'insp-audit-fail'));
+
+    await expectLater(
+      () => repository.updateWizardProgress(
+        inspectionId: created.id,
+        organizationId: created.organizationId,
+        userId: created.userId,
+        snapshot: const WizardProgressSnapshot(
+          lastStepIndex: 2,
+          completion: <String, bool>{'photo:exteriorFront': true},
+          branchContext: <String, dynamic>{},
+          status: WizardProgressStatus.inProgress,
+        ),
+      ),
+      throwsA(isA<StateError>()),
+    );
+  });
+
   test('report readiness can be upserted and fetched by scope', () async {
     final repository = InspectionRepository(InMemoryInspectionStore());
     final created = await repository.createInspection(buildSetup(id: 'insp-ready'));
@@ -481,5 +535,21 @@ class _MalformedWizardPayloadStore implements InspectionStore {
     required DateTime computedAt,
   }) {
     throw UnimplementedError();
+  }
+}
+
+class _AlwaysFailAuditGateway implements AuditEventGateway {
+  @override
+  Future<Map<String, dynamic>> append(Map<String, dynamic> payload) async {
+    throw StateError('audit write failed');
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> listByInspection({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return const <Map<String, dynamic>>[];
   }
 }

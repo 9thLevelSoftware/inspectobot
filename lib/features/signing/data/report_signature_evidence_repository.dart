@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:inspectobot/data/supabase/supabase_client_provider.dart';
+import 'package:inspectobot/features/audit/data/audit_event_repository.dart';
 import 'package:inspectobot/features/pdf/pdf_generation_input.dart';
 import 'package:inspectobot/features/sync/sync_operation.dart';
 import 'package:inspectobot/features/signing/domain/report_signature_evidence.dart';
@@ -18,18 +19,24 @@ abstract class ReportSignatureEvidenceGateway {
 }
 
 class ReportSignatureEvidenceRepository {
-  ReportSignatureEvidenceRepository(this._gateway);
+  ReportSignatureEvidenceRepository(this._gateway, {AuditEventRepository? auditRepository})
+      : _auditRepository = auditRepository;
 
   factory ReportSignatureEvidenceRepository.live() {
     if (SupabaseClientProvider.isConfigured) {
       return ReportSignatureEvidenceRepository(
         SupabaseReportSignatureEvidenceGateway(SupabaseClientProvider.client),
+        auditRepository: AuditEventRepository.live(),
       );
     }
-    return ReportSignatureEvidenceRepository(InMemoryReportSignatureEvidenceGateway());
+    return ReportSignatureEvidenceRepository(
+      InMemoryReportSignatureEvidenceGateway(),
+      auditRepository: AuditEventRepository.live(),
+    );
   }
 
   final ReportSignatureEvidenceGateway _gateway;
+  final AuditEventRepository? _auditRepository;
 
   Future<ReportSignatureEvidence> persist({
     required PdfGenerationInput input,
@@ -52,7 +59,23 @@ class ReportSignatureEvidenceRepository {
       createdAt: now,
     );
     final stored = await _gateway.upsert(evidence.toJson());
-    return ReportSignatureEvidence.fromJson(stored);
+    final saved = ReportSignatureEvidence.fromJson(stored);
+    if (_auditRepository != null) {
+      await _auditRepository.append(
+        inspectionId: saved.inspectionId,
+        organizationId: saved.organizationId,
+        userId: saved.userId,
+        eventType: 'signature_persisted',
+        payload: <String, dynamic>{
+          'signature_evidence_id': saved.id,
+          'payload_hash': saved.payloadHash,
+          'signature_hash': saved.signatureHash,
+          'signer_role': saved.signerRole,
+        },
+        occurredAt: saved.signedAt,
+      );
+    }
+    return saved;
   }
 
   Future<List<ReportSignatureEvidence>> listByInspection({

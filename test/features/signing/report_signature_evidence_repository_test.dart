@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inspectobot/features/audit/data/audit_event_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
 import 'package:inspectobot/features/pdf/pdf_generation_input.dart';
@@ -143,4 +144,61 @@ void main() {
     expect(records, hasLength(2));
     expect(records.map((row) => row.payloadHash).toSet(), hasLength(2));
   });
+
+  test('persist appends immutable audit event with hash linkage', () async {
+    final auditGateway = InMemoryAuditEventGateway();
+    final repository = ReportSignatureEvidenceRepository(
+      InMemoryReportSignatureEvidenceGateway(),
+      auditRepository: AuditEventRepository(auditGateway),
+    );
+
+    final persisted = await repository.persist(
+      input: buildInput(inspectionId: 'insp-5'),
+      signerRole: 'inspector',
+      signatureHash: 'sig-hash-audit',
+      attribution: const ReportSignatureAttribution(),
+    );
+
+    final events = await AuditEventRepository(auditGateway).listByInspection(
+      inspectionId: 'insp-5',
+      organizationId: 'org-1',
+      userId: 'user-1',
+    );
+    expect(events, hasLength(1));
+    expect(events.single.eventType, 'signature_persisted');
+    expect(events.single.payload['payload_hash'], persisted.payloadHash);
+  });
+
+  test('persist fails closed when audit write fails', () async {
+    final repository = ReportSignatureEvidenceRepository(
+      InMemoryReportSignatureEvidenceGateway(),
+      auditRepository: AuditEventRepository(_AlwaysFailAuditGateway()),
+    );
+
+    await expectLater(
+      () => repository.persist(
+        input: buildInput(inspectionId: 'insp-6'),
+        signerRole: 'inspector',
+        signatureHash: 'sig-hash-fail',
+        attribution: const ReportSignatureAttribution(),
+      ),
+      throwsA(isA<StateError>()),
+    );
+  });
+}
+
+class _AlwaysFailAuditGateway implements AuditEventGateway {
+  @override
+  Future<Map<String, dynamic>> append(Map<String, dynamic> payload) async {
+    throw StateError('audit write failed');
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> listByInspection({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return const <Map<String, dynamic>>[];
+  }
 }

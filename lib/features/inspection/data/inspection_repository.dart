@@ -1,4 +1,5 @@
 import 'package:inspectobot/data/supabase/supabase_client_provider.dart';
+import 'package:inspectobot/features/audit/data/audit_event_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
@@ -92,8 +93,10 @@ class InspectionRepository {
     this._store, {
     SyncOutboxStore? outboxStore,
     bool enqueueSyncOperations = false,
+    AuditEventRepository? auditRepository,
   })  : _outboxStore = outboxStore,
-        _enqueueSyncOperations = enqueueSyncOperations;
+        _enqueueSyncOperations = enqueueSyncOperations,
+        _auditRepository = auditRepository;
 
   factory InspectionRepository.live() {
     final localStore = InMemoryInspectionStore();
@@ -107,12 +110,14 @@ class InspectionRepository {
       ),
       outboxStore: SyncOutboxStore(),
       enqueueSyncOperations: true,
+      auditRepository: AuditEventRepository.live(),
     );
   }
 
   final InspectionStore _store;
   final SyncOutboxStore? _outboxStore;
   final bool _enqueueSyncOperations;
+  final AuditEventRepository? _auditRepository;
 
   Future<InspectionSetup> createInspection(InspectionSetup setup) async {
     _validate(setup);
@@ -157,6 +162,21 @@ class InspectionRepository {
       wizardBranchContext: snapshot.branchContext,
       wizardStatus: _encodeStatus(snapshot.status),
     );
+    if (_auditRepository != null) {
+      await _auditRepository.append(
+        inspectionId: inspectionId,
+        organizationId: organizationId,
+        userId: userId,
+        eventType: 'inspection_progress_updated',
+        payload: <String, dynamic>{
+          'step_index': snapshot.lastStepIndex,
+          'status': _encodeStatus(snapshot.status),
+          'completion_count':
+              snapshot.completion.values.where((value) => value).length,
+          'correlation_id': 'wizard_progress::$inspectionId::${DateTime.now().toUtc().millisecondsSinceEpoch}',
+        },
+      );
+    }
     if (setup != null) {
       await _enqueueWizardProgressUpsert(
         setup: setup,
