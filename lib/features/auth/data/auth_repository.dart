@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:inspectobot/data/supabase/supabase_client_provider.dart';
+import 'package:inspectobot/features/auth/data/tenant_context_resolver.dart';
+import 'package:inspectobot/features/auth/domain/tenant_context.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum AuthFailureCode {
@@ -23,9 +25,18 @@ class AuthFailure implements Exception {
 }
 
 class AuthSession {
-  const AuthSession({required this.userId});
+  const AuthSession({required this.userId, this.organizationId});
 
   final String userId;
+  final String? organizationId;
+
+  TenantContext? get tenantContext {
+    final orgId = organizationId;
+    if (orgId == null || orgId.isEmpty) {
+      return null;
+    }
+    return TenantContext(userId: userId, organizationId: orgId);
+  }
 }
 
 abstract class AuthGateway {
@@ -33,9 +44,14 @@ abstract class AuthGateway {
 
   Stream<AuthSession?> get onAuthStateChange;
 
+  Future<AuthSession?> resolveCurrentSession();
+
   Future<void> signUp({required String email, required String password});
 
-  Future<void> signInWithPassword({required String email, required String password});
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  });
 
   Future<void> signOut();
 
@@ -63,6 +79,9 @@ class AuthRepository {
 
   Stream<AuthSession?> get authStateChanges => _gateway.onAuthStateChange;
 
+  Future<AuthSession?> resolveCurrentSession() =>
+      _gateway.resolveCurrentSession();
+
   Future<void> signUp({required String email, required String password}) async {
     await _runMapped(
       () => _gateway.signUp(email: email.trim(), password: password),
@@ -74,7 +93,8 @@ class AuthRepository {
     required String password,
   }) async {
     await _runMapped(
-      () => _gateway.signInWithPassword(email: email.trim(), password: password),
+      () =>
+          _gateway.signInWithPassword(email: email.trim(), password: password),
     );
   }
 
@@ -102,9 +122,7 @@ class AuthRepository {
   }
 
   Future<void> updatePassword({required String newPassword}) async {
-    await _runMapped(
-      () => _gateway.updatePassword(newPassword: newPassword),
-    );
+    await _runMapped(() => _gateway.updatePassword(newPassword: newPassword));
   }
 
   Future<void> _runMapped(Future<void> Function() operation) async {
@@ -124,13 +142,15 @@ class AuthRepository {
 
   AuthFailure _mapAuthException(AuthException exception) {
     final message = exception.message.toLowerCase();
-    if (message.contains('invalid login') || message.contains('invalid credentials')) {
+    if (message.contains('invalid login') ||
+        message.contains('invalid credentials')) {
       return AuthFailure(
         AuthFailureCode.invalidCredentials,
         'Email or password is incorrect.',
       );
     }
-    if (message.contains('already registered') || message.contains('already exists')) {
+    if (message.contains('already registered') ||
+        message.contains('already exists')) {
       return AuthFailure(
         AuthFailureCode.emailInUse,
         'An account already exists for this email.',
@@ -156,9 +176,14 @@ class AuthRepository {
 }
 
 class SupabaseAuthGateway implements AuthGateway {
-  SupabaseAuthGateway(this._client);
+  SupabaseAuthGateway(
+    this._client, {
+    TenantContextResolver? tenantContextResolver,
+  }) : _tenantContextResolver =
+           tenantContextResolver ?? TenantContextResolver.live();
 
   final SupabaseClient _client;
+  final TenantContextResolver _tenantContextResolver;
 
   @override
   AuthSession? get currentSession {
@@ -166,18 +191,33 @@ class SupabaseAuthGateway implements AuthGateway {
     if (session == null) {
       return null;
     }
-    return AuthSession(userId: session.user.id);
+    final cachedTenantContext = _tenantContextResolver.getCachedForUser(
+      session.user.id,
+    );
+    return AuthSession(
+      userId: session.user.id,
+      organizationId: cachedTenantContext?.organizationId,
+    );
   }
 
   @override
   Stream<AuthSession?> get onAuthStateChange {
-    return _client.auth.onAuthStateChange.map((event) {
+    return _client.auth.onAuthStateChange.asyncMap((event) async {
       final session = event.session;
       if (session == null) {
         return null;
       }
-      return AuthSession(userId: session.user.id);
+      return _resolveSession(session.user.id);
     });
+  }
+
+  @override
+  Future<AuthSession?> resolveCurrentSession() async {
+    final session = _client.auth.currentSession;
+    if (session == null) {
+      return null;
+    }
+    return _resolveSession(session.user.id);
   }
 
   @override
@@ -210,6 +250,14 @@ class SupabaseAuthGateway implements AuthGateway {
   Future<void> updatePassword({required String newPassword}) {
     return _client.auth.updateUser(UserAttributes(password: newPassword));
   }
+
+  Future<AuthSession> _resolveSession(String userId) async {
+    final context = await _tenantContextResolver.resolveForUser(userId);
+    return AuthSession(
+      userId: context.userId,
+      organizationId: context.organizationId,
+    );
+  }
 }
 
 class InMemoryAuthGateway implements AuthGateway {
@@ -224,6 +272,9 @@ class InMemoryAuthGateway implements AuthGateway {
   Stream<AuthSession?> get onAuthStateChange => _controller.stream;
 
   @override
+  Future<AuthSession?> resolveCurrentSession() async => _session;
+
+  @override
   Future<void> resetPasswordForEmail({
     required String email,
     required String redirectTo,
@@ -234,7 +285,10 @@ class InMemoryAuthGateway implements AuthGateway {
     required String email,
     required String password,
   }) async {
-    _session = const AuthSession(userId: 'local-user');
+    _session = const AuthSession(
+      userId: 'local-user',
+      organizationId: 'org-local-local-user',
+    );
     _controller.add(_session);
   }
 
@@ -246,7 +300,10 @@ class InMemoryAuthGateway implements AuthGateway {
 
   @override
   Future<void> signUp({required String email, required String password}) async {
-    _session = const AuthSession(userId: 'local-user');
+    _session = const AuthSession(
+      userId: 'local-user',
+      organizationId: 'org-local-local-user',
+    );
     _controller.add(_session);
   }
 

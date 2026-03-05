@@ -7,7 +7,9 @@ import 'package:inspectobot/features/auth/presentation/auth_gate.dart';
 
 void main() {
   testWidgets('shows signed-out shell when no active session', (tester) async {
-    final repository = AuthRepository(_GateFakeAuthGateway(initialSession: null));
+    final repository = AuthRepository(
+      _GateFakeAuthGateway(initialSession: null),
+    );
 
     await tester.pumpWidget(
       MaterialApp(home: AuthGate(repository: repository)),
@@ -35,7 +37,8 @@ void main() {
 }
 
 class _GateFakeAuthGateway implements AuthGateway {
-  _GateFakeAuthGateway({AuthSession? initialSession}) : _session = initialSession;
+  _GateFakeAuthGateway({AuthSession? initialSession})
+    : _session = initialSession;
 
   final _controller = StreamController<AuthSession?>.broadcast();
   AuthSession? _session;
@@ -50,6 +53,9 @@ class _GateFakeAuthGateway implements AuthGateway {
 
   @override
   Stream<AuthSession?> get onAuthStateChange => _controller.stream;
+
+  @override
+  Future<AuthSession?> resolveCurrentSession() async => _session;
 
   @override
   Future<void> resetPasswordForEmail({
@@ -67,7 +73,10 @@ class _GateFakeAuthGateway implements AuthGateway {
   Future<void> signOut() async {}
 
   @override
-  Future<void> signUp({required String email, required String password}) async {}
+  Future<void> signUp({
+    required String email,
+    required String password,
+  }) async {}
 
   @override
   Future<void> updatePassword({required String newPassword}) async {}

@@ -53,9 +53,25 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     expect(events.first?.userId, 'fake-user');
+    expect(events.first?.organizationId, 'fake-org');
     expect(events.last, isNull);
 
     await subscription.cancel();
+  });
+
+  test('resolveCurrentSession returns tenant-aware session context', () async {
+    final gateway = _FakeAuthGateway();
+    final repository = AuthRepository(gateway);
+
+    await repository.signInWithPassword(
+      email: 'inspector@example.com',
+      password: 'Password123!',
+    );
+    final session = await repository.resolveCurrentSession();
+
+    expect(session?.userId, 'fake-user');
+    expect(session?.organizationId, 'fake-org');
+    expect(session?.tenantContext?.organizationId, 'fake-org');
   });
 }
 
@@ -74,6 +90,9 @@ class _FakeAuthGateway implements AuthGateway {
   Stream<AuthSession?> get onAuthStateChange => _controller.stream;
 
   @override
+  Future<AuthSession?> resolveCurrentSession() async => _session;
+
+  @override
   Future<void> resetPasswordForEmail({
     required String email,
     required String redirectTo,
@@ -87,7 +106,10 @@ class _FakeAuthGateway implements AuthGateway {
     if (signInError != null) {
       throw signInError!;
     }
-    _session = const AuthSession(userId: 'fake-user');
+    _session = const AuthSession(
+      userId: 'fake-user',
+      organizationId: 'fake-org',
+    );
     _controller.add(_session);
   }
 
@@ -98,7 +120,10 @@ class _FakeAuthGateway implements AuthGateway {
   }
 
   @override
-  Future<void> signUp({required String email, required String password}) async {}
+  Future<void> signUp({
+    required String email,
+    required String password,
+  }) async {}
 
   @override
   Future<void> updatePassword({required String newPassword}) async {}
