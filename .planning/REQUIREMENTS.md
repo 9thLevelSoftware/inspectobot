@@ -12,24 +12,24 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 - [ ] **AUTH-01**: User can create an account with email and password.
 - [ ] **AUTH-02**: User can sign in and stay signed in across app restarts.
 - [x] **AUTH-03**: User can reset password using an email reset flow.
-- [ ] **AUTH-04**: User can save inspector profile details including license type and license number.
-- [ ] **AUTH-05**: User can capture and store inspector signature for report signing.
+- [x] **AUTH-04**: User can save inspector profile details including license type and license number.
+- [x] **AUTH-05**: User can capture and store inspector signature for report signing.
 
 ### Inspection Setup and Workflow
 
 - [ ] **FLOW-01**: User can create an inspection with client identity, property address, inspection date, and year built.
-- [ ] **FLOW-02**: User can select one or more supported forms for an inspection (`Insp4pt 03-25`, `RCF-1 03-25`, `OIR-B1-1802 Rev 04/26`).
+- [x] **FLOW-02**: User can select one or more supported forms for an inspection (`Insp4pt 03-25`, `RCF-1 03-25`, `OIR-B1-1802 Rev 04/26`).
 - [ ] **FLOW-03**: User can complete a linear wizard with required-step progression and conditional branching.
 - [x] **FLOW-04**: User can resume an in-progress inspection and continue from last incomplete step.
-- [ ] **FLOW-05**: User can see a per-form completion summary that identifies missing required items.
+- [x] **FLOW-05**: User can see a per-form completion summary that identifies missing required items.
 
 ### Evidence and Media Compliance
 
-- [ ] **EVID-01**: User can capture required exterior elevation photos (front, rear, left, right) for applicable forms.
+- [x] **EVID-01**: User can capture required exterior elevation photos (front, rear, left, right) for applicable forms.
 - [ ] **EVID-02**: User can capture required roof evidence including slope-specific photos and defect photos when present.
 - [x] **EVID-03**: User can capture required plumbing, HVAC, electrical, and hazard photos based on selected form logic.
 - [x] **EVID-04**: User can capture evidence for all seven wind mitigation categories, including supporting documents when required.
-- [ ] **EVID-05**: System blocks PDF generation when any required field or required evidence category is incomplete.
+- [x] **EVID-05**: System blocks PDF generation when any required field or required evidence category is incomplete.
 - [x] **EVID-06**: System compresses captured images to mobile-friendly sizes before upload and PDF embedding.
 
 ### Forms, PDF, Delivery, and Audit
@@ -84,18 +84,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-01 | Phase 17 | Pending |
 | AUTH-02 | Phase 17 | Pending |
 | AUTH-03 | Phase 13 | Complete |
-| AUTH-04 | Phase 16 | Pending |
-| AUTH-05 | Phase 16 | Pending |
+| AUTH-04 | Phase 16 | Complete |
+| AUTH-05 | Phase 16 | Complete |
 | FLOW-01 | Phase 17 | Pending |
-| FLOW-02 | Phase 16 | Pending |
+| FLOW-02 | Phase 16 | Complete |
 | FLOW-03 | Phase 16 | Pending |
 | FLOW-04 | Phase 14 | Complete |
-| FLOW-05 | Phase 16 | Pending |
-| EVID-01 | Phase 16 | Pending |
+| FLOW-05 | Phase 16 | Complete |
+| EVID-01 | Phase 16 | Complete |
 | EVID-02 | Phase 18 | Pending |
 | EVID-03 | Phase 16 | Complete |
 | EVID-04 | Phase 16 | Complete |
-| EVID-05 | Phase 16 | Pending |
+| EVID-05 | Phase 16 | Complete |
 | EVID-06 | Phase 16 | Complete |
 | PDF-01 | Phase 11 | Complete |
 | PDF-02 | Phase 14 | Complete |

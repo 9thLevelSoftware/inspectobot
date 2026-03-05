@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 ## Current Position
 
 Phase: 16 of 18 (Verification Traceability Closure)
-Plan: 2 of 3 in current phase
+Plan: 3 of 3 in current phase
 Status: Phase 16 in progress
-Last activity: 2026-03-05 - Executed 16-02 to normalize phase 08/10/11 verification requirement trace schemas and align mapped rows for DATA-01, EVID-03, EVID-04, EVID-06, and SEC-02.
+Last activity: 2026-03-05 - Executed 16-01 to normalize phase 01/02/03/05/06 verification requirement trace rows for AUTH-04, AUTH-05, FLOW-02, FLOW-05, EVID-01, and EVID-05.
 
 Progress: [█████████░] 89%
 
@@ -63,6 +63,7 @@ Progress: [█████████░] 89%
 | Phase 09 P02 | 3 min | 2 tasks | 8 files |
 | Phase 09 P03 | 4 min | 2 tasks | 9 files |
 | Phase 16 P02 | 2 min | 2 tasks | 3 files |
+| Phase 16 P01 | 3 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,8 @@ Recent decisions affecting current work:
 - [Phase 12]: Sync enqueue and runner eligibility enforce dependencyOperationId contracts; unresolved dependencies fail explicitly instead of executing out of order.
 - [Phase 16]: Standardized verification requirement rows to canonical Requirement|Source Plan|Description|Status|Evidence schema for phases 08/10/11.
 - [Phase 16]: Normalized mapped requirement row status vocabulary to lowercase passed for deterministic extraction.
+- [Phase 16]: Standardized VERIFICATION requirement trace rows to canonical five-column schema with passed status vocabulary.
+- [Phase 16]: Used explicit source plan filename IDs in trace rows for deterministic milestone parser extraction.
 
 ### Pending Todos
 
@@ -112,6 +115,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05 19:56
-Stopped at: Completed 16-02-PLAN.md
+Last session: 2026-03-05 19:57
+Stopped at: Completed 16-01-PLAN.md
 Resume file: None
