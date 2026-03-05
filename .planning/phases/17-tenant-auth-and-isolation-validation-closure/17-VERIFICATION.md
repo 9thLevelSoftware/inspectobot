@@ -30,7 +30,7 @@ score: 0/3 must-haves verified
 | --- | --- | --- | --- |
 | `.planning/phases/17-tenant-auth-and-isolation-validation-closure/17-VERIFICATION.md` | Canonical requirement-to-scenario verification scaffold for phase 17 | ✓ VERIFIED | This artifact initialized with requirement trace schema and evidence placeholders. |
 | `.planning/phases/09-tenant-context-and-storage-contract-closure/09-VERIFICATION.md` | Source phase debt baseline showing `human_needed` live verification requirements | ✓ VERIFIED | Captures inherited closure debt and scenarios to resolve in phase 17. |
-| `test/features/auth/auth_repository_test.dart` | Focused preflight command target for auth contract regression signal | human_needed | Command output placeholders not yet captured in this scaffold initialization task. |
+| `test/features/auth/auth_repository_test.dart` | Focused preflight command target for auth contract regression signal | ✓ VERIFIED | Preflight command suite executed and passed; output evidence captured under `Captured Preflight Output`. |
 
 ### Key Link Verification
 
@@ -60,9 +60,9 @@ Run the focused regression commands before and after live validation. If any com
 
 | Command | Result | Output Snippet | Captured At |
 | --- | --- | --- | --- |
-| `flutter test test/features/auth/auth_repository_test.dart test/features/auth/auth_gate_test.dart test/features/auth/tenant_context_resolver_test.dart` | pending | _pending_ | _pending_ |
-| `flutter test test/features/inspection/new_inspection_page_test.dart test/features/inspection/dashboard_page_test.dart` | pending | _pending_ | _pending_ |
-| `flutter test test/features/sync/sync_runner_test.dart` | pending | _pending_ | _pending_ |
+| `flutter test test/features/auth/auth_repository_test.dart test/features/auth/auth_gate_test.dart test/features/auth/tenant_context_resolver_test.dart` | passed | `All tests passed!` after 11 assertions, including password-recovery route and tenant-context resolution checks. | 2026-03-05T21:47:25Z |
+| `flutter test test/features/inspection/new_inspection_page_test.dart test/features/inspection/dashboard_page_test.dart` | passed | `All tests passed!` after 5 assertions, including required-form enforcement and save+navigate behavior. | 2026-03-05T21:47:25Z |
+| `flutter test test/features/sync/sync_runner_test.dart` | passed | `All tests passed!` after 4 assertions, including active-tenant mismatch skip behavior. | 2026-03-05T21:47:25Z |
 
 ### Live Evidence Guardrails
 
