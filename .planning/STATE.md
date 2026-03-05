@@ -18,7 +18,7 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 **Last Activity:** 2026-03-05
 **Last Activity Description:** Completed 17-04 replay harness + sanitized live evidence closure; phase 17 verification now passed for AUTH-01/AUTH-02/FLOW-01/SEC-01.
 
-**Progress:** [██████████] 98%
+**Progress:** [██████████] 100%
 
 ## Performance Metrics
 
@@ -73,6 +73,7 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 | Phase 17 P02 | 15 min | 3 tasks | 2 files |
 | Phase 17 P03 | 2 min | 3 tasks | 3 files |
 | Phase 18 P01 | 22 min | 3 tasks | 5 files |
+| Phase 18 P02 | 3 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -123,6 +124,8 @@ Recent decisions affecting current work:
 - [Phase 17]: Replayed live Supabase validation after credential rotation checkpoint and closed AUTH-01/AUTH-02/FLOW-01/SEC-01 rows to passed using sanitized output.
 - [Phase 18]: CloudPdfService now invokes Supabase function runtime and classifies 404/429/503 as unavailable while preserving terminal failures.
 - [Phase 18]: Checklist generation defaults to PdfStrategy.cloudFallback with deterministic terminal-failure inspector messaging.
+- [Phase 18]: License source keys remain explicitly non-required by default and are removed from loader allowlist unless policy is intentionally changed.
+- [Phase 18]: Phase-18 verification is the canonical EVID-02 closure source linking plan-01 resilience tests and plan-02 mapping-policy tests.
 
 ### Pending Todos
 
@@ -138,6 +141,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-03-05T23:32:44.144Z
-**Stopped At:** Completed 18-01-PLAN.md
+**Last session:** 2026-03-05T23:38:53.471Z
+**Stopped At:** Completed 18-02-PLAN.md
 **Resume File:** None
