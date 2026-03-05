@@ -131,5 +131,40 @@ void main() {
     );
     expect(mediaOp.dependencyOperationId, 'insp-op-1');
   });
+
+  test('loadEvidenceMediaPaths returns pending requirement-keyed file paths', () async {
+    final tempRoot = await Directory.systemTemp.createTemp(
+      'inspectobot_sync_rehydrate_',
+    );
+    addTearDown(() async {
+      if (await tempRoot.exists()) {
+        await tempRoot.delete(recursive: true);
+      }
+    });
+
+    final store = PendingMediaSyncStore(directoryProvider: () async => tempRoot);
+    await store.enqueue(
+      MediaSyncTask(
+        taskId: 'rehydrate-1',
+        inspectionId: 'i4',
+        organizationId: 'org-1',
+        userId: 'user-1',
+        requirementKey: 'photo:exteriorFront',
+        mediaType: CapturedMediaType.photo,
+        evidenceInstanceId: 'photo:exteriorFront',
+        category: RequiredPhotoCategory.exteriorFront,
+        filePath: '/tmp/front.jpg',
+        createdAt: DateTime.utc(2026, 3, 6),
+      ),
+    );
+
+    final byRequirement = await store.loadEvidenceMediaPaths(
+      inspectionId: 'i4',
+      organizationId: 'org-1',
+      userId: 'user-1',
+    );
+
+    expect(byRequirement['photo:exteriorFront'], <String>['/tmp/front.jpg']);
+  });
 }
 
