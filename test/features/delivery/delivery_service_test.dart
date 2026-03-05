@@ -40,6 +40,7 @@ void main() {
         input: buildInput(),
         localFilePath: '/tmp/report.pdf',
         sizeBytes: 2048,
+        payloadHash: 'payload-hash-1',
         signatureHash: 'signature-hash-1',
       );
 
@@ -47,6 +48,8 @@ void main() {
         artifact.storagePath,
         'org/org-1/users/user-1/reports/insp-1/report.pdf',
       );
+      expect(artifact.payloadHash, 'payload-hash-1');
+      expect(artifact.signatureHash, 'signature-hash-1');
 
       final deliveryActions = await DeliveryRepository(deliveryGateway)
           .listByInspection(

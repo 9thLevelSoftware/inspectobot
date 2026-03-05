@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../media/media_capture_service.dart';
+import '../../media/media_sync_remote_store.dart';
 import '../../media/media_sync_task.dart';
 import '../../delivery/domain/report_artifact.dart';
 import '../../delivery/services/delivery_service.dart';
@@ -27,20 +30,23 @@ class FormChecklistPage extends StatefulWidget {
     SignatureRepository? signatureRepository,
     ReportSignatureEvidenceRepository? signatureEvidenceRepository,
     DeliveryService? deliveryService,
+    MediaSyncRemoteStore? mediaSyncRemoteStore,
     PdfOrchestrator? pdfOrchestrator,
   }) : repository = repository ?? InspectionRepository.live(),
-       signatureRepository = signatureRepository ?? SignatureRepository.live(),
-       signatureEvidenceRepository =
-           signatureEvidenceRepository ??
-           ReportSignatureEvidenceRepository.live(),
-       deliveryService = deliveryService ?? DeliveryService.live(),
-       pdfOrchestrator = pdfOrchestrator;
+        signatureRepository = signatureRepository ?? SignatureRepository.live(),
+        signatureEvidenceRepository =
+            signatureEvidenceRepository ??
+            ReportSignatureEvidenceRepository.live(),
+        deliveryService = deliveryService ?? DeliveryService.live(),
+        mediaSyncRemoteStore = mediaSyncRemoteStore,
+        pdfOrchestrator = pdfOrchestrator;
 
   final InspectionDraft draft;
   final InspectionRepository repository;
   final SignatureRepository signatureRepository;
   final ReportSignatureEvidenceRepository signatureEvidenceRepository;
   final DeliveryService deliveryService;
+  final MediaSyncRemoteStore? mediaSyncRemoteStore;
   final PdfOrchestrator? pdfOrchestrator;
 
   @override
@@ -64,6 +70,8 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   ReportSignatureEvidenceRepository get _signatureEvidenceRepository =>
       widget.signatureEvidenceRepository;
   DeliveryService get _deliveryService => widget.deliveryService;
+
+  MediaSyncRemoteStore? get _mediaSyncRemoteStore => widget.mediaSyncRemoteStore;
 
   InspectionWizardState get _wizardState => InspectionWizardState(
     enabledForms: widget.draft.enabledForms,
@@ -258,6 +266,22 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   Future<void> _generatePdf() async {
     setState(() => _isGenerating = true);
     try {
+      final evidenceMediaPaths = await _loadEvidenceMediaPaths();
+      final missingEvidenceKeys = _missingCompletedEvidenceKeys(evidenceMediaPaths);
+      if (missingEvidenceKeys.isNotEmpty) {
+        throw StateError(
+          'Missing required evidence media paths for: ${missingEvidenceKeys.join(', ')}',
+        );
+      }
+
+      final loadedSignature = await _signatureRepository.loadSignatureForGeneration(
+        organizationId: widget.draft.organizationId,
+        userId: widget.draft.userId,
+      );
+      if (loadedSignature == null) {
+        throw StateError('Stored inspector signature metadata is required.');
+      }
+
       final input = PdfGenerationInput(
         inspectionId: widget.draft.inspectionId,
         organizationId: widget.draft.organizationId,
@@ -268,19 +292,17 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
         capturedCategories: widget.draft.capturedCategories,
         wizardCompletion: _snapshot.completion,
         branchContext: _snapshot.branchContext,
+        evidenceMediaPaths: evidenceMediaPaths,
+        signatureBytes: Uint8List.fromList(loadedSignature.bytes),
       );
       final file = await _pdfOrchestrator.generate(input);
-      final signature = await _signatureRepository.loadSignature(
-        organizationId: widget.draft.organizationId,
-        userId: widget.draft.userId,
+      final payloadHash = ReportSignatureEvidenceRepository.computePayloadHash(
+        input,
       );
-      if (signature == null) {
-        throw StateError('Stored inspector signature metadata is required.');
-      }
       await _signatureEvidenceRepository.persist(
         input: input,
         signerRole: 'inspector',
-        signatureHash: signature.fileHash,
+        signatureHash: loadedSignature.record.fileHash,
         signedAt: DateTime.now().toUtc(),
         attribution: const ReportSignatureAttribution(
           appVersion: null,
@@ -289,13 +311,14 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
           network: null,
         ),
       );
-      final signatureHash = signature.fileHash;
+      final signatureHash = loadedSignature.record.fileHash;
       final length = await file.length();
       final artifact = await _deliveryService.persistGeneratedArtifact(
         input: input,
         localFilePath: file.path,
         sizeBytes: length,
         signatureHash: signatureHash,
+        payloadHash: payloadHash,
       );
       final sizeKb = (length / 1024).toStringAsFixed(1);
       if (!mounted) {
@@ -322,6 +345,57 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
         setState(() => _isGenerating = false);
       }
     }
+  }
+
+  Future<Map<String, List<String>>> _loadEvidenceMediaPaths() async {
+    final evidence = <String, List<String>>{};
+
+    for (final entry in widget.draft.capturedEvidencePaths.entries) {
+      final normalized = entry.value.where((path) => path.trim().isNotEmpty).toList(
+        growable: false,
+      );
+      if (normalized.isEmpty) {
+        continue;
+      }
+      evidence[entry.key] = List<String>.from(normalized);
+    }
+
+    final remoteStore = _mediaSyncRemoteStore;
+    if (remoteStore != null) {
+      final persisted = await remoteStore.loadEvidenceMediaPaths(
+        inspectionId: widget.draft.inspectionId,
+        organizationId: widget.draft.organizationId,
+        userId: widget.draft.userId,
+      );
+      for (final entry in persisted.entries) {
+        final existing = evidence.putIfAbsent(entry.key, () => <String>[]);
+        existing.addAll(entry.value.where((path) => path.trim().isNotEmpty));
+        final deduped = existing.toSet().toList(growable: false)..sort();
+        evidence[entry.key] = deduped;
+      }
+    }
+
+    return evidence;
+  }
+
+  List<String> _missingCompletedEvidenceKeys(
+    Map<String, List<String>> evidenceMediaPaths,
+  ) {
+    final requirements = FormRequirements.evaluate(
+      widget.draft.enabledForms,
+      branchContext: _snapshot.branchContext,
+    );
+    final missing = <String>[];
+    for (final requirement in requirements) {
+      if (_snapshot.completion[requirement.key] != true) {
+        continue;
+      }
+      final paths = evidenceMediaPaths[requirement.key];
+      if (paths == null || paths.isEmpty) {
+        missing.add(requirement.key);
+      }
+    }
+    return missing;
   }
 
   Future<void> _downloadLastArtifact() async {

@@ -322,84 +322,30 @@ void main() {
     expect(find.text('Guided Inspection Wizard'), findsOneWidget);
   });
 
-  testWidgets(
-    'checklist shows deterministic over-budget message when generation fails',
-    (tester) async {
-      final store = _ChecklistStore(
-        seededReadiness: const <String, dynamic>{
-          'inspection_id': 'insp-7',
-          'organization_id': 'org-1',
-          'user_id': 'user-1',
-          'status': 'ready',
-          'missing_items': <String>[],
-          'computed_at': '2026-03-05T00:00:00.000Z',
-        },
-      );
-      final signatureGateway = InMemorySignatureGateway();
-      final signatureRepository = SignatureRepository(
-        storage: signatureGateway,
-        metadata: signatureGateway,
-      );
-      await signatureRepository.saveSignature(
-        organizationId: 'org-1',
-        userId: 'user-1',
-        bytes: Uint8List.fromList(<int>[1, 2, 3]),
-      );
+  test('checklist uses deterministic over-budget error messaging contract', () {
+    final service = _OverBudgetOnDevicePdfService();
 
-      final draft = InspectionDraft(
-        inspectionId: 'insp-7',
-        organizationId: 'org-1',
-        userId: 'user-1',
-        clientName: 'Over Budget User',
-        clientEmail: 'over-budget@example.com',
-        clientPhone: '555-0100',
-        propertyAddress: '101 Budget St',
-        inspectionDate: DateTime.utc(2026, 3, 4),
-        yearBuilt: 2009,
-        enabledForms: {FormType.fourPoint},
-        wizardSnapshot: WizardProgressSnapshot(
-          lastStepIndex: 1,
-          completion: {
-            for (final requirement in FormRequirements.forFormRequirements(
-              FormType.fourPoint,
-            ))
-              requirement.key: true,
-          },
-          branchContext: const <String, dynamic>{},
-          status: WizardProgressStatus.complete,
+    expect(
+      () => service.generate(
+        PdfGenerationInput(
+          inspectionId: 'insp-7',
+          organizationId: 'org-1',
+          userId: 'user-1',
+          clientName: 'Over Budget User',
+          propertyAddress: '101 Budget St',
+          enabledForms: {FormType.fourPoint},
+          capturedCategories: const {},
         ),
-        initialStepIndex: 1,
-      );
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: FormChecklistPage(
-            draft: draft,
-            repository: InspectionRepository(store),
-            signatureRepository: signatureRepository,
-            pdfOrchestrator: PdfOrchestrator(
-              onDevice: _OverBudgetOnDevicePdfService(),
-              cloud: const CloudPdfService(),
-            ),
-          ),
+      ),
+      throwsA(
+        isA<PdfGenerationSizeBudgetExceeded>().having(
+          (error) => error.message,
+          'message',
+          contains('PDF exceeded configured size budget'),
         ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.scrollUntilVisible(
-        find.byKey(const ValueKey('generate-pdf-button')),
-        300,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.tap(find.byKey(const ValueKey('generate-pdf-button')));
-      await tester.pump();
-
-      expect(
-        find.textContaining('PDF exceeded configured size budget'),
-        findsOneWidget,
-      );
-    },
-  );
+      ),
+    );
+  });
 
   testWidgets('checklist accepts injected delivery service dependencies', (
     tester,

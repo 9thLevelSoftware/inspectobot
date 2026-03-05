@@ -54,7 +54,7 @@ class ReportSignatureEvidenceRepository {
       signerRole: signerRole,
       signedAt: (signedAt ?? now).toUtc(),
       signatureHash: signatureHash,
-      payloadHash: _payloadHash(input),
+      payloadHash: computePayloadHash(input),
       attribution: attribution,
       createdAt: now,
     );
@@ -91,7 +91,7 @@ class ReportSignatureEvidenceRepository {
     return rows.map(ReportSignatureEvidence.fromJson).toList(growable: false);
   }
 
-  String _payloadHash(PdfGenerationInput input) {
+  static String computePayloadHash(PdfGenerationInput input) {
     final canonicalPayload = jsonEncode(input.toCanonicalPayload());
     return sha256.convert(utf8.encode(canonicalPayload)).toString();
   }
