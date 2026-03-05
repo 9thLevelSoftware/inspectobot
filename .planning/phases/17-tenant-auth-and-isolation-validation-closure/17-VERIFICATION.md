@@ -48,6 +48,46 @@ score: 0/3 must-haves verified
 | FLOW-01 | 17-tenant-auth-and-isolation-validation-closure-01-PLAN.md | User can create an inspection with client identity, property address, inspection date, and year built. | human_needed | Pending live inspection creation evidence showing authenticated organization/user persistence. |
 | SEC-01 | 17-tenant-auth-and-isolation-validation-closure-01-PLAN.md | System enforces strict tenant isolation so users can only access their own organization data. | human_needed | Pending cross-tenant negative proof for dashboard scope, storage access, and sync replay gating. |
 
+### Automated Preflight
+
+Run the focused regression commands before and after live validation. If any command fails, treat it as a code regression and resolve before writing live evidence claims.
+
+1. `flutter test test/features/auth/auth_repository_test.dart test/features/auth/auth_gate_test.dart test/features/auth/tenant_context_resolver_test.dart`
+2. `flutter test test/features/inspection/new_inspection_page_test.dart test/features/inspection/dashboard_page_test.dart`
+3. `flutter test test/features/sync/sync_runner_test.dart`
+
+#### Captured Preflight Output
+
+| Command | Result | Output Snippet | Captured At |
+| --- | --- | --- | --- |
+| `flutter test test/features/auth/auth_repository_test.dart test/features/auth/auth_gate_test.dart test/features/auth/tenant_context_resolver_test.dart` | pending | _pending_ | _pending_ |
+| `flutter test test/features/inspection/new_inspection_page_test.dart test/features/inspection/dashboard_page_test.dart` | pending | _pending_ | _pending_ |
+| `flutter test test/features/sync/sync_runner_test.dart` | pending | _pending_ | _pending_ |
+
+### Live Evidence Guardrails
+
+- Live closure evidence is valid only when Supabase-backed runtime mode is configured and active.
+- Evidence that resolves tenant IDs matching `org-local-*` is fallback-mode evidence and MUST NOT be used to mark any phase-17 requirement row as passed.
+- Every requirement evidence update must include both runtime artifact links and environment attribution.
+
+#### Environment Attribution (Required)
+
+| Field | Value |
+| --- | --- |
+| Supabase project/environment ID | _pending_ |
+| Supabase URL host | _pending_ |
+| Verification operator | _pending_ |
+| Session timestamp window (UTC) | _pending_ |
+
+#### Live Scenario Evidence Placeholders
+
+| Scenario | Tenant | Expected Outcome | Evidence | Status |
+| --- | --- | --- | --- | --- |
+| Signup bootstrap creates organization membership and allows dashboard entry | Tenant A | Membership row exists and dashboard opens with scoped context | _pending_ | human_needed |
+| Session resume after restart resolves same tenant context | Tenant A | Signed-in route resumes and tenant IDs remain scoped to Tenant A | _pending_ | human_needed |
+| Inspection setup persists required fields with authenticated org/user IDs | Tenant A | New inspection row stores Tenant A organization_id and user_id | _pending_ | human_needed |
+| Cross-tenant isolation blocks mismatched dashboard/outbox access | Tenant B against Tenant A data | Tenant B cannot read/execute Tenant A-scoped records or queued operations | _pending_ | human_needed |
+
 ### Human Verification Required
 
 - Live Supabase-backed execution for signup/bootstrap, sign-in/session resume, inspection creation, and cross-tenant isolation scenarios.
