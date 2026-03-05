@@ -3,6 +3,10 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inspectobot/features/audit/data/audit_event_repository.dart';
+import 'package:inspectobot/features/delivery/data/delivery_repository.dart';
+import 'package:inspectobot/features/delivery/data/report_artifact_repository.dart';
+import 'package:inspectobot/features/delivery/services/delivery_service.dart';
 import 'package:inspectobot/features/identity/data/signature_repository.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
@@ -331,6 +335,80 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('checklist accepts injected delivery service dependencies', (
+    tester,
+  ) async {
+    final store = _ChecklistStore(
+      seededReadiness: const <String, dynamic>{
+        'inspection_id': 'insp-8',
+        'organization_id': 'org-1',
+        'user_id': 'user-1',
+        'status': 'ready',
+        'missing_items': <String>[],
+        'computed_at': '2026-03-05T00:00:00.000Z',
+      },
+    );
+    final signatureGateway = InMemorySignatureGateway();
+    final signatureRepository = SignatureRepository(
+      storage: signatureGateway,
+      metadata: signatureGateway,
+    );
+    await signatureRepository.saveSignature(
+      organizationId: 'org-1',
+      userId: 'user-1',
+      bytes: Uint8List.fromList(<int>[1, 2, 3]),
+    );
+
+    final draft = InspectionDraft(
+      inspectionId: 'insp-8',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Delivery User',
+      clientEmail: 'delivery@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '121 Delivery St',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2004,
+      enabledForms: {FormType.fourPoint},
+      wizardSnapshot: WizardProgressSnapshot(
+        lastStepIndex: 1,
+        completion: {
+          for (final requirement in FormRequirements.forFormRequirements(FormType.fourPoint))
+            requirement.key: true,
+        },
+        branchContext: const <String, dynamic>{},
+        status: WizardProgressStatus.complete,
+      ),
+      initialStepIndex: 1,
+    );
+
+    final deliveryService = DeliveryService(
+      artifactRepository: ReportArtifactRepository(InMemoryReportArtifactGateway()),
+      deliveryRepository: DeliveryRepository(InMemoryDeliveryActionGateway()),
+      auditRepository: AuditEventRepository(InMemoryAuditEventGateway()),
+      signedUrlGateway: _TestSignedUrlGateway(),
+      shareGateway: _TestShareGateway(),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormChecklistPage(
+          draft: draft,
+          repository: InspectionRepository(store),
+          signatureRepository: signatureRepository,
+          deliveryService: deliveryService,
+          pdfOrchestrator: PdfOrchestrator(
+            onDevice: _SuccessfulOnDevicePdfService(),
+            cloud: const CloudPdfService(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Guided Inspection Wizard'), findsOneWidget);
+  });
 }
 
 class _ChecklistStore implements InspectionStore {
@@ -480,4 +558,20 @@ class _OverBudgetOnDevicePdfService extends OnDevicePdfService {
       attempts: 2,
     );
   }
+}
+
+class _TestSignedUrlGateway implements SignedUrlGateway {
+  @override
+  Future<String> createSignedUrl({
+    required String bucket,
+    required String path,
+    required int expiresInSeconds,
+  }) async {
+    return 'https://example.test/$bucket/$path?expires=$expiresInSeconds';
+  }
+}
+
+class _TestShareGateway implements ShareGateway {
+  @override
+  Future<void> shareUri(String uri) async {}
 }

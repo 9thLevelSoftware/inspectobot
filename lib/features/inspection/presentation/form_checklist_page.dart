@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../media/media_capture_service.dart';
 import '../../media/media_sync_task.dart';
+import '../../delivery/domain/report_artifact.dart';
+import '../../delivery/services/delivery_service.dart';
 import '../../pdf/cloud_pdf_service.dart';
 import '../../pdf/on_device_pdf_service.dart';
 import '../../pdf/pdf_generation_input.dart';
@@ -24,17 +26,20 @@ class FormChecklistPage extends StatefulWidget {
     InspectionRepository? repository,
     SignatureRepository? signatureRepository,
     ReportSignatureEvidenceRepository? signatureEvidenceRepository,
+    DeliveryService? deliveryService,
     PdfOrchestrator? pdfOrchestrator,
   })  : repository = repository ?? InspectionRepository.live(),
         signatureRepository = signatureRepository ?? SignatureRepository.live(),
         signatureEvidenceRepository =
             signatureEvidenceRepository ?? ReportSignatureEvidenceRepository.live(),
+        deliveryService = deliveryService ?? DeliveryService.live(),
         pdfOrchestrator = pdfOrchestrator;
 
   final InspectionDraft draft;
   final InspectionRepository repository;
   final SignatureRepository signatureRepository;
   final ReportSignatureEvidenceRepository signatureEvidenceRepository;
+  final DeliveryService deliveryService;
   final PdfOrchestrator? pdfOrchestrator;
 
   @override
@@ -51,11 +56,13 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   bool _isSavingProgress = false;
   String? _lastPdfPath;
   ReportReadiness? _persistedReadiness;
+  ReportArtifact? _lastArtifact;
 
   InspectionRepository get _repository => widget.repository;
   SignatureRepository get _signatureRepository => widget.signatureRepository;
   ReportSignatureEvidenceRepository get _signatureEvidenceRepository =>
       widget.signatureEvidenceRepository;
+  DeliveryService get _deliveryService => widget.deliveryService;
 
   InspectionWizardState get _wizardState => InspectionWizardState(
     enabledForms: widget.draft.enabledForms,
@@ -280,16 +287,24 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
           network: null,
         ),
       );
+      final signatureHash = signature.fileHash;
       final length = await file.length();
+      final artifact = await _deliveryService.persistGeneratedArtifact(
+        input: input,
+        localFilePath: file.path,
+        sizeBytes: length,
+        signatureHash: signatureHash,
+      );
       final sizeKb = (length / 1024).toStringAsFixed(1);
       if (!mounted) {
         return;
       }
       setState(() {
         _lastPdfPath = file.path;
+        _lastArtifact = artifact;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PDF generated (${sizeKb}KB): ${file.path}')),
+        SnackBar(content: Text('PDF generated (${sizeKb}KB) and delivery saved.')),
       );
     } catch (error) {
       if (!mounted) {
@@ -302,6 +317,52 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
       if (mounted) {
         setState(() => _isGenerating = false);
       }
+    }
+  }
+
+  Future<void> _downloadLastArtifact() async {
+    final artifact = _lastArtifact;
+    if (artifact == null) {
+      return;
+    }
+    try {
+      final result = await _deliveryService.startDownload(artifact: artifact);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Download link ready: ${result.url}')),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Download failed: $error')),
+      );
+    }
+  }
+
+  Future<void> _shareLastArtifact() async {
+    final artifact = _lastArtifact;
+    if (artifact == null) {
+      return;
+    }
+    try {
+      final result = await _deliveryService.startSecureShare(artifact: artifact);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Secure share link issued: ${result.url}')),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Secure share failed: $error')),
+      );
     }
   }
 
@@ -419,6 +480,27 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
           if (_lastPdfPath != null) ...[
             const SizedBox(height: 12),
             SelectableText('Last PDF: $_lastPdfPath'),
+          ],
+          if (_lastArtifact != null) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  key: const ValueKey('delivery-download-button'),
+                  onPressed: _downloadLastArtifact,
+                  icon: const Icon(Icons.download),
+                  label: const Text('Download'),
+                ),
+                OutlinedButton.icon(
+                  key: const ValueKey('delivery-secure-share-button'),
+                  onPressed: _shareLastArtifact,
+                  icon: const Icon(Icons.ios_share),
+                  label: const Text('Secure Share'),
+                ),
+              ],
+            ),
           ],
         ],
       ),
