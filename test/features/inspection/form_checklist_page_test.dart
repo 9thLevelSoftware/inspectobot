@@ -39,7 +39,9 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: FormChecklistPage(draft: draft, repository: repository)),
+      MaterialApp(
+        home: FormChecklistPage(draft: draft, repository: repository),
+      ),
     );
 
     expect(find.textContaining('Step 1 of'), findsOneWidget);
@@ -52,7 +54,9 @@ void main() {
     expect(find.text('Exterior Front'), findsWidgets);
   });
 
-  testWidgets('resume step uses persisted last incomplete step', (tester) async {
+  testWidgets('resume step uses persisted last incomplete step', (
+    tester,
+  ) async {
     final requirementKeys = FormRequirements.requirementKeysForForm(
       FormType.fourPoint,
     );
@@ -114,40 +118,43 @@ void main() {
     expect(find.text('Roof Defect'), findsOneWidget);
   });
 
-  testWidgets('wind mitigation step shows supporting document prompts when required', (
-    tester,
-  ) async {
-    final draft = InspectionDraft(
-      inspectionId: 'insp-4',
-      organizationId: 'org-1',
-      userId: 'user-1',
-      clientName: 'Wind User',
-      clientEmail: 'wind@example.com',
-      clientPhone: '555-0100',
-      propertyAddress: '321 Breeze St',
-      inspectionDate: DateTime.utc(2026, 3, 4),
-      yearBuilt: 2005,
-      enabledForms: {FormType.windMitigation},
-      wizardSnapshot: WizardProgressSnapshot(
-        lastStepIndex: 1,
-        completion: const <String, bool>{},
-        branchContext: const <String, dynamic>{
-          'wind_roof_deck_document_required': true,
-          'wind_opening_document_required': true,
-          'wind_permit_document_required': true,
-        },
-        status: WizardProgressStatus.inProgress,
-      ),
-      initialStepIndex: 1,
-    );
+  testWidgets(
+    'wind mitigation step shows supporting document prompts when required',
+    (tester) async {
+      final draft = InspectionDraft(
+        inspectionId: 'insp-4',
+        organizationId: 'org-1',
+        userId: 'user-1',
+        clientName: 'Wind User',
+        clientEmail: 'wind@example.com',
+        clientPhone: '555-0100',
+        propertyAddress: '321 Breeze St',
+        inspectionDate: DateTime.utc(2026, 3, 4),
+        yearBuilt: 2005,
+        enabledForms: {FormType.windMitigation},
+        wizardSnapshot: WizardProgressSnapshot(
+          lastStepIndex: 1,
+          completion: const <String, bool>{},
+          branchContext: const <String, dynamic>{
+            'wind_roof_deck_document_required': true,
+            'wind_opening_document_required': true,
+            'wind_permit_document_required': true,
+          },
+          status: WizardProgressStatus.inProgress,
+        ),
+        initialStepIndex: 1,
+      );
 
-    await tester.pumpWidget(MaterialApp(home: FormChecklistPage(draft: draft)));
+      await tester.pumpWidget(
+        MaterialApp(home: FormChecklistPage(draft: draft)),
+      );
 
-    expect(find.text('Wind Roof Deck Supporting Document'), findsOneWidget);
-    expect(find.text('Wind Opening Protection Document'), findsOneWidget);
-    expect(find.text('Wind Permit/Age Document'), findsOneWidget);
-    expect(find.text('Upload'), findsWidgets);
-  });
+      expect(find.text('Wind Roof Deck Supporting Document'), findsOneWidget);
+      expect(find.text('Wind Opening Protection Document'), findsOneWidget);
+      expect(find.text('Wind Permit/Age Document'), findsOneWidget);
+      expect(find.text('Upload'), findsWidgets);
+    },
+  );
 
   testWidgets('save progress preserves persisted branch flags', (tester) async {
     final store = _ChecklistStore();
@@ -175,16 +182,27 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: FormChecklistPage(draft: draft, repository: repository)),
+      MaterialApp(
+        home: FormChecklistPage(draft: draft, repository: repository),
+      ),
     );
 
     await tester.tap(find.text('Continue to Next Step'));
     await tester.pumpAndSettle();
 
     expect(store.lastWizardBranchContext, isNotNull);
-    expect(store.lastWizardBranchContext!['wind_roof_deck_document_required'], isTrue);
-    expect(store.lastWizardBranchContext!['wind_opening_document_required'], isTrue);
-    expect(store.lastWizardBranchContext!['enabled_forms'], contains('wind_mitigation'));
+    expect(
+      store.lastWizardBranchContext!['wind_roof_deck_document_required'],
+      isTrue,
+    );
+    expect(
+      store.lastWizardBranchContext!['wind_opening_document_required'],
+      isTrue,
+    );
+    expect(
+      store.lastWizardBranchContext!['enabled_forms'],
+      contains('wind_mitigation'),
+    );
   });
 
   testWidgets('PDF CTA stays blocked when persisted readiness is blocked', (
@@ -215,7 +233,9 @@ void main() {
       wizardSnapshot: WizardProgressSnapshot(
         lastStepIndex: 1,
         completion: {
-          for (final requirement in FormRequirements.forFormRequirements(FormType.fourPoint))
+          for (final requirement in FormRequirements.forFormRequirements(
+            FormType.fourPoint,
+          ))
             requirement.key: true,
         },
         branchContext: const <String, dynamic>{},
@@ -225,7 +245,9 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: FormChecklistPage(draft: draft, repository: repository)),
+      MaterialApp(
+        home: FormChecklistPage(draft: draft, repository: repository),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -270,7 +292,9 @@ void main() {
       wizardSnapshot: WizardProgressSnapshot(
         lastStepIndex: 1,
         completion: {
-          for (final requirement in FormRequirements.forFormRequirements(FormType.fourPoint))
+          for (final requirement in FormRequirements.forFormRequirements(
+            FormType.fourPoint,
+          ))
             requirement.key: true,
         },
         branchContext: const <String, dynamic>{},
@@ -298,81 +322,84 @@ void main() {
     expect(find.text('Guided Inspection Wizard'), findsOneWidget);
   });
 
-  testWidgets('checklist shows deterministic over-budget message when generation fails', (
-    tester,
-  ) async {
-    final store = _ChecklistStore(
-      seededReadiness: const <String, dynamic>{
-        'inspection_id': 'insp-7',
-        'organization_id': 'org-1',
-        'user_id': 'user-1',
-        'status': 'ready',
-        'missing_items': <String>[],
-        'computed_at': '2026-03-05T00:00:00.000Z',
-      },
-    );
-    final signatureGateway = InMemorySignatureGateway();
-    final signatureRepository = SignatureRepository(
-      storage: signatureGateway,
-      metadata: signatureGateway,
-    );
-    await signatureRepository.saveSignature(
-      organizationId: 'org-1',
-      userId: 'user-1',
-      bytes: Uint8List.fromList(<int>[1, 2, 3]),
-    );
-
-    final draft = InspectionDraft(
-      inspectionId: 'insp-7',
-      organizationId: 'org-1',
-      userId: 'user-1',
-      clientName: 'Over Budget User',
-      clientEmail: 'over-budget@example.com',
-      clientPhone: '555-0100',
-      propertyAddress: '101 Budget St',
-      inspectionDate: DateTime.utc(2026, 3, 4),
-      yearBuilt: 2009,
-      enabledForms: {FormType.fourPoint},
-      wizardSnapshot: WizardProgressSnapshot(
-        lastStepIndex: 1,
-        completion: {
-          for (final requirement in FormRequirements.forFormRequirements(FormType.fourPoint))
-            requirement.key: true,
+  testWidgets(
+    'checklist shows deterministic over-budget message when generation fails',
+    (tester) async {
+      final store = _ChecklistStore(
+        seededReadiness: const <String, dynamic>{
+          'inspection_id': 'insp-7',
+          'organization_id': 'org-1',
+          'user_id': 'user-1',
+          'status': 'ready',
+          'missing_items': <String>[],
+          'computed_at': '2026-03-05T00:00:00.000Z',
         },
-        branchContext: const <String, dynamic>{},
-        status: WizardProgressStatus.complete,
-      ),
-      initialStepIndex: 1,
-    );
+      );
+      final signatureGateway = InMemorySignatureGateway();
+      final signatureRepository = SignatureRepository(
+        storage: signatureGateway,
+        metadata: signatureGateway,
+      );
+      await signatureRepository.saveSignature(
+        organizationId: 'org-1',
+        userId: 'user-1',
+        bytes: Uint8List.fromList(<int>[1, 2, 3]),
+      );
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: FormChecklistPage(
-          draft: draft,
-          repository: InspectionRepository(store),
-          signatureRepository: signatureRepository,
-          pdfOrchestrator: PdfOrchestrator(
-            onDevice: _OverBudgetOnDevicePdfService(),
-            cloud: const CloudPdfService(),
+      final draft = InspectionDraft(
+        inspectionId: 'insp-7',
+        organizationId: 'org-1',
+        userId: 'user-1',
+        clientName: 'Over Budget User',
+        clientEmail: 'over-budget@example.com',
+        clientPhone: '555-0100',
+        propertyAddress: '101 Budget St',
+        inspectionDate: DateTime.utc(2026, 3, 4),
+        yearBuilt: 2009,
+        enabledForms: {FormType.fourPoint},
+        wizardSnapshot: WizardProgressSnapshot(
+          lastStepIndex: 1,
+          completion: {
+            for (final requirement in FormRequirements.forFormRequirements(
+              FormType.fourPoint,
+            ))
+              requirement.key: true,
+          },
+          branchContext: const <String, dynamic>{},
+          status: WizardProgressStatus.complete,
+        ),
+        initialStepIndex: 1,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FormChecklistPage(
+            draft: draft,
+            repository: InspectionRepository(store),
+            signatureRepository: signatureRepository,
+            pdfOrchestrator: PdfOrchestrator(
+              onDevice: _OverBudgetOnDevicePdfService(),
+              cloud: const CloudPdfService(),
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('generate-pdf-button')),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(find.byKey(const ValueKey('generate-pdf-button')));
-    await tester.pump();
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('generate-pdf-button')),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const ValueKey('generate-pdf-button')));
+      await tester.pump();
 
-    expect(
-      find.textContaining('PDF exceeded configured size budget'),
-      findsOneWidget,
-    );
-  });
+      expect(
+        find.textContaining('PDF exceeded configured size budget'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('checklist accepts injected delivery service dependencies', (
     tester,
@@ -412,7 +439,9 @@ void main() {
       wizardSnapshot: WizardProgressSnapshot(
         lastStepIndex: 1,
         completion: {
-          for (final requirement in FormRequirements.forFormRequirements(FormType.fourPoint))
+          for (final requirement in FormRequirements.forFormRequirements(
+            FormType.fourPoint,
+          ))
             requirement.key: true,
         },
         branchContext: const <String, dynamic>{},
@@ -422,7 +451,9 @@ void main() {
     );
 
     final deliveryService = DeliveryService(
-      artifactRepository: ReportArtifactRepository(InMemoryReportArtifactGateway()),
+      artifactRepository: ReportArtifactRepository(
+        InMemoryReportArtifactGateway(),
+      ),
       deliveryRepository: DeliveryRepository(InMemoryDeliveryActionGateway()),
       auditRepository: AuditEventRepository(InMemoryAuditEventGateway()),
       signedUrlGateway: _TestSignedUrlGateway(),
@@ -562,7 +593,7 @@ class _ChecklistStore implements InspectionStore {
 class _FailingSignatureEvidenceRepository
     extends ReportSignatureEvidenceRepository {
   _FailingSignatureEvidenceRepository()
-      : super(InMemoryReportSignatureEvidenceGateway());
+    : super(InMemoryReportSignatureEvidenceGateway());
 
   @override
   Future<ReportSignatureEvidence> persist({
