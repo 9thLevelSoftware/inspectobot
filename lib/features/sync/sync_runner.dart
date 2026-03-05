@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:inspectobot/features/auth/domain/tenant_context.dart';
+
 import '../inspection/domain/required_photo_category.dart';
 import '../inspection/data/inspection_repository.dart';
 import '../media/media_sync_remote_store.dart';
@@ -26,16 +28,16 @@ class SyncRunner {
     required SyncOutboxStore outboxStore,
     required InspectionStore inspectionRemoteStore,
     required MediaSyncRemoteStore mediaRemoteStore,
-  })  : _outboxStore = outboxStore,
-        _inspectionRemoteStore = inspectionRemoteStore,
-        _mediaRemoteStore = mediaRemoteStore;
+  }) : _outboxStore = outboxStore,
+       _inspectionRemoteStore = inspectionRemoteStore,
+       _mediaRemoteStore = mediaRemoteStore;
 
   final SyncOutboxStore _outboxStore;
   final InspectionStore _inspectionRemoteStore;
   final MediaSyncRemoteStore _mediaRemoteStore;
   Completer<SyncRunResult>? _inFlightRun;
 
-  Future<SyncRunResult> runPending() {
+  Future<SyncRunResult> runPending({TenantContext? activeTenantContext}) {
     final inFlight = _inFlightRun;
     if (inFlight != null) {
       return inFlight.future;
@@ -43,20 +45,22 @@ class SyncRunner {
 
     final completer = Completer<SyncRunResult>();
     _inFlightRun = completer;
-    _drain().then(completer.complete).catchError(completer.completeError).whenComplete(
-      () {
-        _inFlightRun = null;
-      },
-    );
+    _drain(activeTenantContext: activeTenantContext)
+        .then(completer.complete)
+        .catchError(completer.completeError)
+        .whenComplete(() {
+          _inFlightRun = null;
+        });
     return completer.future;
   }
 
-  Future<SyncRunResult> _drain() async {
+  Future<SyncRunResult> _drain({TenantContext? activeTenantContext}) async {
     final all = await _outboxStore.listAll();
-    final runnable = all
-        .where(_isRunnable)
-        .toList(growable: true)
-      ..sort(_operationComparator);
+    final runnable =
+        all
+            .where((operation) => _isRunnable(operation, activeTenantContext))
+            .toList(growable: true)
+          ..sort(_operationComparator);
 
     var succeeded = 0;
     var failed = 0;
@@ -85,7 +89,10 @@ class SyncRunner {
     );
   }
 
-  bool _isRunnable(SyncOperation operation) {
+  bool _isRunnable(
+    SyncOperation operation,
+    TenantContext? activeTenantContext,
+  ) {
     if (operation.status == SyncOperationStatus.completed) {
       return false;
     }
@@ -94,9 +101,20 @@ class SyncRunner {
       return false;
     }
     if (operation.dependencyOperationId == null) {
-      return true;
+      return _matchesActiveTenant(operation, activeTenantContext);
     }
-    return true;
+    return _matchesActiveTenant(operation, activeTenantContext);
+  }
+
+  bool _matchesActiveTenant(
+    SyncOperation operation,
+    TenantContext? activeTenantContext,
+  ) {
+    if (activeTenantContext == null) {
+      return false;
+    }
+    return operation.userId == activeTenantContext.userId &&
+        operation.organizationId == activeTenantContext.organizationId;
   }
 
   Future<void> _execute(SyncOperation operation) async {
@@ -109,7 +127,9 @@ class SyncRunner {
           inspectionId: operation.payload['inspection_id'].toString(),
           organizationId: operation.payload['organization_id'].toString(),
           userId: operation.payload['user_id'].toString(),
-          wizardLastStep: int.parse(operation.payload['wizard_last_step'].toString()),
+          wizardLastStep: int.parse(
+            operation.payload['wizard_last_step'].toString(),
+          ),
           wizardCompletion: Map<String, bool>.from(
             operation.payload['wizard_completion'] as Map,
           ),
@@ -123,19 +143,26 @@ class SyncRunner {
         final categoryName = operation.payload['category']?.toString() ?? '';
         final category = RequiredPhotoCategory.values.firstWhere(
           (value) => value.name == categoryName,
-          orElse: () => throw StateError('Unknown media category: $categoryName'),
+          orElse: () =>
+              throw StateError('Unknown media category: $categoryName'),
         );
         await _mediaRemoteStore.upload(
           mediaId: operation.operationId,
           inspectionId: operation.payload['inspection_id'].toString(),
-          organizationId: operation.payload['organization_id']?.toString() ?? operation.organizationId,
+          organizationId:
+              operation.payload['organization_id']?.toString() ??
+              operation.organizationId,
           userId: operation.payload['user_id']?.toString() ?? operation.userId,
-          requirementKey: operation.payload['requirement_key']?.toString() ?? '',
-          mediaType: (operation.payload['media_type']?.toString() ?? '') == CapturedMediaType.document.name
+          requirementKey:
+              operation.payload['requirement_key']?.toString() ?? '',
+          mediaType:
+              (operation.payload['media_type']?.toString() ?? '') ==
+                  CapturedMediaType.document.name
               ? CapturedMediaType.document
               : CapturedMediaType.photo,
           evidenceInstanceId:
-              operation.payload['evidence_instance_id']?.toString() ?? operation.operationId,
+              operation.payload['evidence_instance_id']?.toString() ??
+              operation.operationId,
           category: category,
           filePath: operation.payload['file_path'].toString(),
           capturedAt: operation.createdAt,

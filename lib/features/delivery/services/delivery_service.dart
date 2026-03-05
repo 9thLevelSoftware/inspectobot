@@ -4,14 +4,12 @@ import 'package:inspectobot/features/delivery/data/delivery_repository.dart';
 import 'package:inspectobot/features/delivery/data/report_artifact_repository.dart';
 import 'package:inspectobot/features/delivery/domain/report_artifact.dart';
 import 'package:inspectobot/features/pdf/pdf_generation_input.dart';
+import 'package:inspectobot/features/storage/storage_path_contract.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DeliveryLinkResult {
-  const DeliveryLinkResult({
-    required this.url,
-    required this.correlationId,
-  });
+  const DeliveryLinkResult({required this.url, required this.correlationId});
 
   final String url;
   final String correlationId;
@@ -38,16 +36,18 @@ class DeliveryService {
     required ShareGateway shareGateway,
     this.defaultBucket = 'report-artifacts-private',
     this.signedUrlTtl = const Duration(minutes: 15),
-  })  : _artifactRepository = artifactRepository,
-        _deliveryRepository = deliveryRepository,
-        _auditRepository = auditRepository,
-        _signedUrlGateway = signedUrlGateway,
-        _shareGateway = shareGateway;
+  }) : _artifactRepository = artifactRepository,
+       _deliveryRepository = deliveryRepository,
+       _auditRepository = auditRepository,
+       _signedUrlGateway = signedUrlGateway,
+       _shareGateway = shareGateway;
 
   factory DeliveryService.live() {
     if (!SupabaseClientProvider.isConfigured) {
       return DeliveryService(
-        artifactRepository: ReportArtifactRepository(InMemoryReportArtifactGateway()),
+        artifactRepository: ReportArtifactRepository(
+          InMemoryReportArtifactGateway(),
+        ),
         deliveryRepository: DeliveryRepository(InMemoryDeliveryActionGateway()),
         auditRepository: AuditEventRepository(InMemoryAuditEventGateway()),
         signedUrlGateway: InMemorySignedUrlGateway(),
@@ -81,9 +81,15 @@ class DeliveryService {
     String? payloadHash,
   }) async {
     final now = DateTime.now().toUtc();
-    final correlationId = 'delivery-artifact::${input.inspectionId}::${now.millisecondsSinceEpoch}';
+    final correlationId =
+        'delivery-artifact::${input.inspectionId}::${now.millisecondsSinceEpoch}';
     final fileName = localFilePath.split(RegExp(r'[\\/]')).last;
-    final storagePath = '${input.organizationId}/${input.userId}/reports/${input.inspectionId}/$fileName';
+    final storagePath = buildReportArtifactStoragePath(
+      organizationId: input.organizationId,
+      userId: input.userId,
+      inspectionId: input.inspectionId,
+      fileName: fileName,
+    );
 
     final artifact = await _artifactRepository.upsertGeneratedArtifact(
       inspectionId: input.inspectionId,
@@ -97,9 +103,7 @@ class DeliveryService {
       createdAt: now,
       payloadHash: payloadHash,
       signatureHash: signatureHash,
-      metadata: <String, dynamic>{
-        'source_path': localFilePath,
-      },
+      metadata: <String, dynamic>{'source_path': localFilePath},
     );
 
     await _deliveryRepository.recordAction(
@@ -143,7 +147,9 @@ class DeliveryService {
     );
   }
 
-  Future<DeliveryLinkResult> startSecureShare({required ReportArtifact artifact}) {
+  Future<DeliveryLinkResult> startSecureShare({
+    required ReportArtifact artifact,
+  }) {
     return _createLinkAndRecord(
       artifact: artifact,
       actionType: 'share_started',
@@ -161,7 +167,8 @@ class DeliveryService {
     required bool shouldShare,
   }) async {
     final now = DateTime.now().toUtc();
-    final correlationId = '$actionType::${artifact.id}::${now.millisecondsSinceEpoch}';
+    final correlationId =
+        '$actionType::${artifact.id}::${now.millisecondsSinceEpoch}';
     final url = await _signedUrlGateway.createSignedUrl(
       bucket: artifact.storageBucket,
       path: artifact.storagePath,

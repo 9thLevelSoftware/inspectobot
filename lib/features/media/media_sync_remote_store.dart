@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:inspectobot/data/supabase/supabase_client_provider.dart';
+import 'package:inspectobot/features/storage/storage_path_contract.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'media_sync_task.dart';
@@ -34,8 +35,8 @@ class MediaSyncRemoteStore {
   MediaSyncRemoteStore({
     required MediaStorageGateway storage,
     required MediaMetadataGateway metadata,
-  })  : _storage = storage,
-        _metadata = metadata;
+  }) : _storage = storage,
+       _metadata = metadata;
 
   factory MediaSyncRemoteStore.live() {
     if (!SupabaseClientProvider.isConfigured) {
@@ -58,8 +59,13 @@ class MediaSyncRemoteStore {
     required String mediaId,
     required CapturedMediaType mediaType,
   }) {
-    final extension = mediaType == CapturedMediaType.document ? 'pdf' : 'jpg';
-    return 'org/$organizationId/users/$userId/inspections/$inspectionId/media/$mediaId.$extension';
+    return buildMediaStoragePath(
+      organizationId: organizationId,
+      userId: userId,
+      inspectionId: inspectionId,
+      mediaId: mediaId,
+      mediaType: mediaType,
+    );
   }
 
   Future<void> upload({
@@ -86,7 +92,9 @@ class MediaSyncRemoteStore {
     await _storage.upload(
       path: storagePath,
       bytes: bytes,
-      contentType: 'image/jpeg',
+      contentType: mediaType == CapturedMediaType.document
+          ? 'application/pdf'
+          : 'image/jpeg',
     );
     await _metadata.upsertMetadata(
       mediaId: mediaId,
@@ -114,11 +122,13 @@ class SupabaseMediaStorageGateway implements MediaStorageGateway {
     required Uint8List bytes,
     required String contentType,
   }) {
-    return _client.storage.from('inspection-media-private').uploadBinary(
-      path,
-      bytes,
-      fileOptions: FileOptions(contentType: contentType, upsert: true),
-    );
+    return _client.storage
+        .from('inspection-media-private')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(contentType: contentType, upsert: true),
+        );
   }
 }
 
@@ -140,17 +150,21 @@ class SupabaseMediaMetadataGateway implements MediaMetadataGateway {
     required String storagePath,
     required DateTime capturedAt,
   }) {
-    return _client.from('inspection_media_assets').upsert(<String, dynamic>{
-      'id': mediaId,
-      'inspection_id': inspectionId,
-      'organization_id': organizationId,
-      'user_id': userId,
-      'requirement_key': requirementKey,
-      'media_type': mediaType.name,
-      'evidence_instance_id': evidenceInstanceId,
-      'category': category.name,
-      'storage_path': storagePath,
-      'captured_at': capturedAt.toIso8601String(),
-    }, onConflict: 'inspection_id,requirement_key,evidence_instance_id,media_type');
+    return _client.from('inspection_media_assets').upsert(
+      <String, dynamic>{
+        'id': mediaId,
+        'inspection_id': inspectionId,
+        'organization_id': organizationId,
+        'user_id': userId,
+        'requirement_key': requirementKey,
+        'media_type': mediaType.name,
+        'evidence_instance_id': evidenceInstanceId,
+        'category': category.name,
+        'storage_path': storagePath,
+        'captured_at': capturedAt.toIso8601String(),
+      },
+      onConflict:
+          'inspection_id,requirement_key,evidence_instance_id,media_type',
+    );
   }
 }

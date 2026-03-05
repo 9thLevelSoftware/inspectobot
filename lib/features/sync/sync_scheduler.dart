@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/widgets.dart';
 import 'package:inspectobot/data/supabase/supabase_client_provider.dart';
+import 'package:inspectobot/features/auth/data/auth_repository.dart';
+import 'package:inspectobot/features/auth/domain/tenant_context.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/media/media_sync_remote_store.dart';
 
@@ -13,23 +15,35 @@ class SyncScheduler with WidgetsBindingObserver {
   SyncScheduler({
     required SyncRunner runner,
     Stream<Object>? connectivityChanges,
-  })  : _runner = runner,
-        _connectivityChanges = connectivityChanges;
+    Future<TenantContext?> Function()? activeTenantContextProvider,
+  }) : _runner = runner,
+       _connectivityChanges = connectivityChanges,
+       _activeTenantContextProvider =
+           activeTenantContextProvider ?? (() async => null);
 
   factory SyncScheduler.live() {
     if (!SupabaseClientProvider.isConfigured) {
-      throw StateError('Supabase must be configured before starting sync scheduler.');
+      throw StateError(
+        'Supabase must be configured before starting sync scheduler.',
+      );
     }
     final runner = SyncRunner(
       outboxStore: SyncOutboxStore(),
-      inspectionRemoteStore: SupabaseInspectionStore(SupabaseClientProvider.client),
+      inspectionRemoteStore: SupabaseInspectionStore(
+        SupabaseClientProvider.client,
+      ),
       mediaRemoteStore: MediaSyncRemoteStore.live(),
     );
+    final authRepository = AuthRepository.live();
     return SyncScheduler(
       runner: runner,
-      connectivityChanges: Connectivity()
-          .onConnectivityChanged
-          .map<Object>((event) => event),
+      connectivityChanges: Connectivity().onConnectivityChanged.map<Object>(
+        (event) => event,
+      ),
+      activeTenantContextProvider: () async {
+        final session = await authRepository.resolveCurrentSession();
+        return session?.tenantContext;
+      },
     );
   }
 
@@ -43,6 +57,7 @@ class SyncScheduler with WidgetsBindingObserver {
 
   final SyncRunner _runner;
   final Stream<Object>? _connectivityChanges;
+  final Future<TenantContext?> Function() _activeTenantContextProvider;
   StreamSubscription<Object>? _connectivitySubscription;
   bool _started = false;
 
@@ -74,8 +89,9 @@ class SyncScheduler with WidgetsBindingObserver {
     _connectivitySubscription = null;
   }
 
-  Future<SyncRunResult> runPending() {
-    return _runner.runPending();
+  Future<SyncRunResult> runPending() async {
+    final activeTenantContext = await _activeTenantContextProvider();
+    return _runner.runPending(activeTenantContext: activeTenantContext);
   }
 
   @override

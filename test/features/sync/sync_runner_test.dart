@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inspectobot/features/auth/domain/tenant_context.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
 import 'package:inspectobot/features/media/media_sync_remote_store.dart';
@@ -36,7 +37,9 @@ void main() {
   }
 
   test('runner executes operations in dependency-safe order', () async {
-    final tempRoot = await Directory.systemTemp.createTemp('inspectobot_sync_runner_');
+    final tempRoot = await Directory.systemTemp.createTemp(
+      'inspectobot_sync_runner_',
+    );
     addTearDown(() async {
       if (await tempRoot.exists()) {
         await tempRoot.delete(recursive: true);
@@ -87,7 +90,12 @@ void main() {
       mediaRemoteStore: mediaStore,
     );
 
-    final result = await runner.runPending();
+    final result = await runner.runPending(
+      activeTenantContext: const TenantContext(
+        userId: 'user-1',
+        organizationId: 'org-1',
+      ),
+    );
     expect(result.attempted, 2);
     expect(result.succeeded, 2);
     expect(result.failed, 0);
@@ -95,75 +103,148 @@ void main() {
     expect(mediaStore.events.first, 'media:upload:media-1');
   });
 
-  test('runner increments retry metadata and skips exhausted failures', () async {
-    final tempRoot = await Directory.systemTemp.createTemp('inspectobot_sync_retry_');
-    addTearDown(() async {
-      if (await tempRoot.exists()) {
-        await tempRoot.delete(recursive: true);
-      }
-    });
+  test(
+    'runner increments retry metadata and skips exhausted failures',
+    () async {
+      final tempRoot = await Directory.systemTemp.createTemp(
+        'inspectobot_sync_retry_',
+      );
+      addTearDown(() async {
+        if (await tempRoot.exists()) {
+          await tempRoot.delete(recursive: true);
+        }
+      });
 
-    final outbox = SyncOutboxStore(directoryProvider: () async => tempRoot);
-    await outbox.enqueue(
-      buildOp(
-        id: 'failable',
-        type: SyncOperationType.mediaUpload,
-        payload: <String, dynamic>{
-          'inspection_id': 'insp-1',
-          'organization_id': 'org-1',
-          'user_id': 'user-1',
-          'requirement_key': 'photo:exteriorFront',
-          'media_type': 'photo',
-          'evidence_instance_id': 'photo:exteriorFront',
-          'category': 'exteriorFront',
-          'file_path': '/tmp/front.jpg',
-        },
-      ),
-    );
-    await outbox.enqueue(
-      buildOp(
-        id: 'exhausted',
-        type: SyncOperationType.mediaUpload,
-        payload: <String, dynamic>{
-          'inspection_id': 'insp-1',
-          'organization_id': 'org-1',
-          'user_id': 'user-1',
-          'requirement_key': 'photo:exteriorRear',
-          'media_type': 'photo',
-          'evidence_instance_id': 'photo:exteriorRear',
-          'category': 'exteriorRear',
-          'file_path': '/tmp/rear.jpg',
-        },
-        status: SyncOperationStatus.failed,
-        retryCount: 3,
-        maxRetries: 3,
-      ),
-    );
+      final outbox = SyncOutboxStore(directoryProvider: () async => tempRoot);
+      await outbox.enqueue(
+        buildOp(
+          id: 'failable',
+          type: SyncOperationType.mediaUpload,
+          payload: <String, dynamic>{
+            'inspection_id': 'insp-1',
+            'organization_id': 'org-1',
+            'user_id': 'user-1',
+            'requirement_key': 'photo:exteriorFront',
+            'media_type': 'photo',
+            'evidence_instance_id': 'photo:exteriorFront',
+            'category': 'exteriorFront',
+            'file_path': '/tmp/front.jpg',
+          },
+        ),
+      );
+      await outbox.enqueue(
+        buildOp(
+          id: 'exhausted',
+          type: SyncOperationType.mediaUpload,
+          payload: <String, dynamic>{
+            'inspection_id': 'insp-1',
+            'organization_id': 'org-1',
+            'user_id': 'user-1',
+            'requirement_key': 'photo:exteriorRear',
+            'media_type': 'photo',
+            'evidence_instance_id': 'photo:exteriorRear',
+            'category': 'exteriorRear',
+            'file_path': '/tmp/rear.jpg',
+          },
+          status: SyncOperationStatus.failed,
+          retryCount: 3,
+          maxRetries: 3,
+        ),
+      );
 
-    final runner = SyncRunner(
-      outboxStore: outbox,
-      inspectionRemoteStore: _RecordingInspectionStore(),
-      mediaRemoteStore: _AlwaysFailMediaRemoteStore(),
-    );
+      final runner = SyncRunner(
+        outboxStore: outbox,
+        inspectionRemoteStore: _RecordingInspectionStore(),
+        mediaRemoteStore: _AlwaysFailMediaRemoteStore(),
+      );
 
-    final result = await runner.runPending();
-    expect(result.attempted, 1);
-    expect(result.failed, 1);
-    expect(result.skipped, 1);
+      final result = await runner.runPending(
+        activeTenantContext: const TenantContext(
+          userId: 'user-1',
+          organizationId: 'org-1',
+        ),
+      );
+      expect(result.attempted, 1);
+      expect(result.failed, 1);
+      expect(result.skipped, 1);
 
-    final operations = await outbox.listAll();
-    final failed = operations.firstWhere((op) => op.operationId == 'failable');
-    expect(failed.status, SyncOperationStatus.failed);
-    expect(failed.retryCount, 1);
-    expect(failed.lastError, contains('upload failed'));
-  });
+      final operations = await outbox.listAll();
+      final failed = operations.firstWhere(
+        (op) => op.operationId == 'failable',
+      );
+      expect(failed.status, SyncOperationStatus.failed);
+      expect(failed.retryCount, 1);
+      expect(failed.lastError, contains('upload failed'));
+    },
+  );
+
+  test(
+    'runner skips operations for mismatched active tenant context',
+    () async {
+      final tempRoot = await Directory.systemTemp.createTemp(
+        'inspectobot_sync_tenant_gate_',
+      );
+      addTearDown(() async {
+        if (await tempRoot.exists()) {
+          await tempRoot.delete(recursive: true);
+        }
+      });
+
+      final outbox = SyncOutboxStore(directoryProvider: () async => tempRoot);
+      await outbox.enqueue(
+        SyncOperation(
+          operationId: 'media-other-user',
+          type: SyncOperationType.mediaUpload,
+          aggregateId: 'insp-1',
+          organizationId: 'org-1',
+          userId: 'user-2',
+          payload: <String, dynamic>{
+            'inspection_id': 'insp-1',
+            'organization_id': 'org-1',
+            'user_id': 'user-2',
+            'requirement_key': 'photo:exteriorFront',
+            'media_type': 'photo',
+            'evidence_instance_id': 'photo:exteriorFront',
+            'category': 'exteriorFront',
+            'file_path': '/tmp/front.jpg',
+          },
+          createdAt: DateTime.utc(2026, 3, 4, 18, 0, 0),
+          updatedAt: DateTime.utc(2026, 3, 4, 18, 0, 0),
+        ),
+      );
+
+      final inspectionStore = _RecordingInspectionStore();
+      final mediaStore = _RecordingMediaRemoteStore();
+      final runner = SyncRunner(
+        outboxStore: outbox,
+        inspectionRemoteStore: inspectionStore,
+        mediaRemoteStore: mediaStore,
+      );
+
+      final result = await runner.runPending(
+        activeTenantContext: const TenantContext(
+          userId: 'user-1',
+          organizationId: 'org-1',
+        ),
+      );
+
+      expect(result.attempted, 0);
+      expect(result.succeeded, 0);
+      expect(result.failed, 0);
+      expect(result.skipped, 1);
+      expect(inspectionStore.events, isEmpty);
+      expect(mediaStore.events, isEmpty);
+    },
+  );
 }
 
 class _RecordingInspectionStore implements InspectionStore {
   final List<String> events = <String>[];
 
   @override
-  Future<Map<String, dynamic>> create(Map<String, dynamic> inspectionJson) async {
+  Future<Map<String, dynamic>> create(
+    Map<String, dynamic> inspectionJson,
+  ) async {
     events.add('inspection:create:${inspectionJson['id']}');
     return inspectionJson;
   }
@@ -251,10 +332,7 @@ class _RecordingInspectionStore implements InspectionStore {
 
 class _RecordingMediaRemoteStore extends MediaSyncRemoteStore {
   _RecordingMediaRemoteStore()
-      : super(
-          storage: _NoopStorageGateway(),
-          metadata: _NoopMetadataGateway(),
-        );
+    : super(storage: _NoopStorageGateway(), metadata: _NoopMetadataGateway());
 
   final List<String> events = <String>[];
 
@@ -277,10 +355,7 @@ class _RecordingMediaRemoteStore extends MediaSyncRemoteStore {
 
 class _AlwaysFailMediaRemoteStore extends MediaSyncRemoteStore {
   _AlwaysFailMediaRemoteStore()
-      : super(
-          storage: _NoopStorageGateway(),
-          metadata: _NoopMetadataGateway(),
-        );
+    : super(storage: _NoopStorageGateway(), metadata: _NoopMetadataGateway());
 
   @override
   Future<void> upload({
