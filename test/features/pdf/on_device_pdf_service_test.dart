@@ -51,12 +51,12 @@ void main() {
         },
         wizardCompletion: const <String, bool>{
           'photo:exterior_front': true,
-          'photo:roof_overview': true,
+          'photo:roof_condition_main_slope': true,
         },
         fieldValues: const <String, String>{'inspection_id': 'insp-1'},
         evidenceMediaPaths: <String, List<String>>{
           'photo:exterior_front': <String>[photoFile.path],
-          'photo:roof_overview': <String>[photoFile.path],
+          'photo:roof_condition_main_slope': <String>[photoFile.path],
         },
         signatureBytes: Uint8List.fromList(<int>[9, 9, 9, 9]),
       );
@@ -213,7 +213,7 @@ const String _roofMap = '''
   "map_version": "v1",
   "fields": [
     {"key": "text.client_name", "source_key": "client_name", "type": "text", "page": 1, "x": 40, "y": 700, "width": 180, "height": 14},
-    {"key": "image.photo_roof_overview", "source_key": "photo:roof_overview", "type": "image", "page": 1, "x": 40, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_roof_condition_main_slope", "source_key": "photo:roof_condition_main_slope", "type": "image", "page": 1, "x": 40, "y": 520, "width": 120, "height": 90},
     {"key": "signature.inspector", "source_key": "inspector_signature", "type": "signature", "page": 1, "x": 360, "y": 86, "width": 170, "height": 36}
   ]
 }
