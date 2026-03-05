@@ -30,6 +30,12 @@ abstract class MediaMetadataGateway {
     required String contentType,
     required DateTime capturedAt,
   });
+
+  Future<List<Map<String, dynamic>>> listByInspection({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  });
 }
 
 class MediaSyncRemoteStore {
@@ -115,6 +121,36 @@ class MediaSyncRemoteStore {
     );
   }
 
+  Future<Map<String, List<String>>> loadEvidenceMediaPaths({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    final rows = await _metadata.listByInspection(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+    );
+
+    final byRequirement = <String, List<String>>{};
+    for (final row in rows) {
+      final requirementKey = row['requirement_key']?.toString();
+      final storagePath = row['storage_path']?.toString();
+      if (requirementKey == null ||
+          requirementKey.trim().isEmpty ||
+          storagePath == null ||
+          storagePath.trim().isEmpty) {
+        continue;
+      }
+      byRequirement.putIfAbsent(requirementKey, () => <String>[]).add(storagePath);
+    }
+
+    for (final paths in byRequirement.values) {
+      paths.sort();
+    }
+    return byRequirement;
+  }
+
   static String _resolveContentType({
     required CapturedMediaType mediaType,
     required String filePath,
@@ -194,5 +230,24 @@ class SupabaseMediaMetadataGateway implements MediaMetadataGateway {
       onConflict:
           'inspection_id,requirement_key,evidence_instance_id,media_type',
     );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> listByInspection({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    final result = await _client
+        .from('inspection_media_assets')
+        .select()
+        .eq('inspection_id', inspectionId)
+        .eq('organization_id', organizationId)
+        .eq('user_id', userId)
+        .order('captured_at', ascending: true);
+
+    return (result as List<dynamic>)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList(growable: false);
   }
 }

@@ -8,6 +8,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class SignatureStorageGateway {
   Future<void> upload({required String path, required Uint8List bytes});
+
+  Future<Uint8List?> read({required String path});
 }
 
 abstract class SignatureMetadataGateway {
@@ -100,6 +102,41 @@ class SignatureRepository {
       capturedAt: DateTime.parse(json['captured_at'] as String).toUtc(),
     );
   }
+
+  Future<LoadedSignature?> loadSignatureForGeneration({
+    required String organizationId,
+    required String userId,
+  }) async {
+    final record = await loadSignature(
+      organizationId: organizationId,
+      userId: userId,
+    );
+    if (record == null) {
+      return null;
+    }
+
+    final expectedPath = buildStoragePath(
+      organizationId: organizationId,
+      userId: userId,
+    );
+    if (record.storagePath != expectedPath) {
+      throw StateError(
+        'Stored signature path does not match organization/user scope.',
+      );
+    }
+
+    final bytes = await _storage.read(path: record.storagePath);
+    if (bytes == null || bytes.isEmpty) {
+      throw StateError('Stored inspector signature bytes are required.');
+    }
+
+    final bytesHash = sha256.convert(bytes).toString();
+    if (bytesHash != record.fileHash) {
+      throw StateError('Stored inspector signature bytes hash mismatch.');
+    }
+
+    return LoadedSignature(record: record, bytes: bytes);
+  }
 }
 
 class SupabaseSignatureStorageGateway implements SignatureStorageGateway {
@@ -114,6 +151,15 @@ class SupabaseSignatureStorageGateway implements SignatureStorageGateway {
       bytes,
       fileOptions: const FileOptions(upsert: true),
     );
+  }
+
+  @override
+  Future<Uint8List?> read({required String path}) async {
+    final bytes = await _client.storage.from('signature-private').download(path);
+    if (bytes.isEmpty) {
+      return null;
+    }
+    return bytes;
   }
 }
 
@@ -175,6 +221,15 @@ class InMemorySignatureGateway
   @override
   Future<void> upload({required String path, required Uint8List bytes}) async {
     _bytesByPath[path] = base64Encode(bytes);
+  }
+
+  @override
+  Future<Uint8List?> read({required String path}) async {
+    final encoded = _bytesByPath[path];
+    if (encoded == null) {
+      return null;
+    }
+    return Uint8List.fromList(base64Decode(encoded));
   }
 
   @override

@@ -41,3 +41,10 @@ class SignatureRecord {
   final String fileHash;
   final DateTime capturedAt;
 }
+
+class LoadedSignature {
+  const LoadedSignature({required this.record, required this.bytes});
+
+  final SignatureRecord record;
+  final List<int> bytes;
+}

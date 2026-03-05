@@ -37,4 +37,25 @@ void main() {
     expect(loaded!.storagePath, saved.storagePath);
     expect(loaded.fileHash, saved.fileHash);
   });
+
+  test('loadSignatureForGeneration returns bytes linked to metadata hash', () async {
+    final gateway = InMemorySignatureGateway();
+    final repository = SignatureRepository(storage: gateway, metadata: gateway);
+    final bytes = Uint8List.fromList([9, 8, 7, 6]);
+
+    await repository.saveSignature(
+      organizationId: 'org-1',
+      userId: 'user-1',
+      bytes: bytes,
+    );
+
+    final loaded = await repository.loadSignatureForGeneration(
+      organizationId: 'org-1',
+      userId: 'user-1',
+    );
+
+    expect(loaded, isNotNull);
+    expect(loaded!.bytes, bytes);
+    expect(loaded.record.storagePath, 'org/org-1/users/user-1/signature.png');
+  });
 }
