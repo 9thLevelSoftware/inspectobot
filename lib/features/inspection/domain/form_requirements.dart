@@ -174,22 +174,45 @@ class FormRequirements {
   static final Map<FormType, List<RequiredPhotoCategory>> requiredPhotos = {
     for (final entry in _requirementsByForm.entries)
       entry.key: entry.value
-          .where((requirement) => requirement.applies(const <String, dynamic>{}))
-          .where((requirement) => requirement.mediaType == EvidenceMediaType.photo)
+          .where(
+            (requirement) => requirement.applies(const <String, dynamic>{}),
+          )
+          .where(
+            (requirement) => requirement.mediaType == EvidenceMediaType.photo,
+          )
           .map((requirement) => requirement.category)
           .whereType<RequiredPhotoCategory>()
           .toList(growable: false),
+  };
+
+  static final Map<RequiredPhotoCategory, String> _canonicalPhotoKeyByCategory =
+      {
+        for (final form in FormType.values)
+          for (final requirement
+              in _requirementsByForm[form] ?? const <EvidenceRequirement>[])
+            if (requirement.mediaType == EvidenceMediaType.photo &&
+                requirement.category != null)
+              requirement.category!: requirement.key,
+      };
+
+  static final Map<String, RequiredPhotoCategory> _categoryByRequirementKey = {
+    for (final requirements in _requirementsByForm.values)
+      for (final requirement in requirements)
+        if (requirement.category != null)
+          requirement.key: requirement.category!,
   };
 
   static List<EvidenceRequirement> forFormRequirements(
     FormType form, {
     Map<String, dynamic> branchContext = const <String, dynamic>{},
   }) {
-    final requirements = _requirementsByForm[form] ?? const <EvidenceRequirement>[];
-    final filtered = requirements
-        .where((requirement) => requirement.applies(branchContext))
-        .toList(growable: false)
-      ..sort((a, b) => a.key.compareTo(b.key));
+    final requirements =
+        _requirementsByForm[form] ?? const <EvidenceRequirement>[];
+    final filtered =
+        requirements
+            .where((requirement) => requirement.applies(branchContext))
+            .toList(growable: false)
+          ..sort((a, b) => a.key.compareTo(b.key));
     _assertUniqueKeys(filtered);
     return filtered;
   }
@@ -199,7 +222,8 @@ class FormRequirements {
     Map<String, dynamic> branchContext = const <String, dynamic>{},
   }) {
     final merged = <EvidenceRequirement>[];
-    final sortedForms = forms.toList()..sort((a, b) => a.index.compareTo(b.index));
+    final sortedForms = forms.toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
     for (final form in sortedForms) {
       merged.addAll(forFormRequirements(form, branchContext: branchContext));
     }
@@ -219,24 +243,35 @@ class FormRequirements {
   }
 
   static List<RequiredPhotoCategory> forForm(FormType form) {
-    return List<RequiredPhotoCategory>.unmodifiable(requiredPhotos[form] ?? const []);
+    return List<RequiredPhotoCategory>.unmodifiable(
+      requiredPhotos[form] ?? const [],
+    );
   }
 
   static String requirementKeyForPhoto(RequiredPhotoCategory category) {
-    return 'photo:${category.name}';
+    return _canonicalPhotoKeyByCategory[category] ?? 'photo:${category.name}';
   }
 
   static List<String> requirementKeysForForm(FormType form) {
-    return forForm(form)
-        .map(requirementKeyForPhoto)
+    return forFormRequirements(form)
+        .where(
+          (requirement) => requirement.mediaType == EvidenceMediaType.photo,
+        )
+        .map((requirement) => requirement.key)
         .toList(growable: false);
+  }
+
+  static RequiredPhotoCategory? categoryForRequirementKey(String key) {
+    return _categoryByRequirementKey[key];
   }
 
   static void _assertUniqueKeys(List<EvidenceRequirement> requirements) {
     final keys = <String>{};
     for (final requirement in requirements) {
       if (!keys.add(requirement.key)) {
-        throw StateError('Duplicate evidence requirement key: ${requirement.key}');
+        throw StateError(
+          'Duplicate evidence requirement key: ${requirement.key}',
+        );
       }
     }
   }
@@ -287,4 +322,3 @@ class FormRequirements {
 
   static bool _always(Map<String, dynamic> _) => true;
 }
-

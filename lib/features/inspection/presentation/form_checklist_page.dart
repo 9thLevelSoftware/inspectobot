@@ -28,12 +28,13 @@ class FormChecklistPage extends StatefulWidget {
     ReportSignatureEvidenceRepository? signatureEvidenceRepository,
     DeliveryService? deliveryService,
     PdfOrchestrator? pdfOrchestrator,
-  })  : repository = repository ?? InspectionRepository.live(),
-        signatureRepository = signatureRepository ?? SignatureRepository.live(),
-        signatureEvidenceRepository =
-            signatureEvidenceRepository ?? ReportSignatureEvidenceRepository.live(),
-        deliveryService = deliveryService ?? DeliveryService.live(),
-        pdfOrchestrator = pdfOrchestrator;
+  }) : repository = repository ?? InspectionRepository.live(),
+       signatureRepository = signatureRepository ?? SignatureRepository.live(),
+       signatureEvidenceRepository =
+           signatureEvidenceRepository ??
+           ReportSignatureEvidenceRepository.live(),
+       deliveryService = deliveryService ?? DeliveryService.live(),
+       pdfOrchestrator = pdfOrchestrator;
 
   final InspectionDraft draft;
   final InspectionRepository repository;
@@ -72,7 +73,8 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   @override
   void initState() {
     super.initState();
-    _pdfOrchestrator = widget.pdfOrchestrator ??
+    _pdfOrchestrator =
+        widget.pdfOrchestrator ??
         PdfOrchestrator(
           onDevice: OnDevicePdfService(),
           cloud: const CloudPdfService(),
@@ -143,14 +145,10 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   }
 
   RequiredPhotoCategory? _categoryForRequirementKey(String key) {
-    final normalizedKey = key.contains('#') ? key.substring(0, key.indexOf('#')) : key;
-    for (final category in RequiredPhotoCategory.values) {
-      final photoKey = FormRequirements.requirementKeyForPhoto(category);
-      if (photoKey == normalizedKey) {
-        return category;
-      }
-    }
-    return null;
+    final normalizedKey = key.contains('#')
+        ? key.substring(0, key.indexOf('#'))
+        : key;
+    return FormRequirements.categoryForRequirementKey(normalizedKey);
   }
 
   Future<void> _capture(EvidenceRequirement requirement) async {
@@ -178,7 +176,9 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
     setState(() {
       widget.draft.capturedCategories.add(category);
       widget.draft.capturedPhotoPaths[category] = result.filePath;
-      widget.draft.capturedEvidencePaths[requirement.key] = <String>[result.filePath];
+      widget.draft.capturedEvidencePaths[requirement.key] = <String>[
+        result.filePath,
+      ];
       _snapshot = _snapshot.copyWith(completion: completion);
     });
     await _syncReadinessFromSnapshot();
@@ -218,7 +218,9 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
           .map((requirement) => requirement.label)
           .join(', ');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Complete required items before continuing: $missing')),
+        SnackBar(
+          content: Text('Complete required items before continuing: $missing'),
+        ),
       );
       return;
     }
@@ -232,7 +234,7 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
       }
       if (isLastStep) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Inspection wizard complete.')), 
+          const SnackBar(content: Text('Inspection wizard complete.')),
         );
         return;
       }
@@ -304,15 +306,17 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
         _lastArtifact = artifact;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PDF generated (${sizeKb}KB) and delivery saved.')),
+        SnackBar(
+          content: Text('PDF generated (${sizeKb}KB) and delivery saved.'),
+        ),
       );
     } catch (error) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PDF generation failed: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('PDF generation failed: $error')));
     } finally {
       if (mounted) {
         setState(() => _isGenerating = false);
@@ -337,9 +341,9 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Download failed: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Download failed: $error')));
     }
   }
 
@@ -349,7 +353,9 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
       return;
     }
     try {
-      final result = await _deliveryService.startSecureShare(artifact: artifact);
+      final result = await _deliveryService.startSecureShare(
+        artifact: artifact,
+      );
       if (!mounted) {
         return;
       }
@@ -360,9 +366,9 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Secure share failed: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Secure share failed: $error')));
     }
   }
 
@@ -378,26 +384,30 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
     }
 
     return Column(
-      children: step.requirements.map((requirement) {
-        final category = requirement.category;
-        final captured = _snapshot.completion[requirement.key] == true;
-        return Card(
-          child: ListTile(
-            title: Text(requirement.label),
-            subtitle: Text(captured ? 'Captured' : 'Missing required item'),
-            trailing: captured
-                ? const Icon(Icons.check_circle, color: Colors.green)
-                : OutlinedButton(
-                    onPressed: category == null ? null : () => _capture(requirement),
-                    child: Text(
-                      requirement.mediaType == EvidenceMediaType.document
-                          ? 'Upload'
-                          : 'Capture',
-                    ),
-                  ),
-          ),
-        );
-      }).toList(growable: false),
+      children: step.requirements
+          .map((requirement) {
+            final category = requirement.category;
+            final captured = _snapshot.completion[requirement.key] == true;
+            return Card(
+              child: ListTile(
+                title: Text(requirement.label),
+                subtitle: Text(captured ? 'Captured' : 'Missing required item'),
+                trailing: captured
+                    ? const Icon(Icons.check_circle, color: Colors.green)
+                    : OutlinedButton(
+                        onPressed: category == null
+                            ? null
+                            : () => _capture(requirement),
+                        child: Text(
+                          requirement.mediaType == EvidenceMediaType.document
+                              ? 'Upload'
+                              : 'Capture',
+                        ),
+                      ),
+              ),
+            );
+          })
+          .toList(growable: false),
     );
   }
 
