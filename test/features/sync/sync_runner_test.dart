@@ -446,6 +446,11 @@ class _AlwaysFailMediaRemoteStore extends MediaSyncRemoteStore {
 
 class _NoopStorageGateway implements MediaStorageGateway {
   @override
+  Future<Uint8List?> readBytes({required String path}) async {
+    return null;
+  }
+
+  @override
   Future<void> upload({
     required String path,
     required Uint8List bytes,

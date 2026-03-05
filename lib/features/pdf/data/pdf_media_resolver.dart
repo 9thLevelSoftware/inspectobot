@@ -4,22 +4,28 @@ import 'dart:typed_data';
 import '../models/pdf_field_map.dart';
 import '../pdf_generation_input.dart';
 
+typedef PdfRemoteMediaReader = Future<Uint8List?> Function(String storagePath);
+
 class ResolvedPdfFieldData {
   const ResolvedPdfFieldData({
     required this.textByFieldKey,
     required this.checkboxByFieldKey,
     required this.imageByFieldKey,
     required this.signatureByFieldKey,
+    required this.unresolvedMediaByFieldKey,
   });
 
   final Map<String, String> textByFieldKey;
   final Map<String, bool> checkboxByFieldKey;
   final Map<String, Uint8List> imageByFieldKey;
   final Map<String, Uint8List> signatureByFieldKey;
+  final Map<String, String> unresolvedMediaByFieldKey;
 }
 
 class PdfMediaResolver {
-  const PdfMediaResolver();
+  const PdfMediaResolver({this.remoteReadBytes});
+
+  final PdfRemoteMediaReader? remoteReadBytes;
 
   Future<ResolvedPdfFieldData> resolve({
     required PdfGenerationInput input,
@@ -29,6 +35,7 @@ class PdfMediaResolver {
     final checkboxByFieldKey = <String, bool>{};
     final imageByFieldKey = <String, Uint8List>{};
     final signatureByFieldKey = <String, Uint8List>{};
+    final unresolvedMediaByFieldKey = <String, String>{};
 
     for (final field in fieldMap.fields) {
       switch (field.type) {
@@ -43,12 +50,14 @@ class PdfMediaResolver {
             input: input,
           );
         case PdfFieldType.image:
-          final bytes = await _resolveImageBytes(
+          final imageResult = await _resolveImageBytes(
             sourceKey: field.sourceKey,
             input: input,
           );
-          if (bytes != null) {
-            imageByFieldKey[field.key] = bytes;
+          if (imageResult.bytes != null) {
+            imageByFieldKey[field.key] = imageResult.bytes!;
+          } else {
+            unresolvedMediaByFieldKey[field.key] = imageResult.reason;
           }
         case PdfFieldType.signature:
           final signature = input.signatureBytes;
@@ -63,6 +72,7 @@ class PdfMediaResolver {
       checkboxByFieldKey: checkboxByFieldKey,
       imageByFieldKey: imageByFieldKey,
       signatureByFieldKey: signatureByFieldKey,
+      unresolvedMediaByFieldKey: unresolvedMediaByFieldKey,
     );
   }
 
@@ -101,18 +111,69 @@ class PdfMediaResolver {
     return input.wizardCompletion[sourceKey] == true;
   }
 
-  Future<Uint8List?> _resolveImageBytes({
+  Future<_ImageResolutionResult> _resolveImageBytes({
     required String sourceKey,
     required PdfGenerationInput input,
   }) async {
     final paths = input.evidenceMediaPaths[sourceKey];
     if (paths == null || paths.isEmpty) {
-      return null;
+      return const _ImageResolutionResult(
+        bytes: null,
+        reason: 'No media references provided',
+      );
     }
-    final file = File(paths.first);
-    if (!await file.exists()) {
-      return null;
+
+    String? lastFailure;
+    for (final rawPath in paths) {
+      final reference = rawPath.trim();
+      if (reference.isEmpty) {
+        continue;
+      }
+
+      final file = File(reference);
+      try {
+        if (await file.exists()) {
+          final localBytes = await file.readAsBytes();
+          if (localBytes.isNotEmpty) {
+            return _ImageResolutionResult(
+              bytes: localBytes,
+              reason: 'Resolved from local file',
+            );
+          }
+          lastFailure = 'Local file was empty: $reference';
+          continue;
+        }
+      } catch (_) {
+        lastFailure = 'Local read failed: $reference';
+      }
+
+      final remoteReader = remoteReadBytes;
+      if (remoteReader != null) {
+        try {
+          final remoteBytes = await remoteReader(reference);
+          if (remoteBytes != null && remoteBytes.isNotEmpty) {
+            return _ImageResolutionResult(
+              bytes: remoteBytes,
+              reason: 'Resolved from remote storage key',
+            );
+          }
+          lastFailure = 'Remote object key not found: $reference';
+        } catch (_) {
+          lastFailure = 'Remote read failed: $reference';
+        }
+      }
     }
-    return file.readAsBytes();
+
+    return _ImageResolutionResult(
+      bytes: null,
+      reason: lastFailure ?? 'Unable to resolve media references',
+    );
   }
+}
+
+class _ImageResolutionResult {
+  const _ImageResolutionResult({required this.bytes, required this.reason});
+
+  final Uint8List? bytes;
+  final String reason;
 }

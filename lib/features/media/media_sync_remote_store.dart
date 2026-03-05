@@ -14,6 +14,8 @@ abstract class MediaStorageGateway {
     required Uint8List bytes,
     required String contentType,
   });
+
+  Future<Uint8List?> readBytes({required String path});
 }
 
 abstract class MediaMetadataGateway {
@@ -151,6 +153,10 @@ class MediaSyncRemoteStore {
     return byRequirement;
   }
 
+  Future<Uint8List?> readBytesByStoragePath({required String storagePath}) {
+    return _storage.readBytes(path: storagePath);
+  }
+
   static String _resolveContentType({
     required CapturedMediaType mediaType,
     required String filePath,
@@ -191,6 +197,15 @@ class SupabaseMediaStorageGateway implements MediaStorageGateway {
           bytes,
           fileOptions: FileOptions(contentType: contentType, upsert: true),
         );
+  }
+
+  @override
+  Future<Uint8List?> readBytes({required String path}) async {
+    final bytes = await _client.storage.from('inspection-media-private').download(path);
+    if (bytes.isEmpty) {
+      return null;
+    }
+    return bytes;
   }
 }
 

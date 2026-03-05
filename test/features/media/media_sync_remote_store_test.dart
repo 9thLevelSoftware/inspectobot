@@ -112,11 +112,33 @@ void main() {
       );
     },
   );
+
+  test('readBytesByStoragePath delegates to storage gateway', () async {
+    final storage = _CapturingStorageGateway()
+      ..bytesByPath = Uint8List.fromList(<int>[7, 8, 9]);
+    final store = MediaSyncRemoteStore(
+      storage: storage,
+      metadata: _NoopMetadataGateway(),
+    );
+
+    final bytes = await store.readBytesByStoragePath(
+      storagePath: 'org/org-1/users/user-1/inspections/insp-1/media/media-1.jpg',
+    );
+
+    expect(bytes, isNotNull);
+    expect(bytes, <int>[7, 8, 9]);
+  });
 }
 
 class _CapturingStorageGateway implements MediaStorageGateway {
   String? lastPath;
   String? lastContentType;
+  Uint8List? bytesByPath;
+
+  @override
+  Future<Uint8List?> readBytes({required String path}) async {
+    return bytesByPath;
+  }
 
   @override
   Future<void> upload({
@@ -130,6 +152,15 @@ class _CapturingStorageGateway implements MediaStorageGateway {
 }
 
 class _NoopMetadataGateway implements MediaMetadataGateway {
+  @override
+  Future<List<Map<String, dynamic>>> listByInspection({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return const <Map<String, dynamic>>[];
+  }
+
   @override
   Future<void> upsertMetadata({
     required String mediaId,
@@ -148,6 +179,15 @@ class _NoopMetadataGateway implements MediaMetadataGateway {
 
 class _CapturingMetadataGateway implements MediaMetadataGateway {
   String? lastContentType;
+
+  @override
+  Future<List<Map<String, dynamic>>> listByInspection({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return const <Map<String, dynamic>>[];
+  }
 
   @override
   Future<void> upsertMetadata({

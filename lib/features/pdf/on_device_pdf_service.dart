@@ -6,6 +6,7 @@ import 'data/pdf_media_resolver.dart';
 import 'data/pdf_size_budget_config_store.dart';
 import 'data/pdf_template_asset_loader.dart';
 import 'domain/pdf_size_budget.dart';
+import 'models/pdf_field_map.dart';
 import 'pdf_generation_input.dart';
 import 'services/pdf_renderer.dart';
 
@@ -48,6 +49,11 @@ class OnDevicePdfService {
         final resolved = await _mediaResolver.resolve(
           input: input,
           fieldMap: templateBundle.fieldMap,
+        );
+        _ensureRequiredEvidenceResolved(
+          input: input,
+          fieldMap: templateBundle.fieldMap,
+          resolved: resolved,
         );
 
         formRequests.add(
@@ -92,6 +98,38 @@ class OnDevicePdfService {
     );
   }
 
+  void _ensureRequiredEvidenceResolved({
+    required PdfGenerationInput input,
+    required PdfFieldMap fieldMap,
+    required ResolvedPdfFieldData resolved,
+  }) {
+    final unresolvedRequiredEvidence = <String, String>{};
+
+    for (final field in fieldMap.fields) {
+      if (field.type != PdfFieldType.image) {
+        continue;
+      }
+      if (input.wizardCompletion[field.sourceKey] != true) {
+        continue;
+      }
+      if (resolved.imageByFieldKey.containsKey(field.key)) {
+        continue;
+      }
+
+      unresolvedRequiredEvidence[field.key] =
+          resolved.unresolvedMediaByFieldKey[field.key] ??
+          'No bytes resolved for required source ${field.sourceKey}';
+    }
+
+    if (unresolvedRequiredEvidence.isNotEmpty) {
+      throw PdfGenerationException(
+        message:
+            'Required evidence media could not be resolved for ${fieldMap.formType.code}.',
+        unresolvedRequiredEvidence: unresolvedRequiredEvidence,
+      );
+    }
+  }
+
   Future<File> _writeOutput(List<int> bytes) async {
     final directory = await _outputDirectoryProvider();
     final filename = 'inspectobot_${DateTime.now().millisecondsSinceEpoch}.pdf';
@@ -113,6 +151,19 @@ class PdfGenerationSizeBudgetExceeded implements Exception {
   final int generatedBytes;
   final int maxBytes;
   final int attempts;
+
+  @override
+  String toString() => message;
+}
+
+class PdfGenerationException implements Exception {
+  const PdfGenerationException({
+    required this.message,
+    this.unresolvedRequiredEvidence = const <String, String>{},
+  });
+
+  final String message;
+  final Map<String, String> unresolvedRequiredEvidence;
 
   @override
   String toString() => message;

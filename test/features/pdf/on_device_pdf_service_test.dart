@@ -179,6 +179,164 @@ void main() {
         ),
       );
     });
+
+    test('resolves remote-only evidence references for required mapped fields', () async {
+      final renderer = _RecordingRenderer(
+        bytesByAttempt: <List<int>>[
+          List<int>.filled(256, 5),
+        ],
+      );
+      final service = OnDevicePdfService(
+        templateAssetLoader: _FakeTemplateLoader(),
+        mediaResolver: PdfMediaResolver(
+          remoteReadBytes: (storagePath) async {
+            if (storagePath == 'org/org-1/users/user-1/inspections/insp-1/media/remote-key.jpg') {
+              return Uint8List.fromList(<int>[4, 5, 6]);
+            }
+            return null;
+          },
+        ),
+        sizeBudgetStore: PdfSizeBudgetConfigStore(
+          readConfig: () => <String, dynamic>{
+            'max_bytes': 5 * 1024 * 1024,
+            'retry_steps': <Map<String, dynamic>>[
+              <String, dynamic>{'jpeg_quality': 75, 'max_width': 1280},
+            ],
+          },
+        ),
+        renderer: renderer,
+        outputDirectoryProvider: () async => Directory.systemTemp,
+      );
+
+      final input = PdfGenerationInput(
+        inspectionId: 'insp-remote-1',
+        organizationId: 'org-1',
+        userId: 'user-1',
+        clientName: 'Remote User',
+        propertyAddress: '1 Remote Key Ln',
+        enabledForms: {FormType.fourPoint},
+        capturedCategories: {RequiredPhotoCategory.exteriorFront},
+        wizardCompletion: const <String, bool>{'photo:exterior_front': true},
+        evidenceMediaPaths: const <String, List<String>>{
+          'photo:exterior_front': <String>[
+            'org/org-1/users/user-1/inspections/insp-1/media/remote-key.jpg',
+          ],
+        },
+      );
+
+      final file = await service.generate(input);
+      expect(await file.exists(), isTrue);
+      expect(
+        renderer.calls.single.forms.single.resolved.imageByFieldKey,
+        contains('image.photo_exterior_front'),
+      );
+    });
+
+    test('fails closed when required mapped evidence cannot be resolved', () async {
+      final service = OnDevicePdfService(
+        templateAssetLoader: _FakeTemplateLoader(),
+        mediaResolver: const PdfMediaResolver(),
+        sizeBudgetStore: PdfSizeBudgetConfigStore(
+          readConfig: () => <String, dynamic>{
+            'max_bytes': 5 * 1024 * 1024,
+            'retry_steps': <Map<String, dynamic>>[
+              <String, dynamic>{'jpeg_quality': 75, 'max_width': 1280},
+            ],
+          },
+        ),
+        renderer: _RecordingRenderer(
+          bytesByAttempt: <List<int>>[
+            List<int>.filled(256, 5),
+          ],
+        ),
+        outputDirectoryProvider: () async => Directory.systemTemp,
+      );
+
+      final input = PdfGenerationInput(
+        inspectionId: 'insp-unresolved-1',
+        organizationId: 'org-1',
+        userId: 'user-1',
+        clientName: 'Unresolved User',
+        propertyAddress: '2 Missing Ln',
+        enabledForms: {FormType.fourPoint},
+        capturedCategories: {RequiredPhotoCategory.exteriorFront},
+        wizardCompletion: const <String, bool>{'photo:exterior_front': true},
+        evidenceMediaPaths: const <String, List<String>>{
+          'photo:exterior_front': <String>['org/org-1/users/user-1/missing.jpg'],
+        },
+      );
+
+      expect(
+        () => service.generate(input),
+        throwsA(
+          isA<PdfGenerationException>()
+              .having(
+                (error) => error.unresolvedRequiredEvidence.keys,
+                'unresolvedRequiredEvidence.keys',
+                contains('image.photo_exterior_front'),
+              )
+              .having(
+                (error) => error.message,
+                'message',
+                contains('Required evidence media could not be resolved'),
+              ),
+        ),
+      );
+    });
+
+    test('accepts mixed local and remote evidence references deterministically', () async {
+      final renderer = _RecordingRenderer(
+        bytesByAttempt: <List<int>>[
+          List<int>.filled(512, 6),
+        ],
+      );
+      final localFile = await _writeTempJpeg(<int>[1, 2, 3, 4]);
+      final service = OnDevicePdfService(
+        templateAssetLoader: _FakeTemplateLoader(),
+        mediaResolver: PdfMediaResolver(
+          remoteReadBytes: (storagePath) async {
+            if (storagePath == 'org/org-1/users/user-1/inspections/insp-1/media/remote-secondary.jpg') {
+              return Uint8List.fromList(<int>[8, 8, 8]);
+            }
+            return null;
+          },
+        ),
+        sizeBudgetStore: PdfSizeBudgetConfigStore(
+          readConfig: () => <String, dynamic>{
+            'max_bytes': 5 * 1024 * 1024,
+            'retry_steps': <Map<String, dynamic>>[
+              <String, dynamic>{'jpeg_quality': 75, 'max_width': 1280},
+            ],
+          },
+        ),
+        renderer: renderer,
+        outputDirectoryProvider: () async => Directory.systemTemp,
+      );
+
+      final input = PdfGenerationInput(
+        inspectionId: 'insp-mixed-1',
+        organizationId: 'org-1',
+        userId: 'user-1',
+        clientName: 'Mixed User',
+        propertyAddress: '3 Mixed Ln',
+        enabledForms: {FormType.fourPoint},
+        capturedCategories: {RequiredPhotoCategory.exteriorFront},
+        wizardCompletion: const <String, bool>{'photo:exterior_front': true},
+        evidenceMediaPaths: <String, List<String>>{
+          'photo:exterior_front': <String>[
+            localFile.path,
+            'org/org-1/users/user-1/inspections/insp-1/media/remote-secondary.jpg',
+          ],
+        },
+      );
+
+      final file = await service.generate(input);
+      expect(await file.exists(), isTrue);
+      expect(
+        renderer.calls.single.forms.single.resolved.imageByFieldKey,
+        contains('image.photo_exterior_front'),
+      );
+    });
   });
 }
 
@@ -191,7 +349,7 @@ PdfGenerationInput _buildInput() {
     propertyAddress: '100 Main St',
     enabledForms: {FormType.fourPoint},
     capturedCategories: {RequiredPhotoCategory.exteriorFront},
-    wizardCompletion: const <String, bool>{'photo:exterior_front': true},
+    wizardCompletion: const <String, bool>{},
   );
 }
 
