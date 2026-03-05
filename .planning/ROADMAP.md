@@ -287,7 +287,12 @@ Plans:
   1. Signup/signin/bootstrap paths are validated against live-backed tenant membership and scoped access behavior.
   2. Inspection setup and dashboard resume flows prove tenant/user scope propagation with no hardcoded context.
   3. Phase verification status is `passed` with requirement-level evidence for all mapped requirements.
-**Plans**: 0 plans
+**Plans**: 3 plans
+
+Plans:
+- [ ] 17-tenant-auth-and-isolation-validation-closure-01-PLAN.md - Establish executable phase-17 verification scaffold with requirement-to-scenario mapping and deterministic automated preflight gates.
+- [ ] 17-tenant-auth-and-isolation-validation-closure-02-PLAN.md - Execute live-backed tenant auth/isolation validation and close phase-level verification from human_needed to passed with requirement evidence.
+- [ ] 17-tenant-auth-and-isolation-validation-closure-03-PLAN.md - Reconcile milestone and requirement artifacts so AUTH-01/AUTH-02/FLOW-01/SEC-01 are marked satisfied with phase-17 evidence links.
 
 ### Phase 18: PDF/Delivery Resilience and Identity Contract Closure
 **Goal**: Close remaining PDF/delivery resilience and identity-contract integration debt so fallback behavior and profile/license data handling are explicit, deterministic, and verified end-to-end.
@@ -323,5 +328,5 @@ Phases execute in numeric order: 1 -> 1.1 -> 2 -> ... -> 18
 | 14. Resume-to-PDF Media Rehydration Hardening | 3/3 | Complete | 2026-03-05 |
 | 15. Debt Closure for Audit Visibility and PDF Resilience | 0/0 | Complete    | 2026-03-05 |
 | 16. Verification Traceability Closure | 3/3 | Complete    | 2026-03-05 |
-| 17. Tenant Auth and Isolation Validation Closure | 0/0 | Planned | - |
+| 17. Tenant Auth and Isolation Validation Closure | 1/3 | In Progress|  |
 | 18. PDF/Delivery Resilience and Identity Contract Closure | 0/0 | Planned | - |

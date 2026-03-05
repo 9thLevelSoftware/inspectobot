@@ -9,15 +9,15 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 
 ### Authentication and Inspector Identity
 
-- [ ] **AUTH-01**: User can create an account with email and password.
-- [ ] **AUTH-02**: User can sign in and stay signed in across app restarts.
+- [x] **AUTH-01**: User can create an account with email and password.
+- [x] **AUTH-02**: User can sign in and stay signed in across app restarts.
 - [x] **AUTH-03**: User can reset password using an email reset flow.
 - [x] **AUTH-04**: User can save inspector profile details including license type and license number.
 - [x] **AUTH-05**: User can capture and store inspector signature for report signing.
 
 ### Inspection Setup and Workflow
 
-- [ ] **FLOW-01**: User can create an inspection with client identity, property address, inspection date, and year built.
+- [x] **FLOW-01**: User can create an inspection with client identity, property address, inspection date, and year built.
 - [x] **FLOW-02**: User can select one or more supported forms for an inspection (`Insp4pt 03-25`, `RCF-1 03-25`, `OIR-B1-1802 Rev 04/26`).
 - [ ] **FLOW-03**: User can complete a linear wizard with required-step progression and conditional branching.
 - [x] **FLOW-04**: User can resume an in-progress inspection and continue from last incomplete step.
@@ -42,7 +42,7 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 
 ### Security, Offline, and Data Integrity
 
-- [ ] **SEC-01**: System enforces strict tenant isolation so users can only access their own organization data.
+- [x] **SEC-01**: System enforces strict tenant isolation so users can only access their own organization data.
 - [x] **SEC-02**: System stores signature evidence metadata (timestamp, signer role, hash linkage, attribution metadata) with each signed report.
 - [x] **OFF-01**: User can complete core inspection capture workflows offline and queue sync operations for later.
 - [x] **OFF-02**: System performs idempotent sync to prevent duplicate or orphaned inspection/media records.
@@ -81,12 +81,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 17 | Pending |
-| AUTH-02 | Phase 17 | Pending |
+| AUTH-01 | Phase 17 | Complete |
+| AUTH-02 | Phase 17 | Complete |
 | AUTH-03 | Phase 13 | Complete |
 | AUTH-04 | Phase 16 | Complete |
 | AUTH-05 | Phase 16 | Complete |
-| FLOW-01 | Phase 17 | Pending |
+| FLOW-01 | Phase 17 | Complete |
 | FLOW-02 | Phase 16 | Complete |
 | FLOW-03 | Phase 16 | Pending |
 | FLOW-04 | Phase 14 | Complete |
@@ -102,7 +102,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PDF-03 | Phase 7 | Complete |
 | DLV-01 | Phase 12 | Complete |
 | DLV-02 | Phase 12 | Complete |
-| SEC-01 | Phase 17 | Pending |
+| SEC-01 | Phase 17 | Complete |
 | SEC-02 | Phase 16 | Complete |
 | OFF-01 | Phase 14 | Complete |
 | OFF-02 | Phase 12 | Complete |

@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** An inspector can complete a Florida insurance inspection workflow quickly and generate compliant, underwriter-ready PDFs with all required data and photos enforced.
-**Current focus:** Phase 16 verification traceability closure is complete; next focus is phase 17 tenant auth and isolation validation closure.
+**Current focus:** Phase 17 tenant auth and isolation validation closure is in progress; next focus is executing live validation evidence in plan 02.
 
 ## Current Position
 
-Phase: 16 of 18 (Verification Traceability Closure)
-Plan: 3 of 3 in current phase
-Status: Phase 16 complete
-Last activity: 2026-03-05 - Executed 16-03 to reconcile requirement completion state, regenerate milestone cross-reference, and publish phase 16 closure verification artifact.
+Phase: 17 of 18 (Tenant Auth and Isolation Validation Closure)
+Plan: 1 of 3 in current phase
+Status: Phase 17 in progress
+Last activity: 2026-03-05 - Executed 17-01 to create canonical verification scaffold, deterministic preflight gates, and anti-fallback live evidence guardrails.
 
-Progress: [█████████▓] 94%
+Progress: [██████████] 97%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30
+- Total plans completed: 31
 - Average duration: 23 min
 - Total execution time: 11.7 hours
 
@@ -65,6 +65,7 @@ Progress: [█████████▓] 94%
 | Phase 16 P02 | 2 min | 2 tasks | 3 files |
 | Phase 16 P01 | 3 min | 2 tasks | 5 files |
 | Phase 16 P03 | 4 min | 3 tasks | 3 files |
+| Phase 17 P01 | 1 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,9 @@ Recent decisions affecting current work:
 - [Phase 16]: Used explicit source plan filename IDs in trace rows for deterministic milestone parser extraction.
 - [Phase 16]: Keep phase 16 closure scope limited to the 11 mapped requirement IDs while documenting residual out-of-scope gaps explicitly.
 - [Phase 16]: Use satisfied as final milestone status for scoped IDs once VERIFICATION, SUMMARY, and REQUIREMENTS are aligned.
+- [Phase 17]: Initialize phase 17 as scaffold-only with all mapped requirements left at human_needed until live evidence is captured.
+- [Phase 17]: Require deterministic preflight command outputs before and after live validation to separate regressions from environment failures.
+- [Phase 17]: Disallow org-local-* fallback IDs as valid evidence for requirement closure.
 
 ### Pending Todos
 
@@ -118,6 +122,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05 20:06
-Stopped at: Completed 16-03-PLAN.md
+Last session: 2026-03-05 21:43
+Stopped at: Completed 17-01-PLAN.md
 Resume file: None
