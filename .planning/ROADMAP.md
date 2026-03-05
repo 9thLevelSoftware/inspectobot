@@ -276,7 +276,11 @@ Plans:
   1. Each mapped requirement appears in at least one phase VERIFICATION requirement trace with explicit status/evidence.
   2. Milestone 3-source cross-reference marks all phase 16 mapped requirements as satisfied (no orphaned status).
   3. Updated verification artifacts preserve file-level evidence links and test evidence for each requirement.
-**Plans**: 0 plans
+**Plans**: 2 plans
+
+Plans:
+- [ ] 18-pdf-delivery-resilience-and-identity-contract-closure-01-PLAN.md - Implement executable cloud fallback runtime behavior and deterministic delivery branch coverage.
+- [ ] 18-pdf-delivery-resilience-and-identity-contract-closure-02-PLAN.md - Enforce profile/license mapping policy and reconcile EVID-02 verification traceability artifacts.
 
 ### Phase 17: Tenant Auth and Isolation Validation Closure
 **Goal**: Convert tenant/auth integration from partially verified (`human_needed`) to fully verified by proving live tenant bootstrap and scoped runtime behavior across auth and inspection setup flows.
@@ -330,4 +334,4 @@ Phases execute in numeric order: 1 -> 1.1 -> 2 -> ... -> 18
 | 15. Debt Closure for Audit Visibility and PDF Resilience | 0/0 | Complete    | 2026-03-05 |
 | 16. Verification Traceability Closure | 3/3 | Complete    | 2026-03-05 |
 | 17. Tenant Auth and Isolation Validation Closure | 4/4 | Complete   | 2026-03-05 |
-| 18. PDF/Delivery Resilience and Identity Contract Closure | 0/0 | Planned | - |
+| 18. PDF/Delivery Resilience and Identity Contract Closure | 1/2 | In Progress|  |

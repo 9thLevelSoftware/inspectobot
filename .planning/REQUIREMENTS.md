@@ -26,7 +26,7 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 ### Evidence and Media Compliance
 
 - [x] **EVID-01**: User can capture required exterior elevation photos (front, rear, left, right) for applicable forms.
-- [ ] **EVID-02**: User can capture required roof evidence including slope-specific photos and defect photos when present.
+- [x] **EVID-02**: User can capture required roof evidence including slope-specific photos and defect photos when present.
 - [x] **EVID-03**: User can capture required plumbing, HVAC, electrical, and hazard photos based on selected form logic.
 - [x] **EVID-04**: User can capture evidence for all seven wind mitigation categories, including supporting documents when required.
 - [x] **EVID-05**: System blocks PDF generation when any required field or required evidence category is incomplete.
@@ -92,7 +92,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FLOW-04 | Phase 14 | Complete |
 | FLOW-05 | Phase 16 | Complete |
 | EVID-01 | Phase 16 | Complete |
-| EVID-02 | Phase 18 | Pending |
+| EVID-02 | Phase 18 | Complete |
 | EVID-03 | Phase 16 | Complete |
 | EVID-04 | Phase 16 | Complete |
 | EVID-05 | Phase 16 | Complete |

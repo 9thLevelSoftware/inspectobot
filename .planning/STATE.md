@@ -14,11 +14,11 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 **Current Phase Name:** PDF/Delivery Resilience and Identity Contract Closure
 **Current Plan:** 1
 **Total Plans in Phase:** 0
-**Status:** Ready to plan phase 18
+**Status:** Phase complete — ready for verification
 **Last Activity:** 2026-03-05
 **Last Activity Description:** Completed 17-04 replay harness + sanitized live evidence closure; phase 17 verification now passed for AUTH-01/AUTH-02/FLOW-01/SEC-01.
 
-**Progress:** [██████████] 100% (phase 17 complete)
+**Progress:** [██████████] 98%
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 | Phase 17 P01 | 1 min | 2 tasks | 2 files |
 | Phase 17 P02 | 15 min | 3 tasks | 2 files |
 | Phase 17 P03 | 2 min | 3 tasks | 3 files |
+| Phase 18 P01 | 22 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -120,6 +121,8 @@ Recent decisions affecting current work:
 - [Phase 17]: Kept unresolved FLOW-03 and EVID-02 findings explicitly out-of-scope during phase-17 closure reconciliation.
 - [Phase 17]: Added a committed `live_validation_runner.mjs` harness so live tenant-auth evidence is replayable from source-controlled artifacts.
 - [Phase 17]: Replayed live Supabase validation after credential rotation checkpoint and closed AUTH-01/AUTH-02/FLOW-01/SEC-01 rows to passed using sanitized output.
+- [Phase 18]: CloudPdfService now invokes Supabase function runtime and classifies 404/429/503 as unavailable while preserving terminal failures.
+- [Phase 18]: Checklist generation defaults to PdfStrategy.cloudFallback with deterministic terminal-failure inspector messaging.
 
 ### Pending Todos
 
@@ -135,6 +138,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-03-05T22:10:01.517Z
-**Stopped At:** Completed 17-04-PLAN.md
+**Last session:** 2026-03-05T23:32:44.144Z
+**Stopped At:** Completed 18-01-PLAN.md
 **Resume File:** None
