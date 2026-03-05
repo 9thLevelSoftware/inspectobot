@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/pdf/data/pdf_template_asset_loader.dart';
@@ -5,6 +7,8 @@ import 'package:inspectobot/features/pdf/models/pdf_field_map.dart';
 import 'package:inspectobot/features/pdf/models/pdf_template_manifest.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('PdfTemplateManifest', () {
     test('pins every supported form to explicit revision and map version', () {
       final manifest = PdfTemplateManifest.standard();
@@ -61,6 +65,16 @@ void main() {
   });
 
   group('PdfTemplateAssetLoader', () {
+    test('loads pinned template bytes for each manifest form', () async {
+      final loader = PdfTemplateAssetLoader();
+
+      for (final form in FormType.values) {
+        final bundle = await loader.load(form);
+        expect(bundle.templateBytes, isNotEmpty);
+        expect(bundle.manifestEntry.templateAssetId, startsWith('assets/pdf/templates/'));
+      }
+    });
+
     test('parses typed field map entries for every supported kind', () async {
       final loader = PdfTemplateAssetLoader(
         manifest: PdfTemplateManifest.standard(),
@@ -78,6 +92,9 @@ void main() {
 }
 ''';
         },
+        readTemplateAsset: (_) async => ByteData.view(
+          Uint8List.fromList(_pdfStubBytes).buffer,
+        ),
       );
 
       final bundle = await loader.load(FormType.fourPoint);
@@ -107,6 +124,9 @@ void main() {
   "fields": []
 }
 ''',
+        readTemplateAsset: (_) async => ByteData.view(
+          Uint8List.fromList(_pdfStubBytes).buffer,
+        ),
       );
 
       expect(
@@ -133,6 +153,9 @@ void main() {
   ]
 }
 ''',
+        readTemplateAsset: (_) async => ByteData.view(
+          Uint8List.fromList(_pdfStubBytes).buffer,
+        ),
       );
 
       expect(
@@ -148,3 +171,15 @@ void main() {
     });
   });
 }
+
+const List<int> _pdfStubBytes = <int>[
+  0x25,
+  0x50,
+  0x44,
+  0x46,
+  0x2D,
+  0x31,
+  0x2E,
+  0x34,
+  0x0A,
+];

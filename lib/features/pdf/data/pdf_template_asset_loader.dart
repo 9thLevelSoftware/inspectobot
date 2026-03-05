@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 
@@ -8,24 +9,29 @@ import '../models/pdf_field_map.dart';
 import '../models/pdf_template_manifest.dart';
 
 typedef PdfMapAssetReader = Future<String> Function(String assetPath);
+typedef PdfTemplateAssetReader = Future<ByteData> Function(String assetPath);
 
 class PdfTemplateAssetBundle {
   const PdfTemplateAssetBundle({
     required this.manifestEntry,
     required this.fieldMap,
+    required this.templateBytes,
   });
 
   final PdfTemplateManifestEntry manifestEntry;
   final PdfFieldMap fieldMap;
+  final Uint8List templateBytes;
 }
 
 class PdfTemplateAssetLoader {
   PdfTemplateAssetLoader({
     PdfTemplateManifest? manifest,
     PdfMapAssetReader? readMapAsset,
+    PdfTemplateAssetReader? readTemplateAsset,
     Set<String>? allowedSourceKeys,
   })  : manifest = manifest ?? PdfTemplateManifest.standard(),
         _readMapAsset = readMapAsset ?? rootBundle.loadString,
+        _readTemplateAsset = readTemplateAsset ?? rootBundle.load,
         _allowedSourceKeys =
             allowedSourceKeys ??
             <String>{
@@ -40,6 +46,7 @@ class PdfTemplateAssetLoader {
 
   final PdfTemplateManifest manifest;
   final PdfMapAssetReader _readMapAsset;
+  final PdfTemplateAssetReader _readTemplateAsset;
   final Set<String> _allowedSourceKeys;
 
   Future<PdfTemplateAssetBundle> load(FormType formType) async {
@@ -55,6 +62,7 @@ class PdfTemplateAssetLoader {
     }
 
     final fields = _parseFields(decoded['fields'], formType);
+    final templateBytes = await _readTemplateBytes(entry, formType);
     return PdfTemplateAssetBundle(
       manifestEntry: entry,
       fieldMap: PdfFieldMap(
@@ -62,6 +70,7 @@ class PdfTemplateAssetLoader {
         mapVersion: mapVersion,
         fields: fields,
       ),
+      templateBytes: templateBytes,
     );
   }
 
@@ -128,6 +137,20 @@ class PdfTemplateAssetLoader {
     throw PdfTemplateAssetLoaderError(
       'Unknown source_key "$sourceKey" in map for ${formType.code}',
     );
+  }
+
+  Future<Uint8List> _readTemplateBytes(
+    PdfTemplateManifestEntry entry,
+    FormType formType,
+  ) async {
+    final raw = await _readTemplateAsset(entry.templateAssetId);
+    final bytes = raw.buffer.asUint8List(raw.offsetInBytes, raw.lengthInBytes);
+    if (bytes.isEmpty) {
+      throw PdfTemplateAssetLoaderError(
+        'Template asset is empty for ${formType.code}: ${entry.templateAssetId}',
+      );
+    }
+    return bytes;
   }
 
   String _requiredString(Map<String, dynamic> source, String key) {
