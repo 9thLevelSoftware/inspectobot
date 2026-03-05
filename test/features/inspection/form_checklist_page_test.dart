@@ -321,6 +321,70 @@ void main() {
     },
   );
 
+  testWidgets('checklist shows explicit empty audit timeline state', (
+    tester,
+  ) async {
+    final draft = InspectionDraft(
+      inspectionId: 'insp-audit-empty',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Empty Audit User',
+      clientEmail: 'audit-empty@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '404 Empty Rd',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2001,
+      enabledForms: {FormType.fourPoint},
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormChecklistPage(
+          draft: draft,
+          auditRepository: AuditEventRepository(
+            _RecordingAuditEventGateway(events: const <Map<String, dynamic>>[]),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('No audit events recorded yet'), findsOneWidget);
+  });
+
+  testWidgets('checklist shows explicit error state when audit load fails', (
+    tester,
+  ) async {
+    final draft = InspectionDraft(
+      inspectionId: 'insp-audit-error',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Error Audit User',
+      clientEmail: 'audit-error@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '505 Error Blvd',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2001,
+      enabledForms: {FormType.fourPoint},
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormChecklistPage(
+          draft: draft,
+          auditRepository: AuditEventRepository(_FailingAuditEventGateway()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Audit timeline unavailable'), findsOneWidget);
+    expect(
+      find.text('Unable to load audit timeline right now. Please retry shortly.'),
+      findsOneWidget,
+    );
+  });
+
 
   testWidgets('checklist accepts injected signature evidence dependencies', (
     tester,
