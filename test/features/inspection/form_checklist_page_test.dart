@@ -12,8 +12,11 @@ import 'package:inspectobot/features/inspection/data/inspection_repository.dart'
 import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
+import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
 import 'package:inspectobot/features/inspection/presentation/form_checklist_page.dart';
+import 'package:inspectobot/features/media/media_sync_task.dart';
+import 'package:inspectobot/features/media/pending_media_sync_store.dart';
 import 'package:inspectobot/features/pdf/cloud_pdf_service.dart';
 import 'package:inspectobot/features/pdf/on_device_pdf_service.dart';
 import 'package:inspectobot/features/pdf/pdf_generation_input.dart';
@@ -424,6 +427,117 @@ void main() {
 
     expect(find.text('Guided Inspection Wizard'), findsOneWidget);
   });
+
+  testWidgets(
+    'generate PDF rehydrates pending evidence when in-memory paths are empty',
+    (tester) async {
+      final requirements = FormRequirements.forFormRequirements(FormType.fourPoint);
+      final requirementKey = requirements.first.key;
+      final pendingStore = _FakePendingMediaSyncStore(
+        byRequirement: {
+          for (final requirement in requirements)
+            requirement.key: <String>[
+              '/tmp/${requirement.key.replaceAll(':', '_')}.jpg',
+            ],
+        },
+      );
+
+      final store = _ChecklistStore(
+        seededReadiness: const <String, dynamic>{
+          'inspection_id': 'insp-9',
+          'organization_id': 'org-1',
+          'user_id': 'user-1',
+          'status': 'ready',
+          'missing_items': <String>[],
+          'computed_at': '2026-03-05T00:00:00.000Z',
+        },
+      );
+      final signatureGateway = InMemorySignatureGateway();
+      final signatureRepository = SignatureRepository(
+        storage: signatureGateway,
+        metadata: signatureGateway,
+      );
+      await signatureRepository.saveSignature(
+        organizationId: 'org-1',
+        userId: 'user-1',
+        bytes: Uint8List.fromList(<int>[1, 2, 3]),
+      );
+
+      final onDevice = _CapturingOnDevicePdfService();
+      final draft = InspectionDraft(
+        inspectionId: 'insp-9',
+        organizationId: 'org-1',
+        userId: 'user-1',
+        clientName: 'Pending Media User',
+        clientEmail: 'pending@example.com',
+        clientPhone: '555-0100',
+        propertyAddress: '131 Pending St',
+        inspectionDate: DateTime.utc(2026, 3, 4),
+        yearBuilt: 2004,
+        enabledForms: {FormType.fourPoint},
+        wizardSnapshot: WizardProgressSnapshot(
+          lastStepIndex: 1,
+          completion: {
+            for (final requirement in FormRequirements.forFormRequirements(
+              FormType.fourPoint,
+            ))
+              requirement.key: true,
+          },
+          branchContext: const <String, dynamic>{},
+          status: WizardProgressStatus.complete,
+        ),
+        initialStepIndex: 1,
+      );
+
+      final deliveryService = DeliveryService(
+        artifactRepository: ReportArtifactRepository(
+          InMemoryReportArtifactGateway(),
+        ),
+        deliveryRepository: DeliveryRepository(InMemoryDeliveryActionGateway()),
+        auditRepository: AuditEventRepository(InMemoryAuditEventGateway()),
+        signedUrlGateway: _TestSignedUrlGateway(),
+        shareGateway: _TestShareGateway(),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FormChecklistPage(
+            draft: draft,
+            repository: InspectionRepository(store),
+            signatureRepository: signatureRepository,
+            signatureEvidenceRepository: ReportSignatureEvidenceRepository(
+              InMemoryReportSignatureEvidenceGateway(),
+            ),
+            deliveryService: deliveryService,
+            pendingMediaSyncStore: pendingStore,
+            pdfOrchestrator: PdfOrchestrator(
+              onDevice: onDevice,
+              cloud: const CloudPdfService(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('generate-pdf-button')),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('generate-pdf-button')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      final generatedInput = onDevice.lastInput;
+      expect(generatedInput, isNotNull);
+      final expectedPath = '/tmp/${requirementKey.replaceAll(':', '_')}.jpg';
+      expect(
+        generatedInput!.evidenceMediaPaths[requirementKey],
+        contains(expectedPath),
+      );
+    },
+  );
 }
 
 class _ChecklistStore implements InspectionStore {
@@ -574,6 +688,35 @@ class _OverBudgetOnDevicePdfService extends OnDevicePdfService {
       maxBytes: 1048576,
       attempts: 2,
     );
+  }
+}
+
+class _CapturingOnDevicePdfService extends OnDevicePdfService {
+  PdfGenerationInput? lastInput;
+
+  @override
+  Future<File> generate(PdfGenerationInput input) async {
+    lastInput = input;
+    final file = File(
+      '${Directory.systemTemp.path}/inspectobot_capture_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+    await file.writeAsBytes(<int>[3, 2, 1], flush: true);
+    return file;
+  }
+}
+
+class _FakePendingMediaSyncStore extends PendingMediaSyncStore {
+  _FakePendingMediaSyncStore({required this.byRequirement});
+
+  final Map<String, List<String>> byRequirement;
+
+  @override
+  Future<Map<String, List<String>>> loadEvidenceMediaPaths({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return byRequirement;
   }
 }
 

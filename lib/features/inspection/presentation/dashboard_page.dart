@@ -3,6 +3,8 @@ import 'package:inspectobot/features/identity/presentation/inspector_identity_pa
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
+import 'package:inspectobot/features/media/media_sync_remote_store.dart';
+import 'package:inspectobot/features/media/pending_media_sync_store.dart';
 import 'package:inspectobot/features/sync/sync_scheduler.dart';
 
 import 'form_checklist_page.dart';
@@ -15,11 +17,15 @@ class DashboardPage extends StatefulWidget {
     required this.userId,
     InspectionRepository? repository,
     SyncScheduler? syncScheduler,
+    this.mediaSyncRemoteStore,
+    this.pendingMediaSyncStore,
   })  : repository = repository ?? InspectionRepository.live(),
         syncScheduler = syncScheduler;
 
   final InspectionRepository repository;
   final SyncScheduler? syncScheduler;
+  final MediaSyncRemoteStore? mediaSyncRemoteStore;
+  final PendingMediaSyncStore? pendingMediaSyncStore;
   final String organizationId;
   final String userId;
 
@@ -92,6 +98,8 @@ class _DashboardPageState extends State<DashboardPage> {
         builder: (_) => FormChecklistPage(
           draft: draft,
           repository: widget.repository,
+          mediaSyncRemoteStore: widget.mediaSyncRemoteStore,
+          pendingMediaSyncStore: widget.pendingMediaSyncStore,
         ),
       ),
     );
@@ -127,6 +135,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       repository: _StaticDashboardRepositoryProvider(
                         widget.repository,
                       ),
+                      mediaSyncRemoteStore: widget.mediaSyncRemoteStore,
+                      pendingMediaSyncStore: widget.pendingMediaSyncStore,
                     ),
                   ),
                 );

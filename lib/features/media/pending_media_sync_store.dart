@@ -61,6 +61,47 @@ class PendingMediaSyncStore {
         .toList(growable: false);
   }
 
+  Future<Map<String, List<String>>> loadEvidenceMediaPaths({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    final operations = await _outboxStore.listByStatus(SyncOperationStatus.pending);
+    final byRequirement = <String, List<String>>{};
+
+    for (final operation in operations) {
+      if (operation.type != SyncOperationType.mediaUpload ||
+          operation.aggregateId != inspectionId ||
+          operation.organizationId != organizationId ||
+          operation.userId != userId) {
+        continue;
+      }
+
+      final requirementKey = operation.payload['requirement_key']?.toString();
+      final filePath = operation.payload['file_path']?.toString();
+      if (requirementKey == null ||
+          requirementKey.trim().isEmpty ||
+          filePath == null ||
+          filePath.trim().isEmpty) {
+        continue;
+      }
+
+      byRequirement.putIfAbsent(requirementKey, () => <String>[]).add(filePath);
+    }
+
+    for (final entry in byRequirement.entries) {
+      final normalized = entry.value
+          .map((path) => path.trim())
+          .where((path) => path.isNotEmpty)
+          .toSet()
+          .toList(growable: false)
+        ..sort();
+      byRequirement[entry.key] = normalized;
+    }
+
+    return byRequirement;
+  }
+
   Future<void> markUploaded(String taskId) async {
     await _outboxStore.markCompleted(taskId);
     await _outboxStore.remove(taskId);

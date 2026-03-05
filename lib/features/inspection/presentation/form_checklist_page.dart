@@ -3,11 +3,13 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../media/media_capture_service.dart';
+import '../../media/pending_media_sync_store.dart';
 import '../../media/media_sync_remote_store.dart';
 import '../../media/media_sync_task.dart';
 import '../../delivery/domain/report_artifact.dart';
 import '../../delivery/services/delivery_service.dart';
 import '../../pdf/cloud_pdf_service.dart';
+import '../../pdf/data/pdf_media_resolver.dart';
 import '../../pdf/on_device_pdf_service.dart';
 import '../../pdf/pdf_generation_input.dart';
 import '../../pdf/pdf_orchestrator.dart';
@@ -31,14 +33,16 @@ class FormChecklistPage extends StatefulWidget {
     ReportSignatureEvidenceRepository? signatureEvidenceRepository,
     DeliveryService? deliveryService,
     MediaSyncRemoteStore? mediaSyncRemoteStore,
+    PendingMediaSyncStore? pendingMediaSyncStore,
     PdfOrchestrator? pdfOrchestrator,
   }) : repository = repository ?? InspectionRepository.live(),
         signatureRepository = signatureRepository ?? SignatureRepository.live(),
         signatureEvidenceRepository =
             signatureEvidenceRepository ??
-            ReportSignatureEvidenceRepository.live(),
+             ReportSignatureEvidenceRepository.live(),
         deliveryService = deliveryService ?? DeliveryService.live(),
         mediaSyncRemoteStore = mediaSyncRemoteStore,
+        pendingMediaSyncStore = pendingMediaSyncStore ?? PendingMediaSyncStore(),
         pdfOrchestrator = pdfOrchestrator;
 
   final InspectionDraft draft;
@@ -47,6 +51,7 @@ class FormChecklistPage extends StatefulWidget {
   final ReportSignatureEvidenceRepository signatureEvidenceRepository;
   final DeliveryService deliveryService;
   final MediaSyncRemoteStore? mediaSyncRemoteStore;
+  final PendingMediaSyncStore pendingMediaSyncStore;
   final PdfOrchestrator? pdfOrchestrator;
 
   @override
@@ -72,6 +77,7 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   DeliveryService get _deliveryService => widget.deliveryService;
 
   MediaSyncRemoteStore? get _mediaSyncRemoteStore => widget.mediaSyncRemoteStore;
+  PendingMediaSyncStore get _pendingMediaSyncStore => widget.pendingMediaSyncStore;
 
   InspectionWizardState get _wizardState => InspectionWizardState(
     enabledForms: widget.draft.enabledForms,
@@ -81,10 +87,20 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   @override
   void initState() {
     super.initState();
+    final remoteStore = _mediaSyncRemoteStore;
     _pdfOrchestrator =
         widget.pdfOrchestrator ??
         PdfOrchestrator(
-          onDevice: OnDevicePdfService(),
+          onDevice: OnDevicePdfService(
+            mediaResolver: PdfMediaResolver(
+              remoteReadBytes: remoteStore == null
+                  ? null
+                  : (storagePath) =>
+                        remoteStore.readBytesByStoragePath(
+                          storagePath: storagePath,
+                        ),
+            ),
+          ),
           cloud: const CloudPdfService(),
           readinessLookup: (input) => _repository.fetchReportReadiness(
             inspectionId: input.inspectionId,
@@ -353,13 +369,16 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
     final evidence = <String, List<String>>{};
 
     for (final entry in widget.draft.capturedEvidencePaths.entries) {
-      final normalized = entry.value.where((path) => path.trim().isNotEmpty).toList(
-        growable: false,
-      );
-      if (normalized.isEmpty) {
-        continue;
-      }
-      evidence[entry.key] = List<String>.from(normalized);
+      _mergeEvidencePaths(evidence, entry.key, entry.value);
+    }
+
+    final pending = await _pendingMediaSyncStore.loadEvidenceMediaPaths(
+      inspectionId: widget.draft.inspectionId,
+      organizationId: widget.draft.organizationId,
+      userId: widget.draft.userId,
+    );
+    for (final entry in pending.entries) {
+      _mergeEvidencePaths(evidence, entry.key, entry.value);
     }
 
     final remoteStore = _mediaSyncRemoteStore;
@@ -370,14 +389,28 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
         userId: widget.draft.userId,
       );
       for (final entry in persisted.entries) {
-        final existing = evidence.putIfAbsent(entry.key, () => <String>[]);
-        existing.addAll(entry.value.where((path) => path.trim().isNotEmpty));
-        final deduped = existing.toSet().toList(growable: false)..sort();
-        evidence[entry.key] = deduped;
+        _mergeEvidencePaths(evidence, entry.key, entry.value);
       }
     }
 
     return evidence;
+  }
+
+  void _mergeEvidencePaths(
+    Map<String, List<String>> evidence,
+    String requirementKey,
+    Iterable<String> candidatePaths,
+  ) {
+    if (requirementKey.trim().isEmpty) {
+      return;
+    }
+    final existing = evidence.putIfAbsent(requirementKey, () => <String>[]);
+    existing.addAll(
+      candidatePaths
+          .map((path) => path.trim())
+          .where((path) => path.isNotEmpty),
+    );
+    evidence[requirementKey] = existing.toSet().toList(growable: false)..sort();
   }
 
   List<String> _missingCompletedEvidenceKeys(

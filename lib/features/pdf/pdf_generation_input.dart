@@ -71,7 +71,18 @@ class PdfGenerationInput {
       ..sort((a, b) => a.key.compareTo(b.key));
     final canonicalEvidencePaths = <String, List<String>>{};
     for (final entry in evidenceEntries) {
-      final sortedPaths = List<String>.from(entry.value)..sort();
+      if (entry.key.trim().isEmpty) {
+        continue;
+      }
+      final sortedPaths = entry.value
+          .map((path) => path.trim())
+          .where((path) => path.isNotEmpty)
+          .toSet()
+          .toList(growable: false)
+        ..sort();
+      if (sortedPaths.isEmpty) {
+        continue;
+      }
       canonicalEvidencePaths[entry.key] = sortedPaths;
     }
 

@@ -10,7 +10,9 @@ import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
 import 'package:inspectobot/features/media/media_sync_remote_store.dart';
 import 'package:inspectobot/features/media/media_sync_task.dart';
+import 'package:inspectobot/features/media/pending_media_sync_store.dart';
 import 'package:inspectobot/features/inspection/presentation/dashboard_page.dart';
+import 'package:inspectobot/features/inspection/presentation/form_checklist_page.dart';
 import 'package:inspectobot/features/sync/sync_outbox_store.dart';
 import 'package:inspectobot/features/sync/sync_runner.dart';
 import 'package:inspectobot/features/sync/sync_scheduler.dart';
@@ -55,12 +57,16 @@ void main() {
     );
 
     final scheduler = _TestSyncScheduler();
+    final remoteStore = _NoopMediaRemoteStore();
+    final pendingStore = PendingMediaSyncStore(outboxStore: SyncOutboxStore());
 
     await tester.pumpWidget(
       MaterialApp(
         home: DashboardPage(
           repository: repository,
           syncScheduler: scheduler,
+          mediaSyncRemoteStore: remoteStore,
+          pendingMediaSyncStore: pendingStore,
           organizationId: organizationId,
           userId: userId,
         ),
@@ -80,6 +86,11 @@ void main() {
     expect(scheduler.runCalls, 1);
     expect(find.text('Guided Inspection Wizard'), findsOneWidget);
     expect(find.textContaining('Step 3 of'), findsOneWidget);
+    final checklist = tester.widget<FormChecklistPage>(
+      find.byType(FormChecklistPage),
+    );
+    expect(identical(checklist.mediaSyncRemoteStore, remoteStore), isTrue);
+    expect(identical(checklist.pendingMediaSyncStore, pendingStore), isTrue);
   });
 }
 
@@ -312,6 +323,11 @@ class _NoopMediaRemoteStore extends MediaSyncRemoteStore {
 
 class _NoopStorageGateway implements MediaStorageGateway {
   @override
+  Future<Uint8List?> readBytes({required String path}) async {
+    return null;
+  }
+
+  @override
   Future<void> upload({
     required String path,
     required Uint8List bytes,
@@ -320,6 +336,15 @@ class _NoopStorageGateway implements MediaStorageGateway {
 }
 
 class _NoopMetadataGateway implements MediaMetadataGateway {
+  @override
+  Future<List<Map<String, dynamic>>> listByInspection({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return const <Map<String, dynamic>>[];
+  }
+
   @override
   Future<void> upsertMetadata({
     required String mediaId,

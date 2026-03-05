@@ -5,6 +5,8 @@ import 'package:inspectobot/features/inspection/data/inspection_repository.dart'
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
+import 'package:inspectobot/features/media/media_sync_remote_store.dart';
+import 'package:inspectobot/features/media/pending_media_sync_store.dart';
 import 'package:inspectobot/features/inspection/presentation/form_checklist_page.dart';
 
 class NewInspectionPage extends StatefulWidget {
@@ -13,12 +15,16 @@ class NewInspectionPage extends StatefulWidget {
     required this.organizationId,
     required this.userId,
     NewInspectionRepositoryProvider? repository,
+    this.mediaSyncRemoteStore,
+    this.pendingMediaSyncStore,
   })
     : repository = repository ?? const _LazyNewInspectionRepository();
 
   final String organizationId;
   final String userId;
   final NewInspectionRepositoryProvider repository;
+  final MediaSyncRemoteStore? mediaSyncRemoteStore;
+  final PendingMediaSyncStore? pendingMediaSyncStore;
 
   @override
   State<NewInspectionPage> createState() => _NewInspectionPageState();
@@ -152,7 +158,12 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
 
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => FormChecklistPage(draft: draft, repository: _repository),
+          builder: (_) => FormChecklistPage(
+            draft: draft,
+            repository: _repository,
+            mediaSyncRemoteStore: widget.mediaSyncRemoteStore,
+            pendingMediaSyncStore: widget.pendingMediaSyncStore,
+          ),
         ),
       );
     } catch (_) {

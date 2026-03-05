@@ -1,6 +1,14 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
+import 'package:inspectobot/features/inspection/presentation/form_checklist_page.dart';
+import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
+import 'package:inspectobot/features/media/media_sync_remote_store.dart';
+import 'package:inspectobot/features/media/media_sync_task.dart';
+import 'package:inspectobot/features/media/pending_media_sync_store.dart';
+import 'package:inspectobot/features/sync/sync_outbox_store.dart';
 import 'package:inspectobot/features/inspection/presentation/new_inspection_page.dart';
 
 void main() {
@@ -10,6 +18,8 @@ void main() {
   Future<void> pumpPage(
     WidgetTester tester, {
     required _TestRepositoryProvider provider,
+    MediaSyncRemoteStore? mediaSyncRemoteStore,
+    PendingMediaSyncStore? pendingMediaSyncStore,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -17,6 +27,8 @@ void main() {
           organizationId: organizationId,
           userId: userId,
           repository: provider,
+          mediaSyncRemoteStore: mediaSyncRemoteStore,
+          pendingMediaSyncStore: pendingMediaSyncStore,
         ),
       ),
     );
@@ -123,9 +135,13 @@ void main() {
 
   testWidgets('successful submit saves and navigates to checklist', (tester) async {
     final store = _SpyInspectionStore();
+    final remoteStore = _NoopMediaRemoteStore();
+    final pendingStore = PendingMediaSyncStore(outboxStore: SyncOutboxStore());
     await pumpPage(
       tester,
       provider: _TestRepositoryProvider(InspectionRepository(store)),
+      mediaSyncRemoteStore: remoteStore,
+      pendingMediaSyncStore: pendingStore,
     );
 
     await fillValidForm(tester);
@@ -146,7 +162,71 @@ void main() {
     );
     expect(find.text('Guided Inspection Wizard'), findsOneWidget);
     expect(find.textContaining('Inspection for Jane Doe'), findsOneWidget);
+    final checklist = tester.widget<FormChecklistPage>(
+      find.byType(FormChecklistPage),
+    );
+    expect(identical(checklist.mediaSyncRemoteStore, remoteStore), isTrue);
+    expect(identical(checklist.pendingMediaSyncStore, pendingStore), isTrue);
   });
+}
+
+class _NoopMediaRemoteStore extends MediaSyncRemoteStore {
+  _NoopMediaRemoteStore()
+    : super(storage: _NoopStorageGateway(), metadata: _NoopMetadataGateway());
+
+  @override
+  Future<void> upload({
+    required String mediaId,
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String requirementKey,
+    required CapturedMediaType mediaType,
+    required String evidenceInstanceId,
+    required RequiredPhotoCategory category,
+    required String filePath,
+    DateTime? capturedAt,
+  }) async {}
+}
+
+class _NoopStorageGateway implements MediaStorageGateway {
+  @override
+  Future<Uint8List?> readBytes({required String path}) async {
+    return null;
+  }
+
+  @override
+  Future<void> upload({
+    required String path,
+    required Uint8List bytes,
+    required String contentType,
+  }) async {}
+}
+
+class _NoopMetadataGateway implements MediaMetadataGateway {
+  @override
+  Future<List<Map<String, dynamic>>> listByInspection({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    return const <Map<String, dynamic>>[];
+  }
+
+  @override
+  Future<void> upsertMetadata({
+    required String mediaId,
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String requirementKey,
+    required CapturedMediaType mediaType,
+    required String evidenceInstanceId,
+    required RequiredPhotoCategory category,
+    required String storagePath,
+    required String contentType,
+    required DateTime capturedAt,
+  }) async {}
 }
 
 class _TestRepositoryProvider implements NewInspectionRepositoryProvider {
