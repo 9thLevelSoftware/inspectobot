@@ -10,6 +10,8 @@ class AppRoutes {
   static const recoveryPath = '/reset-password';
   static const recoveryCallbackUri =
       '$recoveryScheme://$recoveryHost$recoveryPath';
+  static const resetPasswordSuccessMessage =
+      'Password updated successfully. Sign in with your new password.';
   static const inspectorIdentity = '/inspector-identity';
 
   static const authStack = <String>{

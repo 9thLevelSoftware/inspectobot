@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
+import 'package:inspectobot/features/auth/presentation/sign_in_page.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key, AuthRepository? repository})
@@ -16,7 +17,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   bool _submitting = false;
-  String? _message;
   String? _error;
 
   AuthRepository get _repository => widget._repository ?? AuthRepository.live();
@@ -34,7 +34,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     setState(() {
       _submitting = true;
       _error = null;
-      _message = null;
     });
 
     try {
@@ -42,12 +41,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       if (!mounted) {
         return;
       }
-      setState(() {
-        _message = 'Password updated successfully.';
-      });
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.signIn,
         (route) => false,
+        arguments: const SignInPageArgs(
+          infoMessage: AppRoutes.resetPasswordSuccessMessage,
+        ),
       );
     } on AuthFailure catch (error) {
       if (!mounted) {
@@ -87,10 +86,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             onPressed: _submitting ? null : _submit,
             child: Text(_submitting ? 'Updating...' : 'Update Password'),
           ),
-          if (_message != null) ...[
-            const SizedBox(height: 12),
-            Text(_message!, style: const TextStyle(color: Colors.green)),
-          ],
           if (_error != null) ...[
             const SizedBox(height: 12),
             Text(_error!, style: const TextStyle(color: Colors.red)),

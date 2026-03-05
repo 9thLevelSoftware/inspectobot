@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
 
+class SignInPageArgs {
+  const SignInPageArgs({this.infoMessage});
+
+  final String? infoMessage;
+}
+
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key, AuthRepository? repository})
     : _repository = repository;
@@ -18,6 +24,8 @@ class _SignInPageState extends State<SignInPage> {
   final _passwordController = TextEditingController();
   bool _submitting = false;
   String? _error;
+  String? _infoMessage;
+  bool _didLoadRouteArgs = false;
 
   AuthRepository get _repository => widget._repository ?? AuthRepository.live();
 
@@ -28,6 +36,19 @@ class _SignInPageState extends State<SignInPage> {
     super.dispose();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didLoadRouteArgs) {
+      return;
+    }
+    _didLoadRouteArgs = true;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is SignInPageArgs) {
+      _infoMessage = args.infoMessage;
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -35,6 +56,7 @@ class _SignInPageState extends State<SignInPage> {
     setState(() {
       _submitting = true;
       _error = null;
+      _infoMessage = null;
     });
     try {
       await _repository.signInWithPassword(
@@ -44,10 +66,9 @@ class _SignInPageState extends State<SignInPage> {
       if (!mounted) {
         return;
       }
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.dashboard,
-        (route) => false,
-      );
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.dashboard, (route) => false);
     } on AuthFailure catch (error) {
       if (!mounted) {
         return;
@@ -99,6 +120,13 @@ class _SignInPageState extends State<SignInPage> {
                   const SizedBox(height: 12),
                   Text(_error!, style: const TextStyle(color: Colors.red)),
                 ],
+                if (_infoMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _infoMessage!,
+                    style: const TextStyle(color: Colors.green),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: _submitting ? null : _submit,
@@ -117,7 +145,8 @@ class _SignInPageState extends State<SignInPage> {
           TextButton(
             onPressed: _submitting
                 ? null
-                : () => Navigator.of(context).pushNamed(AppRoutes.forgotPassword),
+                : () =>
+                      Navigator.of(context).pushNamed(AppRoutes.forgotPassword),
             child: const Text('Forgot password?'),
           ),
         ],
