@@ -51,6 +51,226 @@
       "y": 86,
       "width": 170,
       "height": 36
+    },
+    {
+      "key": "checkbox.photo_exterior_rear",
+      "source_key": "photo:exterior_rear",
+      "type": "checkbox",
+      "page": 2,
+      "x": 42,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_exterior_rear",
+      "source_key": "photo:exterior_rear",
+      "type": "image",
+      "page": 2,
+      "x": 42,
+      "y": 520,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_exterior_left",
+      "source_key": "photo:exterior_left",
+      "type": "checkbox",
+      "page": 2,
+      "x": 204,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_exterior_left",
+      "source_key": "photo:exterior_left",
+      "type": "image",
+      "page": 2,
+      "x": 204,
+      "y": 520,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_exterior_right",
+      "source_key": "photo:exterior_right",
+      "type": "checkbox",
+      "page": 2,
+      "x": 366,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_exterior_right",
+      "source_key": "photo:exterior_right",
+      "type": "image",
+      "page": 2,
+      "x": 366,
+      "y": 520,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_roof_slope_main",
+      "source_key": "photo:roof_slope_main",
+      "type": "checkbox",
+      "page": 2,
+      "x": 42,
+      "y": 380,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_roof_slope_main",
+      "source_key": "photo:roof_slope_main",
+      "type": "image",
+      "page": 2,
+      "x": 42,
+      "y": 240,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_roof_slope_secondary",
+      "source_key": "photo:roof_slope_secondary",
+      "type": "checkbox",
+      "page": 2,
+      "x": 204,
+      "y": 380,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_roof_slope_secondary",
+      "source_key": "photo:roof_slope_secondary",
+      "type": "image",
+      "page": 2,
+      "x": 204,
+      "y": 240,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_water_heater_tpr_valve",
+      "source_key": "photo:water_heater_tpr_valve",
+      "type": "checkbox",
+      "page": 3,
+      "x": 42,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_water_heater_tpr_valve",
+      "source_key": "photo:water_heater_tpr_valve",
+      "type": "image",
+      "page": 3,
+      "x": 42,
+      "y": 520,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_plumbing_under_sink",
+      "source_key": "photo:plumbing_under_sink",
+      "type": "checkbox",
+      "page": 3,
+      "x": 204,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_plumbing_under_sink",
+      "source_key": "photo:plumbing_under_sink",
+      "type": "image",
+      "page": 3,
+      "x": 204,
+      "y": 520,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_electrical_panel_label",
+      "source_key": "photo:electrical_panel_label",
+      "type": "checkbox",
+      "page": 3,
+      "x": 366,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_electrical_panel_label",
+      "source_key": "photo:electrical_panel_label",
+      "type": "image",
+      "page": 3,
+      "x": 366,
+      "y": 520,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_electrical_panel_open",
+      "source_key": "photo:electrical_panel_open",
+      "type": "checkbox",
+      "page": 3,
+      "x": 42,
+      "y": 380,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_electrical_panel_open",
+      "source_key": "photo:electrical_panel_open",
+      "type": "image",
+      "page": 3,
+      "x": 42,
+      "y": 240,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_hvac_data_plate",
+      "source_key": "photo:hvac_data_plate",
+      "type": "checkbox",
+      "page": 3,
+      "x": 204,
+      "y": 380,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_hvac_data_plate",
+      "source_key": "photo:hvac_data_plate",
+      "type": "image",
+      "page": 3,
+      "x": 204,
+      "y": 240,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_hazard_photo",
+      "source_key": "photo:hazard_photo",
+      "type": "checkbox",
+      "page": 3,
+      "x": 366,
+      "y": 380,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_hazard_photo",
+      "source_key": "photo:hazard_photo",
+      "type": "image",
+      "page": 3,
+      "x": 366,
+      "y": 240,
+      "width": 150,
+      "height": 110
     }
   ]
 }

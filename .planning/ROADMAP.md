@@ -28,7 +28,11 @@ Plans:
 **Depends on:** Phase 19
 **Requirements:** PDF-02, AUTH-04
 **Gap Closure:** Closes non-blocking but high-risk map-coverage integration warning and identity contract consumer-path ambiguity from milestone audit.
-**Plans:** 0 plans
+**Plans:** 2 plans
+
+Plans:
+- [ ] 20-01-PLAN.md — Expand JSON field maps to cover every canonical evidence source key and add coverage enforcement test (PDF-02)
+- [ ] 20-02-PLAN.md — Formalize inspector license non-consumer policy with documentation, strengthened contract tests, and requirement closure (AUTH-04)
 
 ## Notes
 

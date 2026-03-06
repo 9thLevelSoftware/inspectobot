@@ -282,6 +282,14 @@ class FormRequirements {
     return _categoryByRequirementKey[key];
   }
 
+  /// Returns all canonical evidence source keys declared for [form],
+  /// regardless of branch conditions or media type.
+  static Set<String> canonicalSourceKeysForForm(FormType form) {
+    return (_requirementsByForm[form] ?? const <EvidenceRequirement>[])
+        .map((r) => r.key)
+        .toSet();
+  }
+
   static Set<String> canonicalSourceKeys() {
     final keys = <String>{};
     for (final requirements in _requirementsByForm.values) {

@@ -41,6 +41,186 @@
       "y": 86,
       "width": 170,
       "height": 36
+    },
+    {
+      "key": "checkbox.photo_wind_roof_to_wall",
+      "source_key": "photo:wind_roof_to_wall",
+      "type": "checkbox",
+      "page": 2,
+      "x": 42,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_wind_roof_to_wall",
+      "source_key": "photo:wind_roof_to_wall",
+      "type": "image",
+      "page": 2,
+      "x": 42,
+      "y": 520,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_wind_roof_shape",
+      "source_key": "photo:wind_roof_shape",
+      "type": "checkbox",
+      "page": 2,
+      "x": 204,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_wind_roof_shape",
+      "source_key": "photo:wind_roof_shape",
+      "type": "image",
+      "page": 2,
+      "x": 204,
+      "y": 520,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_wind_secondary_water_resistance",
+      "source_key": "photo:wind_secondary_water_resistance",
+      "type": "checkbox",
+      "page": 2,
+      "x": 366,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_wind_secondary_water_resistance",
+      "source_key": "photo:wind_secondary_water_resistance",
+      "type": "image",
+      "page": 2,
+      "x": 366,
+      "y": 520,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_wind_opening_protection",
+      "source_key": "photo:wind_opening_protection",
+      "type": "checkbox",
+      "page": 2,
+      "x": 42,
+      "y": 380,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_wind_opening_protection",
+      "source_key": "photo:wind_opening_protection",
+      "type": "image",
+      "page": 2,
+      "x": 42,
+      "y": 240,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_wind_opening_type",
+      "source_key": "photo:wind_opening_type",
+      "type": "checkbox",
+      "page": 2,
+      "x": 204,
+      "y": 380,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_wind_opening_type",
+      "source_key": "photo:wind_opening_type",
+      "type": "image",
+      "page": 2,
+      "x": 204,
+      "y": 240,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.photo_wind_permit_year",
+      "source_key": "photo:wind_permit_year",
+      "type": "checkbox",
+      "page": 2,
+      "x": 366,
+      "y": 380,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.photo_wind_permit_year",
+      "source_key": "photo:wind_permit_year",
+      "type": "image",
+      "page": 2,
+      "x": 366,
+      "y": 240,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.document_wind_roof_deck",
+      "source_key": "document:wind_roof_deck",
+      "type": "checkbox",
+      "page": 3,
+      "x": 42,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.document_wind_roof_deck",
+      "source_key": "document:wind_roof_deck",
+      "type": "image",
+      "page": 3,
+      "x": 42,
+      "y": 520,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.document_wind_opening_protection",
+      "source_key": "document:wind_opening_protection",
+      "type": "checkbox",
+      "page": 3,
+      "x": 204,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.document_wind_opening_protection",
+      "source_key": "document:wind_opening_protection",
+      "type": "image",
+      "page": 3,
+      "x": 204,
+      "y": 520,
+      "width": 150,
+      "height": 110
+    },
+    {
+      "key": "checkbox.document_wind_permit_year",
+      "source_key": "document:wind_permit_year",
+      "type": "checkbox",
+      "page": 3,
+      "x": 366,
+      "y": 660,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "key": "image.document_wind_permit_year",
+      "source_key": "document:wind_permit_year",
+      "type": "image",
+      "page": 3,
+      "x": 366,
+      "y": 520,
+      "width": 150,
+      "height": 110
     }
   ]
 }
