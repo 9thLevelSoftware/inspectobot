@@ -72,7 +72,9 @@ void main() {
       snapshot: WizardProgressSnapshot(
         lastStepIndex: 0,
         completion: const <String, bool>{},
-        branchContext: const <String, dynamic>{'roof_defect_present': true},
+        branchContext: const <String, dynamic>{
+          FormRequirements.roofDefectPresentBranchFlag: true,
+        },
         status: WizardProgressStatus.inProgress,
       ),
     );
@@ -97,9 +99,9 @@ void main() {
         lastStepIndex: 0,
         completion: const <String, bool>{},
         branchContext: const <String, dynamic>{
-          'wind_roof_deck_document_required': true,
-          'wind_opening_document_required': true,
-          'wind_permit_document_required': true,
+          FormRequirements.windRoofDeckDocumentRequiredBranchFlag: true,
+          FormRequirements.windOpeningDocumentRequiredBranchFlag: true,
+          FormRequirements.windPermitDocumentRequiredBranchFlag: true,
         },
         status: WizardProgressStatus.inProgress,
       ),
@@ -125,8 +127,8 @@ void main() {
           'photo:wind_roof_deck': true,
         },
         branchContext: const <String, dynamic>{
-          'wind_roof_deck_document_required': true,
-          'wind_opening_document_required': true,
+          FormRequirements.windRoofDeckDocumentRequiredBranchFlag: true,
+          FormRequirements.windOpeningDocumentRequiredBranchFlag: true,
         },
         status: WizardProgressStatus.inProgress,
       ),

@@ -3,6 +3,23 @@ import 'form_type.dart';
 import 'required_photo_category.dart';
 
 class FormRequirements {
+  static const String hazardPresentBranchFlag = 'hazard_present';
+  static const String roofDefectPresentBranchFlag = 'roof_defect_present';
+  static const String windRoofDeckDocumentRequiredBranchFlag =
+      'wind_roof_deck_document_required';
+  static const String windOpeningDocumentRequiredBranchFlag =
+      'wind_opening_document_required';
+  static const String windPermitDocumentRequiredBranchFlag =
+      'wind_permit_document_required';
+
+  static const Set<String> canonicalBranchFlags = <String>{
+    hazardPresentBranchFlag,
+    roofDefectPresentBranchFlag,
+    windRoofDeckDocumentRequiredBranchFlag,
+    windOpeningDocumentRequiredBranchFlag,
+    windPermitDocumentRequiredBranchFlag,
+  };
+
   static final Map<FormType, List<EvidenceRequirement>> _requirementsByForm = {
     FormType.fourPoint: <EvidenceRequirement>[
       _photo(
@@ -78,7 +95,7 @@ class FormRequirements {
         label: 'Hazard Photo',
         form: FormType.fourPoint,
         category: RequiredPhotoCategory.hazardPhoto,
-        when: _boolFlag('hazard_present'),
+        when: _boolFlag(hazardPresentBranchFlag),
       ),
     ],
     FormType.roofCondition: <EvidenceRequirement>[
@@ -101,7 +118,7 @@ class FormRequirements {
         label: 'Roof Defect',
         form: FormType.roofCondition,
         category: RequiredPhotoCategory.roofDefect,
-        when: _boolFlag('roof_defect_present'),
+        when: _boolFlag(roofDefectPresentBranchFlag),
       ),
     ],
     FormType.windMitigation: <EvidenceRequirement>[
@@ -152,21 +169,21 @@ class FormRequirements {
         label: 'Wind Roof Deck Supporting Document',
         form: FormType.windMitigation,
         category: RequiredPhotoCategory.windRoofDeck,
-        when: _boolFlag('wind_roof_deck_document_required'),
+        when: _boolFlag(windRoofDeckDocumentRequiredBranchFlag),
       ),
       _document(
         key: 'document:wind_opening_protection',
         label: 'Wind Opening Protection Document',
         form: FormType.windMitigation,
         category: RequiredPhotoCategory.windOpeningProtection,
-        when: _boolFlag('wind_opening_document_required'),
+        when: _boolFlag(windOpeningDocumentRequiredBranchFlag),
       ),
       _document(
         key: 'document:wind_permit_year',
         label: 'Wind Permit/Age Document',
         form: FormType.windMitigation,
         category: RequiredPhotoCategory.windPermitYear,
-        when: _boolFlag('wind_permit_document_required'),
+        when: _boolFlag(windPermitDocumentRequiredBranchFlag),
       ),
     ],
   };

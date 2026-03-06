@@ -114,13 +114,15 @@ class InspectionWizardState {
     required WizardProgressSnapshot snapshot,
   })  : _enabledForms = enabledForms,
         _snapshot = snapshot,
+        _canonicalBranchContext = _canonicalizeBranchContext(snapshot.branchContext),
         steps = _buildSteps(
           enabledForms.toList()..sort((a, b) => a.index.compareTo(b.index)),
-          snapshot.branchContext,
+          _canonicalizeBranchContext(snapshot.branchContext),
         );
 
   final Set<FormType> _enabledForms;
   final WizardProgressSnapshot _snapshot;
+  final Map<String, dynamic> _canonicalBranchContext;
   final List<WizardStepDefinition> steps;
 
   int get safeLastStepIndex {
@@ -172,7 +174,7 @@ class InspectionWizardState {
     return sortedForms.map((form) {
       final requirements = FormRequirements.forFormRequirements(
         form,
-        branchContext: _snapshot.branchContext,
+        branchContext: _canonicalBranchContext,
       );
       final missing = requirements
           .where(
@@ -213,5 +215,18 @@ class InspectionWizardState {
     }
 
     return steps;
+  }
+
+  static Map<String, dynamic> _canonicalizeBranchContext(
+    Map<String, dynamic> branchContext,
+  ) {
+    final canonical = <String, dynamic>{};
+    for (final key in FormRequirements.canonicalBranchFlags) {
+      final value = branchContext[key];
+      if (value is bool) {
+        canonical[key] = value;
+      }
+    }
+    return canonical;
   }
 }
