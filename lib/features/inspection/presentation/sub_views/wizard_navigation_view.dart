@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:inspectobot/theme/theme.dart';
 
 import '../../domain/evidence_requirement.dart';
+import '../../domain/form_requirements.dart';
 import '../../domain/inspection_wizard_state.dart';
-import '../controllers/inspection_session_controller.dart';
 import '../shared_widgets/branch_flag_toggle_tile.dart';
 import '../shared_widgets/evidence_requirement_card.dart';
 
@@ -53,7 +53,7 @@ class WizardNavigationView extends StatelessWidget {
   Widget _buildStepHeader(BuildContext context, WizardStepDefinition step) {
     return Text(
       'Step ${currentStepIndex + 1} of ${wizardState.steps.length}: ${step.title}',
-      style: const TextStyle(fontWeight: FontWeight.w600),
+      style: Theme.of(context).textTheme.titleMedium,
     );
   }
 
@@ -91,13 +91,13 @@ class WizardNavigationView extends StatelessWidget {
     if (form == null) {
       return const <Widget>[];
     }
-    final flags = InspectionSessionController.branchFlagsByForm[form];
+    final flags = FormRequirements.branchFlagsByForm[form];
     if (flags == null || flags.isEmpty) {
       return const <Widget>[];
     }
     return flags.map((flag) {
       final label =
-          InspectionSessionController.branchFlagLabels[flag] ?? flag;
+          FormRequirements.branchFlagLabels[flag] ?? flag;
       final currentValue = snapshot.branchContext[flag] == true;
       return BranchFlagToggleTile(
         flagKey: flag,

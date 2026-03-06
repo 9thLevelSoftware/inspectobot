@@ -212,6 +212,31 @@ class FormRequirements {
               requirement.category!: requirement.key,
       };
 
+  // ---------------------------------------------------------------------------
+  // Branch flag maps (authoritative source for UI and controller)
+  // ---------------------------------------------------------------------------
+
+  static const Map<FormType, List<String>> branchFlagsByForm = {
+    FormType.fourPoint: [hazardPresentBranchFlag],
+    FormType.roofCondition: [roofDefectPresentBranchFlag],
+    FormType.windMitigation: [
+      windRoofDeckDocumentRequiredBranchFlag,
+      windOpeningDocumentRequiredBranchFlag,
+      windPermitDocumentRequiredBranchFlag,
+    ],
+  };
+
+  static const Map<String, String> branchFlagLabels = {
+    hazardPresentBranchFlag: 'Hazard present?',
+    roofDefectPresentBranchFlag: 'Roof defect present?',
+    windRoofDeckDocumentRequiredBranchFlag:
+        'Roof deck supporting document required?',
+    windOpeningDocumentRequiredBranchFlag:
+        'Opening protection document required?',
+    windPermitDocumentRequiredBranchFlag:
+        'Permit/age document required?',
+  };
+
   static final Map<String, RequiredPhotoCategory> _categoryByRequirementKey = {
     for (final requirements in _requirementsByForm.values)
       for (final requirement in requirements)

@@ -23,9 +23,9 @@ class EvidenceCaptureView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
+        Text(
           'Per-Form Summary',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: Theme.of(context).textTheme.titleMedium,
         ),
         SizedBox(height: AppSpacing.spacingSm),
         if (summaries.isEmpty)

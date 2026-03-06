@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:inspectobot/theme/theme.dart';
+
 import '../../domain/evidence_requirement.dart';
 
 /// A reusable card displaying a single evidence requirement with its capture
@@ -33,7 +35,7 @@ class EvidenceRequirementCard extends StatelessWidget {
         title: Text(requirement.label),
         subtitle: Text(isCaptured ? 'Captured' : 'Missing required item'),
         trailing: isCaptured
-            ? const Icon(Icons.check_circle, color: Colors.green)
+            ? const Icon(Icons.check_circle, color: Palette.success)
             : OutlinedButton(
                 onPressed: onCapture,
                 child: Text(

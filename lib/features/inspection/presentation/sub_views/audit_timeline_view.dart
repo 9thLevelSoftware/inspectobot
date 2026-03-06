@@ -37,7 +37,7 @@ class AuditTimelineView extends StatelessWidget {
     if (errorMessage != null) {
       return Card(
         child: ListTile(
-          leading: const Icon(Icons.error_outline, color: Colors.redAccent),
+          leading: Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
           title: const Text('Audit timeline unavailable'),
           subtitle: Text(errorMessage!),
         ),
@@ -59,9 +59,9 @@ class AuditTimelineView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Audit Timeline',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: Theme.of(context).textTheme.titleMedium,
         ),
         SizedBox(height: AppSpacing.spacingSm),
         ...auditEvents.take(maxDisplayedEvents).map(

@@ -13,7 +13,9 @@ import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
 import 'package:inspectobot/features/inspection/presentation/controllers/inspection_session_controller.dart';
+import 'package:inspectobot/features/inspection/domain/evidence_requirement.dart';
 import 'package:inspectobot/features/media/media_capture_service.dart';
+import 'package:inspectobot/features/media/media_capture_result.dart';
 import 'package:inspectobot/features/media/media_sync_task.dart';
 import 'package:inspectobot/features/media/pending_media_sync_store.dart';
 import 'package:inspectobot/features/pdf/cloud_pdf_service.dart';
@@ -471,6 +473,237 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // group: capture
+  // ---------------------------------------------------------------------------
+
+  group('capture', () {
+    test('successful capture updates snapshot completion and calls onStateChanged',
+        () async {
+      var notifyCount = 0;
+      final requirements =
+          FormRequirements.forFormRequirements(FormType.fourPoint);
+      final firstReq = requirements.first;
+      final mediaCapture = _SuccessfulMediaCaptureService();
+      final controller = _makeController(
+        draft: _makeDraft(),
+        mediaCapture: mediaCapture,
+      );
+      controller.onStateChanged = () => notifyCount += 1;
+      controller.initialize();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      notifyCount = 0;
+
+      final result = await controller.capture(firstReq);
+
+      expect(result, CaptureResult.captured);
+      expect(controller.snapshot.completion[firstReq.key], isTrue);
+      expect(notifyCount, greaterThanOrEqualTo(1));
+    });
+
+    test('capture returns cancelled when requirement has null category',
+        () async {
+      final controller = _makeController();
+      controller.initialize();
+
+      final nullCategoryRequirement = EvidenceRequirement(
+        key: 'test:null_category',
+        label: 'Null Category',
+        form: FormType.fourPoint,
+        mediaType: EvidenceMediaType.photo,
+        minimumCount: 1,
+        category: null,
+      );
+
+      final result = await controller.capture(nullCategoryRequirement);
+
+      expect(result, CaptureResult.cancelled);
+    });
+
+    test('capture returns cancelled when media service returns null', () async {
+      // _NoOpMediaCaptureService always returns null from captureRequiredPhoto
+      final controller = _makeController(
+        mediaCapture: _NoOpMediaCaptureService(),
+      );
+      controller.initialize();
+
+      final requirements =
+          FormRequirements.forFormRequirements(FormType.fourPoint);
+      final firstReq = requirements.first;
+
+      final result = await controller.capture(firstReq);
+
+      expect(result, CaptureResult.cancelled);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // group: delivery (extended)
+  // ---------------------------------------------------------------------------
+
+  group('delivery success paths', () {
+    test('downloadArtifact returns success after generatePdf', () async {
+      final requirements =
+          FormRequirements.forFormRequirements(FormType.fourPoint);
+      final completion = <String, bool>{
+        for (final req in requirements) req.key: true,
+      };
+      final pendingStore = _FakePendingMediaSyncStore(byRequirement: {
+        for (final req in requirements)
+          req.key: ['/tmp/${req.key.replaceAll(':', '_')}.jpg'],
+      });
+      final signatureRepository = await _seededSignatureRepository();
+      final deliveryService = _testDeliveryService();
+
+      final controller = _makeController(
+        draft: _makeDraft(
+          wizardSnapshot: WizardProgressSnapshot(
+            lastStepIndex: 1,
+            completion: completion,
+            branchContext: const <String, dynamic>{},
+            status: WizardProgressStatus.complete,
+          ),
+          initialStepIndex: 1,
+        ),
+        pendingMediaSyncStore: pendingStore,
+        signatureRepository: signatureRepository,
+        signatureEvidenceRepository: ReportSignatureEvidenceRepository(
+          InMemoryReportSignatureEvidenceGateway(),
+        ),
+        deliveryService: deliveryService,
+      );
+      controller.initialize();
+
+      final pdfResult = await controller.generatePdf();
+      expect(pdfResult.success, isTrue);
+
+      final downloadResult = await controller.downloadArtifact();
+      expect(downloadResult.success, isTrue);
+      expect(downloadResult.url, isNotNull);
+    });
+
+    test('shareArtifact returns success after generatePdf', () async {
+      final requirements =
+          FormRequirements.forFormRequirements(FormType.fourPoint);
+      final completion = <String, bool>{
+        for (final req in requirements) req.key: true,
+      };
+      final pendingStore = _FakePendingMediaSyncStore(byRequirement: {
+        for (final req in requirements)
+          req.key: ['/tmp/${req.key.replaceAll(':', '_')}.jpg'],
+      });
+      final signatureRepository = await _seededSignatureRepository();
+      final deliveryService = _testDeliveryService();
+
+      final controller = _makeController(
+        draft: _makeDraft(
+          wizardSnapshot: WizardProgressSnapshot(
+            lastStepIndex: 1,
+            completion: completion,
+            branchContext: const <String, dynamic>{},
+            status: WizardProgressStatus.complete,
+          ),
+          initialStepIndex: 1,
+        ),
+        pendingMediaSyncStore: pendingStore,
+        signatureRepository: signatureRepository,
+        signatureEvidenceRepository: ReportSignatureEvidenceRepository(
+          InMemoryReportSignatureEvidenceGateway(),
+        ),
+        deliveryService: deliveryService,
+      );
+      controller.initialize();
+
+      final pdfResult = await controller.generatePdf();
+      expect(pdfResult.success, isTrue);
+
+      final shareResult = await controller.shareArtifact();
+      expect(shareResult.success, isTrue);
+      expect(shareResult.url, isNotNull);
+    });
+
+    test('downloadArtifact returns error when delivery service fails',
+        () async {
+      final requirements =
+          FormRequirements.forFormRequirements(FormType.fourPoint);
+      final completion = <String, bool>{
+        for (final req in requirements) req.key: true,
+      };
+      final pendingStore = _FakePendingMediaSyncStore(byRequirement: {
+        for (final req in requirements)
+          req.key: ['/tmp/${req.key.replaceAll(':', '_')}.jpg'],
+      });
+      final signatureRepository = await _seededSignatureRepository();
+      final failingDeliveryService = _failingDeliveryService();
+
+      final controller = _makeController(
+        draft: _makeDraft(
+          wizardSnapshot: WizardProgressSnapshot(
+            lastStepIndex: 1,
+            completion: completion,
+            branchContext: const <String, dynamic>{},
+            status: WizardProgressStatus.complete,
+          ),
+          initialStepIndex: 1,
+        ),
+        pendingMediaSyncStore: pendingStore,
+        signatureRepository: signatureRepository,
+        signatureEvidenceRepository: ReportSignatureEvidenceRepository(
+          InMemoryReportSignatureEvidenceGateway(),
+        ),
+        deliveryService: failingDeliveryService,
+      );
+      controller.initialize();
+
+      final pdfResult = await controller.generatePdf();
+      expect(pdfResult.success, isTrue);
+
+      final downloadResult = await controller.downloadArtifact();
+      expect(downloadResult.success, isFalse);
+      expect(downloadResult.errorMessage, contains('Download failed'));
+    });
+
+    test('shareArtifact returns error when delivery service fails', () async {
+      final requirements =
+          FormRequirements.forFormRequirements(FormType.fourPoint);
+      final completion = <String, bool>{
+        for (final req in requirements) req.key: true,
+      };
+      final pendingStore = _FakePendingMediaSyncStore(byRequirement: {
+        for (final req in requirements)
+          req.key: ['/tmp/${req.key.replaceAll(':', '_')}.jpg'],
+      });
+      final signatureRepository = await _seededSignatureRepository();
+      final failingDeliveryService = _failingDeliveryService();
+
+      final controller = _makeController(
+        draft: _makeDraft(
+          wizardSnapshot: WizardProgressSnapshot(
+            lastStepIndex: 1,
+            completion: completion,
+            branchContext: const <String, dynamic>{},
+            status: WizardProgressStatus.complete,
+          ),
+          initialStepIndex: 1,
+        ),
+        pendingMediaSyncStore: pendingStore,
+        signatureRepository: signatureRepository,
+        signatureEvidenceRepository: ReportSignatureEvidenceRepository(
+          InMemoryReportSignatureEvidenceGateway(),
+        ),
+        deliveryService: failingDeliveryService,
+      );
+      controller.initialize();
+
+      final pdfResult = await controller.generatePdf();
+      expect(pdfResult.success, isTrue);
+
+      final shareResult = await controller.shareArtifact();
+      expect(shareResult.success, isFalse);
+      expect(shareResult.errorMessage, contains('Secure share failed'));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // group: audit events
   // ---------------------------------------------------------------------------
 
@@ -836,4 +1069,68 @@ class _TestSignedUrlGateway implements SignedUrlGateway {
 class _TestShareGateway implements ShareGateway {
   @override
   Future<void> shareUri(String uri) async {}
+}
+
+class _SuccessfulMediaCaptureService extends MediaCaptureService {
+  _SuccessfulMediaCaptureService()
+      : super(
+          pickPhoto: () async => '/tmp/test_photo.jpg',
+          pickDocument: () async => '/tmp/test_doc.pdf',
+          compressPhoto: (_) async => <int>[1, 2, 3],
+          writeCapture: ({
+            required String inspectionId,
+            required RequiredPhotoCategory category,
+            required CapturedMediaType mediaType,
+            required String sourcePath,
+            List<int>? bytes,
+          }) async =>
+              File('/tmp/captured_${category.name}.jpg'),
+        );
+
+  @override
+  Future<MediaCaptureResult?> captureRequiredPhoto({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required RequiredPhotoCategory category,
+    String? requirementKey,
+    CapturedMediaType mediaType = CapturedMediaType.photo,
+    String? evidenceInstanceId,
+  }) async {
+    return MediaCaptureResult(
+      category: category,
+      filePath: '/tmp/captured_${category.name}.jpg',
+      byteSize: 1024,
+    );
+  }
+}
+
+class _FailingSignedUrlGateway implements SignedUrlGateway {
+  @override
+  Future<String> createSignedUrl({
+    required String bucket,
+    required String path,
+    required int expiresInSeconds,
+  }) {
+    throw StateError('signed url generation failed');
+  }
+}
+
+class _FailingShareGateway implements ShareGateway {
+  @override
+  Future<void> shareUri(String uri) {
+    throw StateError('share failed');
+  }
+}
+
+DeliveryService _failingDeliveryService() {
+  return DeliveryService(
+    artifactRepository: ReportArtifactRepository(
+      InMemoryReportArtifactGateway(),
+    ),
+    deliveryRepository: DeliveryRepository(InMemoryDeliveryActionGateway()),
+    auditRepository: AuditEventRepository(InMemoryAuditEventGateway()),
+    signedUrlGateway: _FailingSignedUrlGateway(),
+    shareGateway: _FailingShareGateway(),
+  );
 }

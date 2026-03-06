@@ -156,28 +156,13 @@ class InspectionSessionController {
   ReportReadiness get effectiveReadiness =>
       _persistedReadiness ?? _evaluateReadiness();
 
-  // -- Static maps -----------------------------------------------------------
+  // -- Static maps (delegated to domain layer) --------------------------------
 
-  static const Map<FormType, List<String>> branchFlagsByForm = {
-    FormType.fourPoint: [FormRequirements.hazardPresentBranchFlag],
-    FormType.roofCondition: [FormRequirements.roofDefectPresentBranchFlag],
-    FormType.windMitigation: [
-      FormRequirements.windRoofDeckDocumentRequiredBranchFlag,
-      FormRequirements.windOpeningDocumentRequiredBranchFlag,
-      FormRequirements.windPermitDocumentRequiredBranchFlag,
-    ],
-  };
+  static const Map<FormType, List<String>> branchFlagsByForm =
+      FormRequirements.branchFlagsByForm;
 
-  static const Map<String, String> branchFlagLabels = {
-    FormRequirements.hazardPresentBranchFlag: 'Hazard present?',
-    FormRequirements.roofDefectPresentBranchFlag: 'Roof defect present?',
-    FormRequirements.windRoofDeckDocumentRequiredBranchFlag:
-        'Roof deck supporting document required?',
-    FormRequirements.windOpeningDocumentRequiredBranchFlag:
-        'Opening protection document required?',
-    FormRequirements.windPermitDocumentRequiredBranchFlag:
-        'Permit/age document required?',
-  };
+  static const Map<String, String> branchFlagLabels =
+      FormRequirements.branchFlagLabels;
 
   // -- Public methods --------------------------------------------------------
 

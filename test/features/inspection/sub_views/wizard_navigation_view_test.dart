@@ -188,13 +188,43 @@ void main() {
         onCapture: (r) => capturedRequirement = r,
       ));
 
-      // Tap the first 'Capture' button
+      // Assert capture buttons exist -- do not silently skip
       final captureButtons = find.text('Capture');
-      if (captureButtons.evaluate().isNotEmpty) {
-        await tester.tap(captureButtons.first);
-        await tester.pump();
-        expect(capturedRequirement, isNotNull);
-      }
+      expect(
+        captureButtons,
+        findsAtLeastNWidgets(1),
+        reason: 'Step 1 should have at least one Capture button',
+      );
+      await tester.tap(captureButtons.first);
+      await tester.pump();
+      expect(capturedRequirement, isNotNull);
+    });
+
+    testWidgets('onSetBranchFlag callback fires when toggle is tapped', (
+      tester,
+    ) async {
+      String? flagKeyReceived;
+      bool? flagValueReceived;
+      final state = buildState(forms: {FormType.fourPoint});
+
+      await tester.pumpWidget(buildSubject(
+        wizardState: state,
+        currentStepIndex: 1, // form step with branch flag
+        onSetBranchFlag: (key, value) {
+          flagKeyReceived = key;
+          flagValueReceived = value;
+        },
+      ));
+
+      // The hazard_present branch flag toggle should exist
+      final toggle = find.byKey(const ValueKey('branch-flag-hazard_present'));
+      expect(toggle, findsOneWidget);
+
+      await tester.tap(toggle);
+      await tester.pump();
+
+      expect(flagKeyReceived, 'hazard_present');
+      expect(flagValueReceived, isTrue);
     });
 
     testWidgets('onContinue callback fires when continue button tapped', (
