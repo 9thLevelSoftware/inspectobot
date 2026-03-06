@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 
 import 'package:inspectobot/app/bootstrap/supabase_bootstrap.dart';
 import 'package:inspectobot/app/app.dart';
+import 'package:inspectobot/app/service_locator.dart';
 import 'package:inspectobot/data/supabase/supabase_client_provider.dart';
+import 'package:inspectobot/features/auth/data/auth_repository.dart';
 import 'package:inspectobot/features/sync/sync_scheduler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     await bootstrapSupabase();
+    await setupServiceLocator(AuthRepository.live());
     if (SupabaseClientProvider.isConfigured) {
       try {
         await SyncScheduler.instance.start();
