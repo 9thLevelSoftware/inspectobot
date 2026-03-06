@@ -12,7 +12,7 @@ import 'palette.dart';
 abstract final class AppTypography {
   static const String? _fontFamily = null; // system default
 
-  static TextTheme textTheme = TextTheme(
+  static final TextTheme textTheme = TextTheme(
     displayLarge: TextStyle(
       fontFamily: _fontFamily,
       fontSize: 48,

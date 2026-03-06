@@ -9,7 +9,7 @@ import 'typography.dart';
 ///
 /// Assembles a complete [ThemeData] from the design token system:
 /// [Palette] colors, [AppTypography] text styles, [AppTokens] extension,
-/// and 16 component themes.
+/// and component themes.
 ///
 /// Usage: `theme: AppTheme.dark()` in [MaterialApp].
 abstract final class AppTheme {
@@ -60,139 +60,209 @@ abstract final class AppTheme {
       extensions: <ThemeExtension>[AppTokens.dark()],
 
       // -----------------------------------------------------------------------
-      // Component themes (16)
+      // Component themes
       // -----------------------------------------------------------------------
 
-      // 1. AppBarTheme
-      appBarTheme: const AppBarTheme(
+      // 7.1 AppBarTheme
+      appBarTheme: AppBarTheme(
         backgroundColor: Palette.surface,
         foregroundColor: Palette.onSurface,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
+        elevation: AppElevation.level2,
+        surfaceTintColor: Palette.surfaceTint,
+        titleTextStyle: AppTypography.textTheme.titleLarge,
         centerTitle: false,
+        iconTheme: const IconThemeData(color: Palette.onSurface, size: 24),
       ),
 
-      // 2. CardTheme
+      // 7.2 CardTheme
       cardTheme: CardThemeData(
-        color: Palette.surface,
+        color: Palette.surfaceContainer,
+        surfaceTintColor: Palette.surfaceTint,
         elevation: AppElevation.level1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.radiusMd),
+          borderRadius: AppRadii.md,
         ),
+        margin: const EdgeInsets.symmetric(vertical: AppSpacing.spacingXs),
+        clipBehavior: Clip.antiAlias,
       ),
 
-      // 3. InputDecorationTheme
+      // 7.3 InputDecorationTheme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Palette.surfaceVariant,
+        contentPadding: AppEdgeInsets.inputPadding,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.radiusSm),
+          borderRadius: AppRadii.sm,
           borderSide: const BorderSide(color: Palette.outline),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.radiusSm),
+          borderRadius: AppRadii.sm,
           borderSide: const BorderSide(color: Palette.outline),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.radiusSm),
+          borderRadius: AppRadii.sm,
           borderSide: const BorderSide(color: Palette.primary, width: 2),
         ),
-        hintStyle: const TextStyle(color: Palette.onSurfaceVariant),
-        contentPadding: AppEdgeInsets.inputPadding,
+        errorBorder: OutlineInputBorder(
+          borderRadius: AppRadii.sm,
+          borderSide: const BorderSide(color: Palette.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: AppRadii.sm,
+          borderSide: const BorderSide(color: Palette.error, width: 2),
+        ),
+        labelStyle: AppTypography.textTheme.labelMedium?.copyWith(
+          color: Palette.onSurfaceVariant,
+        ),
+        hintStyle: AppTypography.textTheme.bodyMedium?.copyWith(
+          color: Palette.disabled,
+        ),
+        errorStyle: AppTypography.textTheme.bodySmall?.copyWith(
+          color: Palette.error,
+        ),
+        floatingLabelStyle: const TextStyle(color: Palette.primary),
       ),
 
-      // 4. ElevatedButtonTheme
+      // 7.4 ElevatedButtonTheme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Palette.primary,
-          foregroundColor: Palette.onPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.radiusSm),
+          backgroundColor: Palette.surfaceContainerHigh,
+          foregroundColor: Palette.primary,
+          elevation: AppElevation.level1,
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.spacingLg,
+            vertical: AppSpacing.spacingMd,
           ),
-          minimumSize: const Size(0, 48),
+          textStyle: AppTypography.textTheme.labelLarge,
         ),
       ),
 
-      // 5. OutlinedButtonTheme
+      // 7.5 FilledButtonTheme (BLOCKER 1 - was missing)
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: Palette.primary,
+          foregroundColor: Palette.onPrimary,
+          disabledBackgroundColor: Palette.surfaceContainerHigh,
+          disabledForegroundColor: Palette.disabled,
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.spacingLg,
+            vertical: AppSpacing.spacingMd,
+          ),
+          textStyle: AppTypography.textTheme.labelLarge,
+        ),
+      ),
+
+      // 7.6 OutlinedButtonTheme
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: Palette.primary,
           side: const BorderSide(color: Palette.outline),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.radiusSm),
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.spacingLg,
+            vertical: AppSpacing.spacingMd,
           ),
-          minimumSize: const Size(0, 48),
+          textStyle: AppTypography.textTheme.labelLarge,
         ),
       ),
 
-      // 6. TextButtonTheme
+      // 7.7 TextButtonTheme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: Palette.primary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.radiusSm),
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.spacingMd,
+            vertical: AppSpacing.spacingSm,
           ),
-          minimumSize: const Size(0, 48),
+          textStyle: AppTypography.textTheme.labelLarge,
         ),
       ),
 
-      // 7. IconButtonTheme
+      // 7.8 IconButtonTheme
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
-          minimumSize: const Size(48, 48),
+          foregroundColor: Palette.onSurfaceVariant,
+          highlightColor: Palette.primary.withValues(alpha: 0.12),
         ),
       ),
 
-      // 8. ChipTheme
+      // 7.9 ChipTheme
       chipTheme: ChipThemeData(
-        backgroundColor: Palette.surfaceVariant,
-        labelStyle: const TextStyle(color: Palette.onSurface),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.radiusSm),
+        backgroundColor: Palette.surfaceContainerHigh,
+        selectedColor: Palette.primaryContainer,
+        disabledColor: Palette.surfaceVariant,
+        labelStyle: AppTypography.textTheme.labelMedium!,
+        side: const BorderSide(color: Palette.outline),
+        shape: RoundedRectangleBorder(borderRadius: AppRadii.xs),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.spacingSm,
+          vertical: AppSpacing.spacingXs,
         ),
       ),
 
-      // 9. BottomNavigationBarTheme
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      // 7.10 BottomNavigationBarTheme
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Palette.surface,
         selectedItemColor: Palette.primary,
         unselectedItemColor: Palette.onSurfaceVariant,
+        selectedLabelStyle: AppTypography.textTheme.labelSmall,
+        unselectedLabelStyle: AppTypography.textTheme.labelSmall,
+        type: BottomNavigationBarType.fixed,
+        elevation: AppElevation.level2,
       ),
 
-      // 10. TabBarTheme
-      tabBarTheme: const TabBarThemeData(
-        indicatorColor: Palette.primary,
-        labelColor: Palette.onSurface,
+      // 7.11 TabBarTheme
+      tabBarTheme: TabBarThemeData(
+        labelColor: Palette.primary,
         unselectedLabelColor: Palette.onSurfaceVariant,
+        labelStyle: AppTypography.textTheme.labelLarge,
+        unselectedLabelStyle: AppTypography.textTheme.labelLarge,
+        indicatorColor: Palette.primary,
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Palette.outlineVariant,
       ),
 
-      // 11. DialogTheme
+      // 7.12 DialogTheme
       dialogTheme: DialogThemeData(
         backgroundColor: Palette.surfaceContainerHigh,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.radiusLg),
-        ),
+        surfaceTintColor: Palette.surfaceTint,
+        elevation: AppElevation.level3,
+        shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
+        titleTextStyle: AppTypography.textTheme.headlineSmall,
+        contentTextStyle: AppTypography.textTheme.bodyMedium,
       ),
 
-      // 12. SnackBarTheme
-      snackBarTheme: const SnackBarThemeData(
+      // 7.13 SnackBarTheme
+      snackBarTheme: SnackBarThemeData(
         backgroundColor: Palette.inverseSurface,
-        contentTextStyle: TextStyle(color: Palette.onInverseSurface),
+        contentTextStyle: AppTypography.textTheme.bodyMedium?.copyWith(
+          color: Palette.onInverseSurface,
+        ),
+        actionTextColor: Palette.inversePrimary,
+        shape: RoundedRectangleBorder(borderRadius: AppRadii.sm),
+        behavior: SnackBarBehavior.floating,
+        elevation: AppElevation.level3,
       ),
 
-      // 13. FloatingActionButtonTheme
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: Palette.primaryContainer,
-        foregroundColor: Palette.onPrimaryContainer,
+      // 7.14 FloatingActionButtonTheme
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: Palette.primary,
+        foregroundColor: Palette.onPrimary,
+        elevation: AppElevation.level3,
+        shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
       ),
 
-      // 14. DividerTheme
+      // 7.14 DividerTheme
       dividerTheme: const DividerThemeData(
         color: Palette.outlineVariant,
         thickness: 1,
+        space: AppSpacing.spacingLg,
       ),
 
-      // 15. BottomSheetTheme
+      // 7.14 BottomSheetTheme
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: Palette.surface,
         shape: RoundedRectangleBorder(
@@ -203,16 +273,55 @@ abstract final class AppTheme {
         ),
       ),
 
-      // 16. SwitchThemeData
+      // 7.14 SwitchTheme
       switchTheme: SwitchThemeData(
-        trackColor: WidgetStateProperty.resolveWith<Color>(
+        thumbColor: WidgetStateProperty.resolveWith<Color>(
           (Set<WidgetState> states) {
             if (states.contains(WidgetState.selected)) {
               return Palette.primary;
             }
-            return Palette.surfaceVariant;
+            return Palette.onSurfaceVariant;
           },
         ),
+        trackColor: WidgetStateProperty.resolveWith<Color>(
+          (Set<WidgetState> states) {
+            if (states.contains(WidgetState.selected)) {
+              return Palette.primaryContainer;
+            }
+            return Palette.surfaceContainerHighest;
+          },
+        ),
+      ),
+
+      // 7.14 CheckboxTheme
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith<Color>(
+          (Set<WidgetState> states) {
+            if (states.contains(WidgetState.selected)) {
+              return Palette.primary;
+            }
+            return Colors.transparent;
+          },
+        ),
+        checkColor: WidgetStateProperty.all(Palette.onPrimary),
+        side: const BorderSide(color: Palette.outline, width: 2),
+      ),
+
+      // 7.14 ListTileTheme
+      listTileTheme: const ListTileThemeData(
+        textColor: Palette.onSurface,
+        iconColor: Palette.onSurfaceVariant,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.spacingLg,
+          vertical: AppSpacing.spacingXs,
+        ),
+      ),
+
+      // 7.14 ProgressIndicatorTheme
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: Palette.primary,
+        circularTrackColor: Palette.surfaceContainerHigh,
+        linearTrackColor: Palette.surfaceContainerHigh,
       ),
     );
   }
