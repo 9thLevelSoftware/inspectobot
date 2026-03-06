@@ -1,9 +1,9 @@
 # Project State
 
 ## Current Position
-- **Phase**: 3 of 8 (executed, pending review)
-- **Status**: Phase 3 complete — all 3 plans executed successfully
-- **Last Activity**: Phase 3 execution (2026-03-06)
+- **Phase**: 3 of 8 (complete)
+- **Status**: Phase 3 complete — review passed (2 cycles)
+- **Last Activity**: Phase 3 review passed (2026-03-06)
 
 ## Progress
 ```
@@ -20,10 +20,13 @@
 - SignInPageArgs migrated to GoRouter extra
 - AuthGate deleted, authStack removed in Wave 3
 - get_it lifecycle: service_locator.dart with setup/reset/test helpers
+- Review: clearRecovery() must be called after password reset to break redirect loop
+- Review: Safe type checks for GoRouter state.extra (no raw casts)
+- Review: Generation counter prevents stale tenant resolution race condition
 
 ## GitHub
 - Issue #2: Phase 2 — Reusable Component Library
 - Issue #3: Phase 3 — Navigation System & App Shell
 
 ## Next Action
-Run `/legion:review` to verify Phase 3: Navigation System & App Shell
+Run `/legion:plan 4` to plan the next phase
