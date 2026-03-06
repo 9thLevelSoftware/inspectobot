@@ -8,7 +8,7 @@
 
 - Gap closure scope created from latest milestone audit.
 - [x] **Phase 19: Conditional Branch Wiring and Evidence Activation** - Restore live conditional wizard/evidence activation by wiring branch-input capture and persistence into requirement evaluation paths.
-- [ ] **Phase 20: PDF Mapping Completeness and Identity Contract Reconciliation** - Close mapped-content coverage risk and reconcile inspector identity profile/license contract usage policy.
+- [x] **Phase 20: PDF Mapping Completeness and Identity Contract Reconciliation** - Close mapped-content coverage risk and reconcile inspector identity profile/license contract usage policy. (completed 2026-03-06)
 
 ## Gap Closure Phase Details
 
@@ -28,7 +28,7 @@ Plans:
 **Depends on:** Phase 19
 **Requirements:** PDF-02, AUTH-04
 **Gap Closure:** Closes non-blocking but high-risk map-coverage integration warning and identity contract consumer-path ambiguity from milestone audit.
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 20-01-PLAN.md — Expand JSON field maps to cover every canonical evidence source key and add coverage enforcement test (PDF-02)

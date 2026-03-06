@@ -18,7 +18,7 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 **Last Activity:** 2026-03-06
 **Last Activity Description:** Phase 19 complete — all 4 requirements (FLOW-03, EVID-02, EVID-03, EVID-04) verified and closed
 
-**Progress:** [██████████] 98%
+**Progress:** [██████████] 100%
 
 ## Performance Metrics
 
@@ -77,6 +77,7 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 | Phase 19 P01 | 2 min | 2 tasks | 5 files |
 | Phase 19 P02 | 3 min | 3 tasks | 7 files |
 | Phase 20 P01 | 3min | 2 tasks | 5 files |
+| Phase 20 P02 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -135,6 +136,8 @@ Recent decisions affecting current work:
 - [Phase 19]: Setup/resume flow preserves branch answers through wizard progress persistence for conditional evidence reactivation.
 - [Phase 20]: Coverage enforcement tests compare canonicalSourceKeysForForm against map source_key sets to catch evidence omissions
 - [Phase 20]: Document evidence keys use image type fields in maps since documents are captured as photos in-app
+- [Phase 20]: License exclusion formalized as AUTH-04 POLICY with explicit reversal steps rather than implicit omission
+- [Phase 20]: Contract tests renamed with AUTH-04 POLICY prefix so grep finds all policy-related assertions
 
 ### Pending Todos
 
@@ -150,6 +153,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-03-06T01:59:26.832Z
-**Stopped At:** Completed 20-01-PLAN.md — ready for 20-02
+**Last session:** 2026-03-06T02:04:27.064Z
+**Stopped At:** Completed 20-02-PLAN.md — Phase 20 complete, all carryover requirements closed
 **Resume File:** None
