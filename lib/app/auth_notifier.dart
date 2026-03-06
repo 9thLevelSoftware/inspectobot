@@ -34,6 +34,7 @@ class AuthNotifier extends ChangeNotifier {
   bool _isHandlingRecovery = false;
   bool _isRecovery = false;
   bool _disposed = false;
+  int _resolveGeneration = 0;
 
   // ---------------------------------------------------------------------------
   // Public getters
@@ -71,6 +72,7 @@ class AuthNotifier extends ChangeNotifier {
     final session = change.session;
     final requiresResolve = session != null && session.tenantContext == null;
 
+    _resolveGeneration++; // Invalidate any in-flight tenant resolution
     _session = session;
     _isResolvingTenant = requiresResolve;
     _safeNotify();
@@ -85,8 +87,12 @@ class AuthNotifier extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   Future<void> _resolveTenantContext() async {
+    final gen = _resolveGeneration;
     final resolved = await _repository.resolveCurrentSession();
     if (_disposed) return; // Race condition guard
+    // If a newer auth event arrived while we were resolving, discard this
+    // stale result to avoid overwriting the current session.
+    if (gen != _resolveGeneration) return;
     _session = resolved;
     _isResolvingTenant = false;
     _safeNotify();

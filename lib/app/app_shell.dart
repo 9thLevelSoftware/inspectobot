@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
+import 'navigation_service.dart';
 import 'routes.dart';
 
 /// Authenticated app shell with persistent bottom navigation.
@@ -45,11 +47,12 @@ class AppShell extends StatelessWidget {
 
   /// Navigate to the appropriate route based on tab index.
   void _onTap(BuildContext context, int index) {
+    final nav = GetIt.I<NavigationService>();
     switch (index) {
       case 0:
-        GoRouter.of(context).go(AppRoutes.dashboard);
+        nav.go(AppRoutes.dashboard);
       case 1:
-        GoRouter.of(context).go(AppRoutes.inspectorIdentity);
+        nav.go(AppRoutes.inspectorIdentity);
     }
   }
 }

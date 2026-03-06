@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inspectobot/app/app_shell.dart';
+import 'package:inspectobot/app/navigation_service.dart';
 import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/theme/app_theme.dart';
 
@@ -30,6 +32,14 @@ GoRouter _createShellRouter({String initialLocation = '/dashboard'}) {
   );
 }
 
+void _registerNav(GoRouter router) {
+  if (!GetIt.I.isRegistered<NavigationService>()) {
+    GetIt.I.registerSingleton<NavigationService>(
+      GoRouterNavigationService(router),
+    );
+  }
+}
+
 Widget _buildApp(GoRouter router) {
   return MaterialApp.router(
     theme: AppTheme.dark(),
@@ -39,8 +49,13 @@ Widget _buildApp(GoRouter router) {
 
 void main() {
   group('AppShell', () {
+    tearDown(() async {
+      await GetIt.I.reset();
+    });
+
     testWidgets('renders bottom navigation bar with 2 items', (tester) async {
       final router = _createShellRouter();
+      _registerNav(router);
       await tester.pumpWidget(_buildApp(router));
       await tester.pumpAndSettle();
 
@@ -53,6 +68,7 @@ void main() {
 
     testWidgets('Inspections tab is selected on /dashboard', (tester) async {
       final router = _createShellRouter(initialLocation: AppRoutes.dashboard);
+      _registerNav(router);
       await tester.pumpWidget(_buildApp(router));
       await tester.pumpAndSettle();
 
@@ -68,6 +84,7 @@ void main() {
       final router = _createShellRouter(
         initialLocation: AppRoutes.inspectorIdentity,
       );
+      _registerNav(router);
       await tester.pumpWidget(_buildApp(router));
       await tester.pumpAndSettle();
 
@@ -81,6 +98,7 @@ void main() {
     testWidgets('tapping Identity tab navigates to /inspector-identity',
         (tester) async {
       final router = _createShellRouter(initialLocation: AppRoutes.dashboard);
+      _registerNav(router);
       await tester.pumpWidget(_buildApp(router));
       await tester.pumpAndSettle();
 
@@ -100,6 +118,7 @@ void main() {
       final router = _createShellRouter(
         initialLocation: AppRoutes.inspectorIdentity,
       );
+      _registerNav(router);
       await tester.pumpWidget(_buildApp(router));
       await tester.pumpAndSettle();
 
@@ -116,6 +135,7 @@ void main() {
 
     testWidgets('uses theme styling (no hardcoded colors)', (tester) async {
       final router = _createShellRouter();
+      _registerNav(router);
       await tester.pumpWidget(_buildApp(router));
       await tester.pumpAndSettle();
 

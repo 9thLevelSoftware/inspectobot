@@ -31,7 +31,11 @@ GoRouter createRouter(AuthNotifier authNotifier) {
         path: AppRoutes.signIn,
         pageBuilder: (context, state) => _fadeTransitionPage(
           key: state.pageKey,
-          child: SignInPage(args: state.extra as SignInPageArgs?),
+          child: SignInPage(
+            args: state.extra is SignInPageArgs
+                ? state.extra as SignInPageArgs
+                : null,
+          ),
         ),
       ),
       GoRoute(
@@ -63,6 +67,10 @@ GoRouter createRouter(AuthNotifier authNotifier) {
           GoRoute(
             path: AppRoutes.dashboard,
             pageBuilder: (context, state) {
+              // Tenant is guaranteed non-null here: the redirect guard keeps
+              // unauthenticated users on auth routes and users with unresolved
+              // tenant on sign-in. The '' fallback is a defensive default that
+              // should never be reached in production.
               final session = authNotifier.session;
               final tenant = session?.tenantContext;
               return _slideTransitionPage(
@@ -109,15 +117,19 @@ GoRouter createRouter(AuthNotifier authNotifier) {
       GoRoute(
         path: '/inspections/:id/checklist',
         pageBuilder: (context, state) {
-          final draft = state.extra as InspectionDraft?;
+          // Safe cast — redirect guard below ensures this is always an
+          // InspectionDraft by the time the builder runs.
+          final draft = state.extra is InspectionDraft
+              ? state.extra as InspectionDraft
+              : null;
           return _slideTransitionPage(
             key: state.pageKey,
             child: FormChecklistPage(draft: draft!),
           );
         },
         redirect: (context, state) {
-          // If extra is null (e.g. deep link without draft), redirect to dashboard
-          if (state.extra == null) {
+          // If extra is missing or wrong type, redirect to dashboard
+          if (state.extra is! InspectionDraft) {
             return AppRoutes.dashboard;
           }
           return null;
@@ -147,8 +159,16 @@ String? _redirect(AuthNotifier authNotifier, GoRouterState state) {
     return AppRoutes.resetPassword;
   }
 
-  // 2. Resolving tenant — don't redirect, let the current page handle loading
+  // 2. Resolving tenant — keep the user on an auth route (or wherever they
+  //    are now) until tenant resolution completes. This prevents protected
+  //    route builders from receiving null tenant context.
   if (authNotifier.isResolvingTenant) {
+    if (!isOnAuthRoute && currentPath != '/') {
+      // User is deep-linking to a protected route while tenant is still
+      // resolving. Send them to sign-in to wait; the next refresh after
+      // resolution will redirect them to dashboard.
+      return AppRoutes.signIn;
+    }
     return null;
   }
 

@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../features/auth/data/auth_repository.dart';
 import 'auth_notifier.dart';
@@ -28,6 +29,7 @@ Future<void> setupServiceLocator(AuthRepository authRepository) async {
 }
 
 /// Reset the service locator. Call in [tearDown] during tests.
+@visibleForTesting
 Future<void> resetServiceLocator() async {
   await GetIt.I.reset();
 }
@@ -36,6 +38,7 @@ Future<void> resetServiceLocator() async {
 ///
 /// Registers provided mocks or creates minimal defaults.
 /// Always call [resetServiceLocator] in tearDown.
+@visibleForTesting
 void setupTestServiceLocator({
   AuthNotifier? authNotifier,
   NavigationService? navigationService,

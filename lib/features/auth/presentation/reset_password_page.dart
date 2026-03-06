@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:inspectobot/app/auth_notifier.dart';
 import 'package:inspectobot/app/navigation_service.dart';
 import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
@@ -43,6 +44,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       if (!mounted) {
         return;
       }
+      // Clear recovery flag so the router redirect no longer traps the user
+      // on the reset-password route.
+      GetIt.I<AuthNotifier>().clearRecovery();
       GetIt.I<NavigationService>().go(
         AppRoutes.signIn,
         extra: const SignInPageArgs(

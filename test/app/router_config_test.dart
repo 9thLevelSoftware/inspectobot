@@ -7,6 +7,7 @@ import 'package:inspectobot/app/auth_notifier.dart';
 import 'package:inspectobot/app/router_config.dart';
 import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
+import 'package:inspectobot/features/auth/presentation/sign_in_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthChangeEvent;
 
 // ---------------------------------------------------------------------------
@@ -275,6 +276,93 @@ void main() {
       await tester.pumpAndSettle();
       // Should NOT have bottom navigation bar
       expect(find.byType(BottomNavigationBar), findsNothing);
+    });
+  });
+
+  group('createRouter security', () {
+    late _FakeAuthRepository repo;
+    late AuthNotifier notifier;
+
+    setUp(() {
+      repo = _FakeAuthRepository();
+      notifier = AuthNotifier(repo);
+    });
+
+    tearDown(() {
+      notifier.dispose();
+      repo.dispose();
+    });
+
+    testWidgets('unauthenticated access to /inspections/new redirects to sign-in',
+        (tester) async {
+      final router = createRouter(notifier);
+      router.go(AppRoutes.newInspection);
+      await tester.pumpWidget(_buildApp(router));
+      await tester.pumpAndSettle();
+      // Should be redirected to sign-in
+      expect(find.text('Sign In'), findsWidgets);
+    });
+
+    testWidgets('wrong type in state.extra does not crash checklist route',
+        (tester) async {
+      notifier.dispose();
+      repo.dispose();
+      repo = _FakeAuthRepository(
+        initialSession:
+            const AuthSession(userId: 'u1', organizationId: 'o1'),
+      );
+      notifier = AuthNotifier(repo);
+      final router = createRouter(notifier);
+      // Pass a String instead of InspectionDraft — should redirect, not crash
+      router.go('/inspections/test-id/checklist', extra: 'not-a-draft');
+      await tester.pumpWidget(_buildApp(router));
+      await tester.pumpAndSettle();
+      // Should redirect to dashboard because extra is wrong type
+      expect(
+        find.text('Florida Insurance Inspection Workflow'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('wrong type in state.extra does not crash sign-in route',
+        (tester) async {
+      final router = createRouter(notifier);
+      // Pass an int instead of SignInPageArgs — should not crash
+      router.go(AppRoutes.signIn, extra: 42);
+      await tester.pumpWidget(_buildApp(router));
+      await tester.pumpAndSettle();
+      // Should render sign-in page normally (args treated as null)
+      expect(find.text('Sign In'), findsWidgets);
+    });
+
+    testWidgets('clearRecovery breaks the recovery redirect loop',
+        (tester) async {
+      final router = createRouter(notifier);
+      await tester.pumpWidget(_buildApp(router));
+      await tester.pumpAndSettle();
+
+      // Trigger recovery — user lands on reset-password
+      repo.emit(
+        AuthChangeEvent.passwordRecovery,
+        session: const AuthSession(userId: 'u1'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Reset Password'), findsWidgets);
+
+      // While recovery is active, navigating to sign-in should be blocked
+      // (redirect sends back to reset-password)
+      router.go(AppRoutes.signIn);
+      await tester.pumpAndSettle();
+      expect(find.text('Reset Password'), findsWidgets);
+
+      // Clear recovery — simulates what happens after successful password update
+      notifier.clearRecovery();
+      await tester.pumpAndSettle();
+
+      // Now navigating to sign-in should work (recovery redirect no longer fires)
+      router.go(AppRoutes.signIn);
+      await tester.pumpAndSettle();
+      expect(find.text('Sign In'), findsWidgets);
     });
   });
 }

@@ -97,6 +97,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             Text(_error!, style: const TextStyle(color: Colors.red)),
           ],
           const SizedBox(height: 8),
+          // TODO(ux): This navigates to reset-password without an active
+          // recovery session. Supabase will reject the updatePassword call,
+          // so the user sees an error. A future UX pass should either disable
+          // this button until recovery is confirmed or show an explanatory
+          // message. See: https://supabase.com/docs/reference/dart/auth-updateuser
           TextButton(
             onPressed: _submitting
                 ? null

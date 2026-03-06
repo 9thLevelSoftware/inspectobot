@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:inspectobot/app/auth_notifier.dart';
 import 'package:inspectobot/app/navigation_service.dart';
 import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/app/service_locator.dart';
@@ -11,13 +12,19 @@ import 'package:inspectobot/features/auth/presentation/reset_password_page.dart'
 import 'package:inspectobot/features/auth/presentation/sign_in_page.dart';
 
 class _MockNavigationService extends Mock implements NavigationService {}
+class _MockAuthNotifier extends Mock implements AuthNotifier {}
 
 void main() {
   late _MockNavigationService mockNav;
+  late _MockAuthNotifier mockAuthNotifier;
 
   setUp(() {
     mockNav = _MockNavigationService();
-    setupTestServiceLocator(navigationService: mockNav);
+    mockAuthNotifier = _MockAuthNotifier();
+    setupTestServiceLocator(
+      navigationService: mockNav,
+      authNotifier: mockAuthNotifier,
+    );
   });
 
   tearDown(() async {
