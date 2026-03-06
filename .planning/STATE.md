@@ -14,11 +14,11 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 **Current Phase Name:** Conditional Branch Wiring and Evidence Activation
 **Current Plan:** 2
 **Total Plans in Phase:** 2
-**Status:** Complete
+**Status:** Phase complete — ready for verification
 **Last Activity:** 2026-03-06
 **Last Activity Description:** Phase 19 complete — all 4 requirements (FLOW-03, EVID-02, EVID-03, EVID-04) verified and closed
 
-**Progress:** [██████████] 99%
+**Progress:** [██████████] 98%
 
 ## Performance Metrics
 
@@ -76,6 +76,7 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 | Phase 18 P02 | 3 min | 3 tasks | 6 files |
 | Phase 19 P01 | 2 min | 2 tasks | 5 files |
 | Phase 19 P02 | 3 min | 3 tasks | 7 files |
+| Phase 20 P01 | 3min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -132,6 +133,8 @@ Recent decisions affecting current work:
 - [Phase 19]: Repository write/decode paths persist only canonical bool branch flags while retaining enabled_forms metadata.
 - [Phase 19]: Live branch-input capture wired through checklist UI with immediate snapshot update and readiness refresh.
 - [Phase 19]: Setup/resume flow preserves branch answers through wizard progress persistence for conditional evidence reactivation.
+- [Phase 20]: Coverage enforcement tests compare canonicalSourceKeysForForm against map source_key sets to catch evidence omissions
+- [Phase 20]: Document evidence keys use image type fields in maps since documents are captured as photos in-app
 
 ### Pending Todos
 
@@ -147,6 +150,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-03-06
-**Stopped At:** Phase 19 complete — ready for Phase 20 planning
+**Last session:** 2026-03-06T01:59:26.832Z
+**Stopped At:** Completed 20-01-PLAN.md — ready for 20-02
 **Resume File:** None

@@ -10,7 +10,7 @@
 - [x] **EVID-02**: User can capture required roof evidence including slope-specific photos and defect photos when present.
 - [x] **EVID-03**: User can capture required plumbing, HVAC, electrical, and hazard photos based on selected form logic.
 - [x] **EVID-04**: User can capture evidence for all seven wind mitigation categories, including supporting documents when required.
-- [ ] **PDF-02**: Generated PDFs include mapped data, mapped images, and inspector signature in required locations.
+- [x] **PDF-02**: Generated PDFs include mapped data, mapped images, and inspector signature in required locations.
 - [ ] **AUTH-04**: User can save inspector profile details including license type and license number, and the contract is explicitly consumed or policy-bound.
 
 ## Candidate v1.1+ Requirements
@@ -37,7 +37,7 @@
 | EVID-02 | Phase 19 | Complete |
 | EVID-03 | Phase 19 | Complete |
 | EVID-04 | Phase 19 | Complete |
-| PDF-02 | Phase 20 | Pending |
+| PDF-02 | Phase 20 | Complete |
 | AUTH-04 | Phase 20 | Pending |
 | DIFF-01 | TBD | Planned |
 | DIFF-02 | TBD | Planned |
