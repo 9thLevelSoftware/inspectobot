@@ -81,7 +81,20 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+### Auto-fixed Issues
+
+**1. [Rule 3 - Blocking] `state advance-plan` parser mismatch on legacy STATE position format**
+- **Found during:** post-task state updates
+- **Issue:** `gsd-tools state advance-plan` returned `Cannot parse Current Plan or Total Plans in Phase from STATE.md` because prior state still reflected archived v1.0 position fields.
+- **Fix:** Applied equivalent state transition manually in `STATE.md` (phase/plan/status/activity), then completed remaining automated state update commands.
+- **Files modified:** `.planning/STATE.md`
+- **Verification:** `STATE.md` now reports phase 19 plan 2 in-progress context and session continuity for `Completed 19-01-PLAN.md`.
+- **Committed in:** `3502df9` (plan metadata commit)
+
+---
+
+**Total deviations:** 1 auto-fixed (1 blocking)
+**Impact on plan:** No scope creep; deviation was limited to execution metadata reconciliation.
 
 ## Issues Encountered
 None.
