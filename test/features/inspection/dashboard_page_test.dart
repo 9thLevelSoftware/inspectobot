@@ -16,6 +16,7 @@ import 'package:inspectobot/features/sync/sync_scheduler.dart';
 import 'package:inspectobot/features/media/media_sync_remote_store.dart';
 import 'package:inspectobot/features/media/media_sync_task.dart';
 import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
+import 'package:inspectobot/theme/theme.dart';
 import 'dart:typed_data';
 
 class _MockNavigationService extends Mock implements NavigationService {}
@@ -78,6 +79,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: AppTheme.dark(),
         home: DashboardPage(
           repository: repository,
           syncScheduler: scheduler,
@@ -88,11 +90,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Resume In-Progress Inspections'), findsOneWidget);
+    expect(find.text('Inspections'), findsOneWidget);
     expect(find.text('Jane Doe'), findsOneWidget);
-    expect(find.textContaining('last incomplete step 3'), findsOneWidget);
+    expect(find.text('In Progress'), findsWidgets);
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Resume'));
+    await tester.tap(find.text('Resume'));
     await tester.pumpAndSettle();
 
     expect(store.lastListOrganizationId, organizationId);
@@ -119,6 +121,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: AppTheme.dark(),
         home: DashboardPage(
           repository: repository,
           syncScheduler: scheduler,
@@ -129,8 +132,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // FilledButton.icon creates an _FilledButtonWithIcon, not a FilledButton
-    await tester.tap(find.text('New Inspection'));
+    // The empty state shows a "New Inspection" action button
+    await tester.tap(find.text('New Inspection').first);
     await tester.pumpAndSettle();
 
     verify(() => mockNav.push<void>(AppRoutes.newInspection)).called(1);
@@ -147,6 +150,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: AppTheme.dark(),
         home: DashboardPage(
           repository: repository,
           syncScheduler: scheduler,
@@ -157,7 +161,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Inspector Identity'));
+    // Inspector Identity is now an IconButton in the AppBar
+    await tester.tap(find.byIcon(Icons.person_outline));
     await tester.pumpAndSettle();
 
     verify(() => mockNav.go(AppRoutes.inspectorIdentity)).called(1);
