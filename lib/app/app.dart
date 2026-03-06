@@ -5,6 +5,7 @@ import '../features/auth/presentation/auth_gate.dart';
 import '../features/auth/presentation/reset_password_page.dart';
 import '../features/auth/presentation/sign_in_page.dart';
 import '../features/auth/presentation/sign_up_page.dart';
+import '../theme/app_theme.dart';
 import 'routes.dart';
 
 class InspectoBotApp extends StatelessWidget {
@@ -14,10 +15,7 @@ class InspectoBotApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'InspectoBot',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.dark(),
       initialRoute: AppRoutes.authGate,
       routes: {
         AppRoutes.authGate: (context) => const AuthGate(),
