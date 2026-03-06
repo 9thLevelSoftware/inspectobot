@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/features/audit/data/audit_event_repository.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
+import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
@@ -136,6 +137,10 @@ void main() {
           'photo:exteriorRear': false,
         },
         branchContext: <String, dynamic>{
+          FormRequirements.hazardPresentBranchFlag: true,
+          FormRequirements.roofDefectPresentBranchFlag: false,
+          FormRequirements.windOpeningDocumentRequiredBranchFlag: 'true',
+          'unexpected_branch_key': true,
           'enabled_forms': <String>['four_point'],
         },
         status: WizardProgressStatus.inProgress,
@@ -154,7 +159,14 @@ void main() {
     expect(fetched, isNotNull);
     expect(fetched!.snapshot.lastStepIndex, 2);
     expect(fetched.snapshot.status, WizardProgressStatus.inProgress);
-    expect(fetched.snapshot.branchContext['enabled_forms'], isNotNull);
+    expect(
+      fetched.snapshot.branchContext,
+      equals(<String, dynamic>{
+        FormRequirements.hazardPresentBranchFlag: true,
+        FormRequirements.roofDefectPresentBranchFlag: false,
+        'enabled_forms': <String>['four_point'],
+      }),
+    );
   });
 
   test('listInProgressInspections enforces tenant scoping and status filtering', () async {
@@ -213,6 +225,13 @@ void main() {
     expect(progress, isNotNull);
     expect(progress!.snapshot.lastStepIndex, 0);
     expect(progress.snapshot.completion, isEmpty);
+    expect(
+      progress.snapshot.branchContext,
+      equals(<String, dynamic>{
+        FormRequirements.roofDefectPresentBranchFlag: true,
+        'enabled_forms': <String>['four_point'],
+      }),
+    );
     expect(progress.snapshot.status, WizardProgressStatus.inProgress);
   });
 
@@ -498,7 +517,12 @@ class _MalformedWizardPayloadStore implements InspectionStore {
       'forms_enabled': <String>['four_point'],
       'wizard_last_step': 'bad-value',
       'wizard_completion': <String, dynamic>{'photo:exteriorFront': 'yes'},
-      'wizard_branch_context': <String, dynamic>{'enabled_forms': <String>['four_point']},
+      'wizard_branch_context': <String, dynamic>{
+        FormRequirements.hazardPresentBranchFlag: 'yes',
+        FormRequirements.roofDefectPresentBranchFlag: true,
+        'unknown_key': true,
+        'enabled_forms': <dynamic>['four_point', 7],
+      },
       'wizard_status': 'unknown',
     };
   }

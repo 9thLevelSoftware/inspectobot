@@ -1,6 +1,7 @@
 import 'package:inspectobot/data/supabase/supabase_client_provider.dart';
 import 'package:inspectobot/features/audit/data/audit_event_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
+import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
 import 'package:inspectobot/features/inspection/domain/report_readiness.dart';
@@ -148,6 +149,9 @@ class InspectionRepository {
     required String userId,
     required WizardProgressSnapshot snapshot,
   }) async {
+    final normalizedBranchContext = _normalizeWizardBranchContext(
+      snapshot.branchContext,
+    );
     final setup = await fetchInspectionById(
       inspectionId: inspectionId,
       organizationId: organizationId,
@@ -159,7 +163,7 @@ class InspectionRepository {
       userId: userId,
       wizardLastStep: snapshot.lastStepIndex,
       wizardCompletion: snapshot.completion,
-      wizardBranchContext: snapshot.branchContext,
+      wizardBranchContext: normalizedBranchContext,
       wizardStatus: _encodeStatus(snapshot.status),
     );
     if (_auditRepository != null) {
@@ -180,7 +184,7 @@ class InspectionRepository {
     if (setup != null) {
       await _enqueueWizardProgressUpsert(
         setup: setup,
-        snapshot: snapshot,
+        snapshot: snapshot.copyWith(branchContext: normalizedBranchContext),
       );
     }
     return InspectionWizardProgress.fromJson(payload);
@@ -376,12 +380,36 @@ WizardProgressSnapshot _decodeSnapshot(Map<String, dynamic> json) {
     });
   }
 
+  final normalizedBranchContext = _normalizeWizardBranchContext(branchContext);
+
   return WizardProgressSnapshot(
     lastStepIndex: lastStepRaw is int ? lastStepRaw : 0,
     completion: completion,
-    branchContext: branchContext,
+    branchContext: normalizedBranchContext,
     status: _decodeStatus(json['wizard_status'] as String?),
   );
+}
+
+const String _enabledFormsBranchContextKey = 'enabled_forms';
+
+Map<String, dynamic> _normalizeWizardBranchContext(Map<String, dynamic> input) {
+  final normalized = <String, dynamic>{};
+
+  for (final key in FormRequirements.canonicalBranchFlags) {
+    final value = input[key];
+    if (value is bool) {
+      normalized[key] = value;
+    }
+  }
+
+  final enabledFormsValue = input[_enabledFormsBranchContextKey];
+  if (enabledFormsValue is List) {
+    normalized[_enabledFormsBranchContextKey] = enabledFormsValue
+        .whereType<String>()
+        .toList(growable: false);
+  }
+
+  return normalized;
 }
 
 class SupabaseInspectionStore implements InspectionStore {
