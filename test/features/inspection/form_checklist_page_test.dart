@@ -13,6 +13,7 @@ import 'package:inspectobot/features/inspection/domain/evidence_requirement.dart
 import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
+import 'package:inspectobot/features/inspection/domain/report_readiness.dart';
 import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
 import 'package:inspectobot/features/inspection/presentation/form_checklist_page.dart';
@@ -396,6 +397,73 @@ void main() {
     // Conditional requirement should still be visible on resume
     expect(find.text('Wind Roof Deck Supporting Document'), findsOneWidget);
   });
+
+  testWidgets(
+    'checklist visible requirements match readiness evaluation under identical branch context',
+    (tester) async {
+      // Use a branch context that activates all conditional requirements
+      // for the roof condition form
+      const branchContext = <String, dynamic>{'roof_defect_present': true};
+      final enabledForms = {FormType.roofCondition};
+
+      // Compute what readiness sees
+      final readinessReqs = FormRequirements.evaluate(
+        enabledForms,
+        branchContext: branchContext,
+      );
+      final readinessLabels = readinessReqs.map((r) => r.label).toSet();
+
+      // Now render the checklist with the same branch context
+      final store = _ChecklistStore();
+      final repository = InspectionRepository(store);
+      final draft = InspectionDraft(
+        inspectionId: 'insp-parity',
+        organizationId: 'org-1',
+        userId: 'user-1',
+        clientName: 'Parity User',
+        clientEmail: 'parity@example.com',
+        clientPhone: '555-0200',
+        propertyAddress: '100 Parity Blvd',
+        inspectionDate: DateTime.utc(2026, 3, 5),
+        yearBuilt: 2010,
+        enabledForms: enabledForms,
+        wizardSnapshot: WizardProgressSnapshot(
+          lastStepIndex: 1,
+          completion: const <String, bool>{},
+          branchContext: branchContext,
+          status: WizardProgressStatus.inProgress,
+        ),
+        initialStepIndex: 1,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FormChecklistPage(draft: draft, repository: repository),
+        ),
+      );
+
+      // All readiness requirement labels should be visible as checklist cards
+      for (final label in readinessLabels) {
+        expect(
+          find.text(label),
+          findsOneWidget,
+          reason: 'Checklist should show "$label" (required by readiness)',
+        );
+      }
+
+      // The conditional Roof Defect must be present
+      expect(find.text('Roof Defect'), findsOneWidget);
+
+      // Verify ReportReadiness.evaluate produces consistent result
+      final readiness = ReportReadiness.evaluate(
+        enabledForms: enabledForms,
+        completion: const <String, bool>{},
+        branchContext: branchContext,
+      );
+      expect(readiness.status, ReportReadinessStatus.blocked);
+      expect(readiness.missingItems, contains('Roof Defect'));
+    },
+  );
 
   testWidgets('PDF CTA stays blocked when persisted readiness is blocked', (
     tester,
