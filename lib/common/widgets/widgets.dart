@@ -21,6 +21,10 @@ export 'status_badge.dart';
 export 'completion_chip.dart';
 export 'progress_bar.dart';
 
+// Layout
+export 'reach_zone_scaffold.dart';
+export 'section_group.dart';
+
 // Feedback
 export 'loading_overlay.dart';
 export 'error_banner.dart';

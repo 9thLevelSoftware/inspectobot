@@ -180,4 +180,40 @@ abstract final class AppTypography {
         height: 1.5,
         color: Palette.onSurfaceVariant,
       );
+
+  /// Section title — highest visual weight in content areas (24sp bold).
+  static TextStyle get sectionTitle => const TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.0,
+        color: Palette.onSurface,
+      );
+
+  /// Subsection title — secondary grouping level (18sp semi-bold).
+  static TextStyle get subsectionTitle => const TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.1,
+        color: Palette.onSurface,
+      );
+
+  /// Field value — displayed data values, high contrast (16sp regular).
+  static TextStyle get fieldValue => const TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0.15,
+        color: Palette.onSurface,
+      );
+
+  /// Required field label — orange accent for mandatory indicators (14sp semi-bold).
+  static TextStyle get fieldLabelRequired => TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.25,
+        color: Palette.primary,
+      );
 }

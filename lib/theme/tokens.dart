@@ -14,6 +14,15 @@ abstract final class AppSpacing {
   static const double spacingXxl = 24.0;
   static const double spacing3xl = 32.0;
   static const double spacing4xl = 48.0;
+
+  /// Minimum interactive element size for field conditions (48dp).
+  static const double minTapTarget = 48.0;
+
+  /// Enlarged tap target for primary thumb-zone actions (56dp).
+  static const double thumbZoneTapTarget = 56.0;
+
+  /// Minimum gap between adjacent interactive elements (8dp).
+  static const double minTapTargetSpacing = 8.0;
 }
 
 /// Semantic [EdgeInsets] constants built from the spacing scale.
@@ -83,4 +92,19 @@ abstract final class AppElevation {
   static const double level3 = 6.0;
   static const double level4 = 8.0;
   static const double level5 = 12.0;
+}
+
+/// Field usability layout constants.
+abstract final class AppFieldUsability {
+  /// Fraction of screen height considered thumb-reachable (bottom 40%).
+  static const double thumbZoneRatio = 0.4;
+
+  /// Minimum contrast ratio for WCAG AAA (normal text).
+  static const double wcagAAANormal = 7.0;
+
+  /// Minimum contrast ratio for WCAG AAA (large text, >=18sp or >=14sp bold).
+  static const double wcagAAALarge = 4.5;
+
+  /// Minimum contrast ratio for WCAG AA (normal text).
+  static const double wcagAANormal = 4.5;
 }
