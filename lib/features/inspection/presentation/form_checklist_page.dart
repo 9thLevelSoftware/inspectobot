@@ -22,6 +22,7 @@ import '../../identity/data/signature_repository.dart';
 import '../data/inspection_repository.dart';
 import '../domain/evidence_requirement.dart';
 import '../domain/form_requirements.dart';
+import '../domain/form_type.dart';
 import '../domain/inspection_draft.dart';
 import '../domain/inspection_wizard_state.dart';
 import '../domain/report_readiness.dart';
@@ -552,9 +553,60 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
     }
   }
 
+  static const Map<FormType, List<String>> _branchFlagsByForm = {
+    FormType.fourPoint: [FormRequirements.hazardPresentBranchFlag],
+    FormType.roofCondition: [FormRequirements.roofDefectPresentBranchFlag],
+    FormType.windMitigation: [
+      FormRequirements.windRoofDeckDocumentRequiredBranchFlag,
+      FormRequirements.windOpeningDocumentRequiredBranchFlag,
+      FormRequirements.windPermitDocumentRequiredBranchFlag,
+    ],
+  };
+
+  static const Map<String, String> _branchFlagLabels = {
+    FormRequirements.hazardPresentBranchFlag: 'Hazard present?',
+    FormRequirements.roofDefectPresentBranchFlag: 'Roof defect present?',
+    FormRequirements.windRoofDeckDocumentRequiredBranchFlag:
+        'Roof deck supporting document required?',
+    FormRequirements.windOpeningDocumentRequiredBranchFlag:
+        'Opening protection document required?',
+    FormRequirements.windPermitDocumentRequiredBranchFlag:
+        'Permit/age document required?',
+  };
+
+  void _setBranchFlag(String key, bool value) {
+    final updatedContext = Map<String, dynamic>.from(_snapshot.branchContext)
+      ..[key] = value;
+    setState(() {
+      _snapshot = _snapshot.copyWith(branchContext: updatedContext);
+    });
+    _syncReadinessFromSnapshot();
+  }
+
+  List<Widget> _buildBranchInputControls(WizardStepDefinition step) {
+    final form = step.form;
+    if (form == null) {
+      return const <Widget>[];
+    }
+    final flags = _branchFlagsByForm[form];
+    if (flags == null || flags.isEmpty) {
+      return const <Widget>[];
+    }
+    return flags.map((flag) {
+      final label = _branchFlagLabels[flag] ?? flag;
+      final currentValue = _snapshot.branchContext[flag] == true;
+      return SwitchListTile(
+        key: ValueKey('branch-flag-$flag'),
+        title: Text(label),
+        value: currentValue,
+        onChanged: (value) => _setBranchFlag(flag, value),
+      );
+    }).toList(growable: false);
+  }
+
   Widget _buildStepContent(InspectionWizardState state) {
     final step = state.steps[_currentStepIndex];
-    if (step.requirements.isEmpty) {
+    if (step.requirements.isEmpty && step.form == null) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Text(
@@ -563,31 +615,36 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
       );
     }
 
+    final branchControls = _buildBranchInputControls(step);
+
     return Column(
-      children: step.requirements
-          .map((requirement) {
-            final category = requirement.category;
-            final captured = _snapshot.completion[requirement.key] == true;
-            return Card(
-              child: ListTile(
-                title: Text(requirement.label),
-                subtitle: Text(captured ? 'Captured' : 'Missing required item'),
-                trailing: captured
-                    ? const Icon(Icons.check_circle, color: Colors.green)
-                    : OutlinedButton(
-                        onPressed: category == null
-                            ? null
-                            : () => _capture(requirement),
-                        child: Text(
-                          requirement.mediaType == EvidenceMediaType.document
-                              ? 'Upload'
-                              : 'Capture',
+      children: [
+        ...branchControls,
+        ...step.requirements
+            .map((requirement) {
+              final category = requirement.category;
+              final captured = _snapshot.completion[requirement.key] == true;
+              return Card(
+                child: ListTile(
+                  title: Text(requirement.label),
+                  subtitle: Text(captured ? 'Captured' : 'Missing required item'),
+                  trailing: captured
+                      ? const Icon(Icons.check_circle, color: Colors.green)
+                      : OutlinedButton(
+                          onPressed: category == null
+                              ? null
+                              : () => _capture(requirement),
+                          child: Text(
+                            requirement.mediaType == EvidenceMediaType.document
+                                ? 'Upload'
+                                : 'Capture',
+                          ),
                         ),
-                      ),
-              ),
-            );
-          })
-          .toList(growable: false),
+                ),
+              );
+            })
+            .toList(growable: false),
+      ],
     );
   }
 
