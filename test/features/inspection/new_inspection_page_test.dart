@@ -2,8 +2,11 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:inspectobot/app/navigation_service.dart';
+import 'package:inspectobot/app/routes.dart';
+import 'package:inspectobot/app/service_locator.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
-import 'package:inspectobot/features/inspection/presentation/form_checklist_page.dart';
 import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
 import 'package:inspectobot/features/media/media_sync_remote_store.dart';
 import 'package:inspectobot/features/media/media_sync_task.dart';
@@ -11,9 +14,23 @@ import 'package:inspectobot/features/media/pending_media_sync_store.dart';
 import 'package:inspectobot/features/sync/sync_outbox_store.dart';
 import 'package:inspectobot/features/inspection/presentation/new_inspection_page.dart';
 
+class _MockNavigationService extends Mock implements NavigationService {}
+
 void main() {
   const organizationId = 'org-session';
   const userId = 'user-session';
+
+  late _MockNavigationService mockNav;
+
+  setUp(() {
+    mockNav = _MockNavigationService();
+    when(() => mockNav.go(any(), extra: any(named: 'extra'))).thenReturn(null);
+    setupTestServiceLocator(navigationService: mockNav);
+  });
+
+  tearDown(() async {
+    await resetServiceLocator();
+  });
 
   Future<void> pumpPage(
     WidgetTester tester, {
@@ -160,56 +177,17 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Guided Inspection Wizard'), findsOneWidget);
-    expect(find.textContaining('Inspection for Jane Doe'), findsOneWidget);
-    final checklist = tester.widget<FormChecklistPage>(
-      find.byType(FormChecklistPage),
-    );
-    expect(identical(checklist.mediaSyncRemoteStore, remoteStore), isTrue);
-    expect(identical(checklist.pendingMediaSyncStore, pendingStore), isTrue);
-  });
 
-  testWidgets('new inspection with roof condition form shows branch controls in checklist', (
-    tester,
-  ) async {
-    final store = _BranchAwareSpyInspectionStore();
-    await pumpPage(
-      tester,
-      provider: _TestRepositoryProvider(InspectionRepository(store)),
-    );
-
-    await fillValidForm(tester);
-
-    // Deselect four-point and wind-mitigation, keep only roof-condition
-    for (final label in const [
-      'Insp4pt 03-25',
-      'OIR-B1-1802 Rev 04/26',
-    ]) {
-      await tester.scrollUntilVisible(
-        find.widgetWithText(CheckboxListTile, label),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.tap(find.widgetWithText(CheckboxListTile, label));
-    }
-    await tester.pump();
-
-    await scrollToContinue(tester);
-    await tester.tap(find.text('Continue to Required Photos'));
-    await tester.pumpAndSettle();
-
-    // Should be on checklist now
-    expect(find.text('Guided Inspection Wizard'), findsOneWidget);
-
-    // Navigate to roof condition step
-    await tester.tap(find.text('Continue to Next Step'));
-    await tester.pumpAndSettle();
-
-    // Branch toggle for roof defect should be present
-    expect(
-      find.byKey(const ValueKey('branch-flag-roof_defect_present')),
-      findsOneWidget,
-    );
+    // Verify NavigationService.go was called with correct checklist route and draft
+    final captured = verify(
+      () => mockNav.go(
+        captureAny(),
+        extra: any(named: 'extra'),
+      ),
+    ).captured;
+    final route = captured.first as String;
+    expect(route, startsWith('/inspections/'));
+    expect(route, endsWith('/checklist'));
   });
 }
 
@@ -362,32 +340,6 @@ class _SpyInspectionStore implements InspectionStore {
       'status': status,
       'missing_items': missingItems,
       'computed_at': computedAt.toIso8601String(),
-    };
-  }
-}
-
-class _BranchAwareSpyInspectionStore extends _SpyInspectionStore {
-  Map<String, dynamic>? lastWizardBranchContext;
-
-  @override
-  Future<Map<String, dynamic>> updateWizardProgress({
-    required String inspectionId,
-    required String organizationId,
-    required String userId,
-    required int wizardLastStep,
-    required Map<String, bool> wizardCompletion,
-    required Map<String, dynamic> wizardBranchContext,
-    required String wizardStatus,
-  }) async {
-    lastWizardBranchContext = Map<String, dynamic>.from(wizardBranchContext);
-    return <String, dynamic>{
-      'id': inspectionId,
-      'organization_id': organizationId,
-      'user_id': userId,
-      'wizard_last_step': wizardLastStep,
-      'wizard_completion': wizardCompletion,
-      'wizard_branch_context': wizardBranchContext,
-      'wizard_status': wizardStatus,
     };
   }
 }

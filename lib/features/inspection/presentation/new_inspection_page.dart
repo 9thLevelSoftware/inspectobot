@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:inspectobot/app/navigation_service.dart';
+import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/media/media_sync_remote_store.dart';
 import 'package:inspectobot/features/media/pending_media_sync_store.dart';
-import 'package:inspectobot/features/inspection/presentation/form_checklist_page.dart';
 
 class NewInspectionPage extends StatefulWidget {
   const NewInspectionPage({
@@ -156,15 +158,9 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
         enabledForms: persisted.enabledForms,
       );
 
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => FormChecklistPage(
-            draft: draft,
-            repository: _repository,
-            mediaSyncRemoteStore: widget.mediaSyncRemoteStore,
-            pendingMediaSyncStore: widget.pendingMediaSyncStore,
-          ),
-        ),
+      GetIt.I<NavigationService>().go(
+        AppRoutes.inspectionChecklist(persisted.id),
+        extra: draft,
       );
     } catch (_) {
       if (!mounted) {

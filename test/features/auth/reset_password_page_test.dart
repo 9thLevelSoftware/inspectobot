@@ -2,28 +2,36 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:inspectobot/app/navigation_service.dart';
 import 'package:inspectobot/app/routes.dart';
+import 'package:inspectobot/app/service_locator.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
 import 'package:inspectobot/features/auth/presentation/reset_password_page.dart';
 import 'package:inspectobot/features/auth/presentation/sign_in_page.dart';
 
+class _MockNavigationService extends Mock implements NavigationService {}
+
 void main() {
-  testWidgets('successful update routes to sign-in with continuation message', (
+  late _MockNavigationService mockNav;
+
+  setUp(() {
+    mockNav = _MockNavigationService();
+    setupTestServiceLocator(navigationService: mockNav);
+  });
+
+  tearDown(() async {
+    await resetServiceLocator();
+  });
+
+  testWidgets('successful update navigates to sign-in with success message', (
     tester,
   ) async {
     final gateway = _ResetFakeAuthGateway();
     final repository = AuthRepository(gateway);
 
     await tester.pumpWidget(
-      MaterialApp(
-        routes: {
-          AppRoutes.resetPassword: (context) =>
-              ResetPasswordPage(repository: repository),
-          AppRoutes.signIn: (context) =>
-              SignInPage(repository: AuthRepository(_NoopGateway())),
-        },
-        initialRoute: AppRoutes.resetPassword,
-      ),
+      MaterialApp(home: ResetPasswordPage(repository: repository)),
     );
 
     await tester.enterText(find.byType(TextFormField), 'Password123!');
@@ -37,8 +45,19 @@ void main() {
     gateway.completeUpdate();
     await tester.pumpAndSettle();
 
-    expect(find.text('Sign In'), findsWidgets);
-    expect(find.text(AppRoutes.resetPasswordSuccessMessage), findsOneWidget);
+    verify(
+      () => mockNav.go(
+        AppRoutes.signIn,
+        extra: any(
+          named: 'extra',
+          that: isA<SignInPageArgs>().having(
+            (a) => a.infoMessage,
+            'infoMessage',
+            AppRoutes.resetPasswordSuccessMessage,
+          ),
+        ),
+      ),
+    ).called(1);
   });
 
   testWidgets('failed update shows auth failure and stays on reset page', (
@@ -62,6 +81,7 @@ void main() {
 
     expect(find.text('Password must be stronger.'), findsOneWidget);
     expect(find.text('Update Password'), findsOneWidget);
+    verifyNever(() => mockNav.go(any(), extra: any(named: 'extra')));
   });
 }
 
@@ -117,41 +137,4 @@ class _ResetFakeAuthGateway implements AuthGateway {
     }
     return _updateCompleter.future;
   }
-}
-
-class _NoopGateway implements AuthGateway {
-  final _controller = StreamController<AuthStateChange>.broadcast();
-
-  @override
-  AuthSession? get currentSession => null;
-
-  @override
-  Stream<AuthStateChange> get onAuthStateChange => _controller.stream;
-
-  @override
-  Future<AuthSession?> resolveCurrentSession() async => null;
-
-  @override
-  Future<void> resetPasswordForEmail({
-    required String email,
-    required String redirectTo,
-  }) async {}
-
-  @override
-  Future<void> signInWithPassword({
-    required String email,
-    required String password,
-  }) async {}
-
-  @override
-  Future<void> signOut() async {}
-
-  @override
-  Future<void> signUp({
-    required String email,
-    required String password,
-  }) async {}
-
-  @override
-  Future<void> updatePassword({required String newPassword}) async {}
 }

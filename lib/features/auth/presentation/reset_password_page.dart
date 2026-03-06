@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:inspectobot/app/navigation_service.dart';
 import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
 import 'package:inspectobot/features/auth/presentation/sign_in_page.dart';
@@ -41,10 +43,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       if (!mounted) {
         return;
       }
-      Navigator.of(context).pushNamedAndRemoveUntil(
+      GetIt.I<NavigationService>().go(
         AppRoutes.signIn,
-        (route) => false,
-        arguments: const SignInPageArgs(
+        extra: const SignInPageArgs(
           infoMessage: AppRoutes.resetPasswordSuccessMessage,
         ),
       );

@@ -31,7 +31,7 @@ GoRouter createRouter(AuthNotifier authNotifier) {
         path: AppRoutes.signIn,
         pageBuilder: (context, state) => _fadeTransitionPage(
           key: state.pageKey,
-          child: const SignInPage(),
+          child: SignInPage(args: state.extra as SignInPageArgs?),
         ),
       ),
       GoRoute(

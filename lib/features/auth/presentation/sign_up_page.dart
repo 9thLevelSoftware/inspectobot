@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:inspectobot/app/navigation_service.dart';
 import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
 
@@ -45,10 +47,7 @@ class _SignUpPageState extends State<SignUpPage> {
       if (!mounted) {
         return;
       }
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.dashboard,
-        (route) => false,
-      );
+      GetIt.I<NavigationService>().go(AppRoutes.dashboard);
     } on AuthFailure catch (error) {
       if (!mounted) {
         return;
@@ -112,7 +111,7 @@ class _SignUpPageState extends State<SignUpPage> {
           TextButton(
             onPressed: _submitting
                 ? null
-                : () => Navigator.of(context).pushReplacementNamed(AppRoutes.signIn),
+                : () => GetIt.I<NavigationService>().replace(AppRoutes.signIn),
             child: const Text('Already have an account? Sign in'),
           ),
         ],

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:inspectobot/app/navigation_service.dart';
 import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
 
@@ -9,10 +11,11 @@ class SignInPageArgs {
 }
 
 class SignInPage extends StatefulWidget {
-  const SignInPage({super.key, AuthRepository? repository})
+  const SignInPage({super.key, AuthRepository? repository, this.args})
     : _repository = repository;
 
   final AuthRepository? _repository;
+  final SignInPageArgs? args;
 
   @override
   State<SignInPage> createState() => _SignInPageState();
@@ -25,7 +28,6 @@ class _SignInPageState extends State<SignInPage> {
   bool _submitting = false;
   String? _error;
   String? _infoMessage;
-  bool _didLoadRouteArgs = false;
 
   AuthRepository get _repository => widget._repository ?? AuthRepository.live();
 
@@ -37,16 +39,9 @@ class _SignInPageState extends State<SignInPage> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_didLoadRouteArgs) {
-      return;
-    }
-    _didLoadRouteArgs = true;
-    final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is SignInPageArgs) {
-      _infoMessage = args.infoMessage;
-    }
+  void initState() {
+    super.initState();
+    _infoMessage = widget.args?.infoMessage;
   }
 
   Future<void> _submit() async {
@@ -66,9 +61,7 @@ class _SignInPageState extends State<SignInPage> {
       if (!mounted) {
         return;
       }
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(AppRoutes.dashboard, (route) => false);
+      GetIt.I<NavigationService>().go(AppRoutes.dashboard);
     } on AuthFailure catch (error) {
       if (!mounted) {
         return;
@@ -139,14 +132,14 @@ class _SignInPageState extends State<SignInPage> {
           TextButton(
             onPressed: _submitting
                 ? null
-                : () => Navigator.of(context).pushNamed(AppRoutes.signUp),
+                : () => GetIt.I<NavigationService>().go(AppRoutes.signUp),
             child: const Text('Create account'),
           ),
           TextButton(
             onPressed: _submitting
                 ? null
                 : () =>
-                      Navigator.of(context).pushNamed(AppRoutes.forgotPassword),
+                      GetIt.I<NavigationService>().go(AppRoutes.forgotPassword),
             child: const Text('Forgot password?'),
           ),
         ],

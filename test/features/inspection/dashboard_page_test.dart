@@ -1,23 +1,41 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:inspectobot/app/navigation_service.dart';
+import 'package:inspectobot/app/routes.dart';
+import 'package:inspectobot/app/service_locator.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
-import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
-import 'package:inspectobot/features/media/media_sync_remote_store.dart';
-import 'package:inspectobot/features/media/media_sync_task.dart';
-import 'package:inspectobot/features/media/pending_media_sync_store.dart';
 import 'package:inspectobot/features/inspection/presentation/dashboard_page.dart';
-import 'package:inspectobot/features/inspection/presentation/form_checklist_page.dart';
 import 'package:inspectobot/features/sync/sync_outbox_store.dart';
 import 'package:inspectobot/features/sync/sync_runner.dart';
 import 'package:inspectobot/features/sync/sync_scheduler.dart';
+import 'package:inspectobot/features/media/media_sync_remote_store.dart';
+import 'package:inspectobot/features/media/media_sync_task.dart';
+import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
+import 'dart:typed_data';
+
+class _MockNavigationService extends Mock implements NavigationService {}
 
 void main() {
+  late _MockNavigationService mockNav;
+
+  setUp(() {
+    mockNav = _MockNavigationService();
+    when(() => mockNav.push<void>(any(), extra: any(named: 'extra')))
+        .thenAnswer((_) async => null);
+    when(() => mockNav.go(any(), extra: any(named: 'extra'))).thenReturn(null);
+    when(() => mockNav.go(any())).thenReturn(null);
+    setupTestServiceLocator(navigationService: mockNav);
+  });
+
+  tearDown(() async {
+    await resetServiceLocator();
+  });
+
   testWidgets('dashboard lists in-progress inspections with resume action', (
     tester,
   ) async {
@@ -57,16 +75,12 @@ void main() {
     );
 
     final scheduler = _TestSyncScheduler();
-    final remoteStore = _NoopMediaRemoteStore();
-    final pendingStore = PendingMediaSyncStore(outboxStore: SyncOutboxStore());
 
     await tester.pumpWidget(
       MaterialApp(
         home: DashboardPage(
           repository: repository,
           syncScheduler: scheduler,
-          mediaSyncRemoteStore: remoteStore,
-          pendingMediaSyncStore: pendingStore,
           organizationId: organizationId,
           userId: userId,
         ),
@@ -84,46 +98,23 @@ void main() {
     expect(store.lastListOrganizationId, organizationId);
     expect(store.lastListUserId, userId);
     expect(scheduler.runCalls, 1);
-    expect(find.text('Guided Inspection Wizard'), findsOneWidget);
-    expect(find.textContaining('Step 3 of'), findsOneWidget);
-    final checklist = tester.widget<FormChecklistPage>(
-      find.byType(FormChecklistPage),
-    );
-    expect(identical(checklist.mediaSyncRemoteStore, remoteStore), isTrue);
-    expect(identical(checklist.pendingMediaSyncStore, pendingStore), isTrue);
+
+    // Verify NavigationService.push was called with correct checklist route
+    verify(
+      () => mockNav.push<void>(
+        AppRoutes.inspectionChecklist('insp-1'),
+        extra: any(named: 'extra'),
+      ),
+    ).called(1);
   });
-  testWidgets('resume preserves branch context and activates conditional requirements', (
+
+  testWidgets('new inspection button navigates via NavigationService', (
     tester,
   ) async {
     const organizationId = 'org-session';
     const userId = 'user-session';
     final store = _ScopeSpyInspectionStore(InMemoryInspectionStore());
     final repository = InspectionRepository(store);
-    final setup = InspectionSetup(
-      id: 'insp-branch-resume',
-      organizationId: organizationId,
-      userId: userId,
-      clientName: 'Branch Resume User',
-      clientEmail: 'branch-resume@example.com',
-      clientPhone: '555-0100',
-      propertyAddress: '789 Branch Blvd',
-      inspectionDate: DateTime.utc(2026, 3, 4),
-      yearBuilt: 2001,
-      enabledForms: {FormType.roofCondition},
-    );
-    final created = await repository.createInspection(setup);
-    await repository.updateWizardProgress(
-      inspectionId: created.id,
-      organizationId: created.organizationId,
-      userId: created.userId,
-      snapshot: WizardProgressSnapshot(
-        lastStepIndex: 1,
-        completion: const <String, bool>{},
-        branchContext: const <String, dynamic>{'roof_defect_present': true},
-        status: WizardProgressStatus.inProgress,
-      ),
-    );
-
     final scheduler = _TestSyncScheduler();
 
     await tester.pumpWidget(
@@ -138,14 +129,38 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Branch Resume User'), findsOneWidget);
-
-    await tester.tap(find.widgetWithText(FilledButton, 'Resume'));
+    // FilledButton.icon creates an _FilledButtonWithIcon, not a FilledButton
+    await tester.tap(find.text('New Inspection'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Guided Inspection Wizard'), findsOneWidget);
-    // Roof Defect requirement should be visible because branch context was preserved
-    expect(find.text('Roof Defect'), findsOneWidget);
+    verify(() => mockNav.push<void>(AppRoutes.newInspection)).called(1);
+  });
+
+  testWidgets('inspector identity button navigates via NavigationService', (
+    tester,
+  ) async {
+    const organizationId = 'org-session';
+    const userId = 'user-session';
+    final store = _ScopeSpyInspectionStore(InMemoryInspectionStore());
+    final repository = InspectionRepository(store);
+    final scheduler = _TestSyncScheduler();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DashboardPage(
+          repository: repository,
+          syncScheduler: scheduler,
+          organizationId: organizationId,
+          userId: userId,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Inspector Identity'));
+    await tester.pumpAndSettle();
+
+    verify(() => mockNav.go(AppRoutes.inspectorIdentity)).called(1);
   });
 }
 

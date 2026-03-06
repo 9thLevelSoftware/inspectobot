@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:inspectobot/app/navigation_service.dart';
 import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
 
@@ -99,7 +101,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             onPressed: _submitting
                 ? null
                 : () =>
-                      Navigator.of(context).pushNamed(AppRoutes.resetPassword),
+                      GetIt.I<NavigationService>().go(AppRoutes.resetPassword),
             child: const Text('Already have a recovery link? Reset password'),
           ),
         ],

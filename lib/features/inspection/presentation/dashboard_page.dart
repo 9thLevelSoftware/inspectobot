@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:inspectobot/features/identity/presentation/inspector_identity_page.dart';
+import 'package:get_it/get_it.dart';
+import 'package:inspectobot/app/navigation_service.dart';
+import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
 import 'package:inspectobot/features/media/media_sync_remote_store.dart';
 import 'package:inspectobot/features/media/pending_media_sync_store.dart';
 import 'package:inspectobot/features/sync/sync_scheduler.dart';
-
-import 'form_checklist_page.dart';
-import 'new_inspection_page.dart';
 
 class DashboardPage extends StatefulWidget {
   DashboardPage({
@@ -93,15 +92,9 @@ class _DashboardPageState extends State<DashboardPage> {
       initialStepIndex: resumeStep,
     );
 
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => FormChecklistPage(
-          draft: draft,
-          repository: widget.repository,
-          mediaSyncRemoteStore: widget.mediaSyncRemoteStore,
-          pendingMediaSyncStore: widget.pendingMediaSyncStore,
-        ),
-      ),
+    await GetIt.I<NavigationService>().push<void>(
+      AppRoutes.inspectionChecklist(progress.inspectionId),
+      extra: draft,
     );
     if (!mounted) {
       return;
@@ -127,18 +120,8 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => NewInspectionPage(
-                      organizationId: widget.organizationId,
-                      userId: widget.userId,
-                      repository: _StaticDashboardRepositoryProvider(
-                        widget.repository,
-                      ),
-                      mediaSyncRemoteStore: widget.mediaSyncRemoteStore,
-                      pendingMediaSyncStore: widget.pendingMediaSyncStore,
-                    ),
-                  ),
+                await GetIt.I<NavigationService>().push<void>(
+                  AppRoutes.newInspection,
                 );
                 if (!mounted) {
                   return;
@@ -151,14 +134,7 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => InspectorIdentityPage(
-                      organizationId: widget.organizationId,
-                      userId: widget.userId,
-                    ),
-                  ),
-                );
+                GetIt.I<NavigationService>().go(AppRoutes.inspectorIdentity);
               },
               icon: const Icon(Icons.badge_outlined),
               label: const Text('Inspector Identity'),
@@ -219,14 +195,4 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
-}
-
-class _StaticDashboardRepositoryProvider
-    implements NewInspectionRepositoryProvider {
-  const _StaticDashboardRepositoryProvider(this.repository);
-
-  final InspectionRepository repository;
-
-  @override
-  InspectionRepository resolve() => repository;
 }
