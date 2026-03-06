@@ -92,6 +92,9 @@ class _DashboardPageState extends State<DashboardPage> {
     );
     final resumeStep = wizardState.resolveNextIncompleteStep();
 
+    // InspectionWizardProgress does not carry the full setup fields
+    // (email, phone, date, yearBuilt). Placeholders are used here because
+    // the checklist page only needs inspectionId and enabledForms to resume.
     final draft = InspectionDraft(
       inspectionId: progress.inspectionId,
       organizationId: progress.organizationId,
@@ -117,7 +120,7 @@ class _DashboardPageState extends State<DashboardPage> {
     _refresh();
   }
 
-  void _navigateToNewInspection() async {
+  Future<void> _navigateToNewInspection() async {
     await GetIt.I<NavigationService>().push<void>(
       AppRoutes.newInspection,
     );
@@ -293,9 +296,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       displayStatus: displayStatus,
                       isComplete: isComplete,
                       onTap: () => _resumeInspection(inspection),
-                      onAction: isComplete
-                          ? () => _resumeInspection(inspection)
-                          : () => _resumeInspection(inspection),
+                      onAction: () => _resumeInspection(inspection),
                     ),
                   );
                 },

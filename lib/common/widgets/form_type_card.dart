@@ -35,12 +35,12 @@ class FormTypeCard extends StatelessWidget {
           ? colorScheme.primaryContainer.withValues(alpha: 0.3)
           : colorScheme.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.radiusMd),
+        borderRadius: AppRadii.md,
         side: BorderSide(color: borderColor, width: borderWidth),
       ),
       child: InkWell(
         onTap: () => onChanged(!selected),
-        borderRadius: BorderRadius.circular(AppRadii.radiusMd),
+        borderRadius: AppRadii.md,
         child: ConstrainedBox(
           constraints:
               const BoxConstraints(minHeight: AppSpacing.minTapTarget),

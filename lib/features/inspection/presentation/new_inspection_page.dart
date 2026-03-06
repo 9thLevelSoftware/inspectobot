@@ -180,7 +180,8 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
         AppRoutes.inspectionChecklist(persisted.id),
         extra: draft,
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Failed to save inspection setup: $e');
       if (!mounted) {
         return;
       }
@@ -206,7 +207,7 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
     final tokens = context.appTokens;
 
     final expansionTileShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadii.radiusMd),
+      borderRadius: AppRadii.md,
     );
 
     return Scaffold(
