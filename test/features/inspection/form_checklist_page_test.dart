@@ -210,6 +210,193 @@ void main() {
     );
   });
 
+  testWidgets('toggling branch flag activates conditional requirement in same session', (
+    tester,
+  ) async {
+    final store = _ChecklistStore();
+    final repository = InspectionRepository(store);
+    final draft = InspectionDraft(
+      inspectionId: 'insp-branch-toggle',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Toggle User',
+      clientEmail: 'toggle@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '555 Toggle Dr',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2010,
+      enabledForms: {FormType.roofCondition},
+      wizardSnapshot: WizardProgressSnapshot(
+        lastStepIndex: 1,
+        completion: const <String, bool>{},
+        branchContext: const <String, dynamic>{},
+        status: WizardProgressStatus.inProgress,
+      ),
+      initialStepIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormChecklistPage(draft: draft, repository: repository),
+      ),
+    );
+
+    // Roof Defect requirement should NOT be visible without branch flag
+    expect(find.text('Roof Defect'), findsNothing);
+
+    // Toggle the roof defect branch flag on
+    await tester.tap(
+      find.byKey(const ValueKey('branch-flag-roof_defect_present')),
+    );
+    await tester.pumpAndSettle();
+
+    // Roof Defect requirement should now be visible
+    expect(find.text('Roof Defect'), findsOneWidget);
+  });
+
+  testWidgets('toggling branch flag off removes conditional requirement', (
+    tester,
+  ) async {
+    final store = _ChecklistStore();
+    final repository = InspectionRepository(store);
+    final draft = InspectionDraft(
+      inspectionId: 'insp-branch-off',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Toggle Off User',
+      clientEmail: 'off@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '556 Toggle Dr',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2010,
+      enabledForms: {FormType.fourPoint},
+      wizardSnapshot: WizardProgressSnapshot(
+        lastStepIndex: 1,
+        completion: const <String, bool>{},
+        branchContext: const <String, dynamic>{'hazard_present': true},
+        status: WizardProgressStatus.inProgress,
+      ),
+      initialStepIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormChecklistPage(draft: draft, repository: repository),
+      ),
+    );
+
+    // Hazard Photo requirement should be visible with branch flag on
+    expect(find.text('Hazard Photo'), findsOneWidget);
+
+    // Toggle the hazard branch flag off
+    await tester.tap(
+      find.byKey(const ValueKey('branch-flag-hazard_present')),
+    );
+    await tester.pumpAndSettle();
+
+    // Hazard Photo requirement should disappear
+    expect(find.text('Hazard Photo'), findsNothing);
+  });
+
+  testWidgets('branch toggle persists through save and resume cycle', (
+    tester,
+  ) async {
+    final store = _ChecklistStore();
+    final repository = InspectionRepository(store);
+    // Start on the wind mitigation step with the branch flag already active
+    // and ALL requirements (including the conditional one) marked complete.
+    final draft = InspectionDraft(
+      inspectionId: 'insp-branch-persist',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Persist User',
+      clientEmail: 'persist@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '557 Persist Ave',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2005,
+      enabledForms: {FormType.windMitigation},
+      wizardSnapshot: WizardProgressSnapshot(
+        lastStepIndex: 1,
+        completion: {
+          // Complete all requirements including the conditional one
+          for (final req in FormRequirements.forFormRequirements(
+            FormType.windMitigation,
+            branchContext: const <String, dynamic>{
+              'wind_roof_deck_document_required': true,
+            },
+          ))
+            req.key: true,
+        },
+        branchContext: const <String, dynamic>{
+          'wind_roof_deck_document_required': true,
+        },
+        status: WizardProgressStatus.inProgress,
+      ),
+      initialStepIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormChecklistPage(draft: draft, repository: repository),
+      ),
+    );
+
+    // The conditional requirement should be visible because the branch flag
+    // was set in the initial snapshot
+    expect(find.text('Wind Roof Deck Supporting Document'), findsOneWidget);
+
+    // Scroll until "Finish Wizard" is visible, then tap to save
+    await tester.scrollUntilVisible(
+      find.text('Finish Wizard'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Finish Wizard'));
+    await tester.pumpAndSettle();
+
+    // Now the branch context should have been persisted
+    expect(store.lastWizardBranchContext, isNotNull);
+    expect(
+      store.lastWizardBranchContext!['wind_roof_deck_document_required'],
+      isTrue,
+    );
+
+    // Simulate resume: create a new draft with the persisted branch context
+    final resumeDraft = InspectionDraft(
+      inspectionId: 'insp-branch-persist',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clientName: 'Persist User',
+      clientEmail: 'persist@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '557 Persist Ave',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2005,
+      enabledForms: {FormType.windMitigation},
+      wizardSnapshot: WizardProgressSnapshot(
+        lastStepIndex: 1,
+        completion: const <String, bool>{},
+        branchContext: const <String, dynamic>{
+          'wind_roof_deck_document_required': true,
+        },
+        status: WizardProgressStatus.inProgress,
+      ),
+      initialStepIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormChecklistPage(draft: resumeDraft, repository: repository),
+      ),
+    );
+
+    // Conditional requirement should still be visible on resume
+    expect(find.text('Wind Roof Deck Supporting Document'), findsOneWidget);
+  });
+
   testWidgets('PDF CTA stays blocked when persisted readiness is blocked', (
     tester,
   ) async {

@@ -92,6 +92,61 @@ void main() {
     expect(identical(checklist.mediaSyncRemoteStore, remoteStore), isTrue);
     expect(identical(checklist.pendingMediaSyncStore, pendingStore), isTrue);
   });
+  testWidgets('resume preserves branch context and activates conditional requirements', (
+    tester,
+  ) async {
+    const organizationId = 'org-session';
+    const userId = 'user-session';
+    final store = _ScopeSpyInspectionStore(InMemoryInspectionStore());
+    final repository = InspectionRepository(store);
+    final setup = InspectionSetup(
+      id: 'insp-branch-resume',
+      organizationId: organizationId,
+      userId: userId,
+      clientName: 'Branch Resume User',
+      clientEmail: 'branch-resume@example.com',
+      clientPhone: '555-0100',
+      propertyAddress: '789 Branch Blvd',
+      inspectionDate: DateTime.utc(2026, 3, 4),
+      yearBuilt: 2001,
+      enabledForms: {FormType.roofCondition},
+    );
+    final created = await repository.createInspection(setup);
+    await repository.updateWizardProgress(
+      inspectionId: created.id,
+      organizationId: created.organizationId,
+      userId: created.userId,
+      snapshot: WizardProgressSnapshot(
+        lastStepIndex: 1,
+        completion: const <String, bool>{},
+        branchContext: const <String, dynamic>{'roof_defect_present': true},
+        status: WizardProgressStatus.inProgress,
+      ),
+    );
+
+    final scheduler = _TestSyncScheduler();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DashboardPage(
+          repository: repository,
+          syncScheduler: scheduler,
+          organizationId: organizationId,
+          userId: userId,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Branch Resume User'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Resume'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Guided Inspection Wizard'), findsOneWidget);
+    // Roof Defect requirement should be visible because branch context was preserved
+    expect(find.text('Roof Defect'), findsOneWidget);
+  });
 }
 
 class _ScopeSpyInspectionStore implements InspectionStore {

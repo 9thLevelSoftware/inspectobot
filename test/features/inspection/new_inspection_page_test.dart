@@ -168,6 +168,49 @@ void main() {
     expect(identical(checklist.mediaSyncRemoteStore, remoteStore), isTrue);
     expect(identical(checklist.pendingMediaSyncStore, pendingStore), isTrue);
   });
+
+  testWidgets('new inspection with roof condition form shows branch controls in checklist', (
+    tester,
+  ) async {
+    final store = _BranchAwareSpyInspectionStore();
+    await pumpPage(
+      tester,
+      provider: _TestRepositoryProvider(InspectionRepository(store)),
+    );
+
+    await fillValidForm(tester);
+
+    // Deselect four-point and wind-mitigation, keep only roof-condition
+    for (final label in const [
+      'Insp4pt 03-25',
+      'OIR-B1-1802 Rev 04/26',
+    ]) {
+      await tester.scrollUntilVisible(
+        find.widgetWithText(CheckboxListTile, label),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.widgetWithText(CheckboxListTile, label));
+    }
+    await tester.pump();
+
+    await scrollToContinue(tester);
+    await tester.tap(find.text('Continue to Required Photos'));
+    await tester.pumpAndSettle();
+
+    // Should be on checklist now
+    expect(find.text('Guided Inspection Wizard'), findsOneWidget);
+
+    // Navigate to roof condition step
+    await tester.tap(find.text('Continue to Next Step'));
+    await tester.pumpAndSettle();
+
+    // Branch toggle for roof defect should be present
+    expect(
+      find.byKey(const ValueKey('branch-flag-roof_defect_present')),
+      findsOneWidget,
+    );
+  });
 }
 
 class _NoopMediaRemoteStore extends MediaSyncRemoteStore {
@@ -319,6 +362,32 @@ class _SpyInspectionStore implements InspectionStore {
       'status': status,
       'missing_items': missingItems,
       'computed_at': computedAt.toIso8601String(),
+    };
+  }
+}
+
+class _BranchAwareSpyInspectionStore extends _SpyInspectionStore {
+  Map<String, dynamic>? lastWizardBranchContext;
+
+  @override
+  Future<Map<String, dynamic>> updateWizardProgress({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required int wizardLastStep,
+    required Map<String, bool> wizardCompletion,
+    required Map<String, dynamic> wizardBranchContext,
+    required String wizardStatus,
+  }) async {
+    lastWizardBranchContext = Map<String, dynamic>.from(wizardBranchContext);
+    return <String, dynamic>{
+      'id': inspectionId,
+      'organization_id': organizationId,
+      'user_id': userId,
+      'wizard_last_step': wizardLastStep,
+      'wizard_completion': wizardCompletion,
+      'wizard_branch_context': wizardBranchContext,
+      'wizard_status': wizardStatus,
     };
   }
 }
