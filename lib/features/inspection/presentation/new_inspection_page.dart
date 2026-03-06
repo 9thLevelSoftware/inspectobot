@@ -4,12 +4,23 @@ import 'package:uuid/uuid.dart';
 
 import 'package:inspectobot/app/navigation_service.dart';
 import 'package:inspectobot/app/routes.dart';
+import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_setup.dart';
 import 'package:inspectobot/features/media/media_sync_remote_store.dart';
 import 'package:inspectobot/features/media/pending_media_sync_store.dart';
+import 'package:inspectobot/theme/theme.dart';
+
+const _formDescriptions = {
+  FormType.fourPoint:
+      'Electrical, HVAC, plumbing, and water heater inspection',
+  FormType.roofCondition:
+      'Roof age, condition, and remaining useful life assessment',
+  FormType.windMitigation:
+      'Wind resistance features and discount qualification',
+};
 
 class NewInspectionPage extends StatefulWidget {
   const NewInspectionPage({
@@ -19,8 +30,7 @@ class NewInspectionPage extends StatefulWidget {
     NewInspectionRepositoryProvider? repository,
     this.mediaSyncRemoteStore,
     this.pendingMediaSyncStore,
-  })
-    : repository = repository ?? const _LazyNewInspectionRepository();
+  }) : repository = repository ?? const _LazyNewInspectionRepository();
 
   final String organizationId;
   final String userId;
@@ -57,6 +67,10 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
     _yearBuiltController.dispose();
     super.dispose();
   }
+
+  // ---------------------------------------------------------------------------
+  // Validators
+  // ---------------------------------------------------------------------------
 
   String? _requiredValidator(String? value, String fieldLabel) {
     if (value == null || value.trim().isEmpty) {
@@ -109,6 +123,10 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
     }
     return null;
   }
+
+  // ---------------------------------------------------------------------------
+  // Save logic
+  // ---------------------------------------------------------------------------
 
   Future<void> _continue() async {
     if (!_formKey.currentState!.validate()) {
@@ -167,7 +185,9 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to save inspection setup. Please retry.')),
+        const SnackBar(
+          content: Text('Unable to save inspection setup. Please retry.'),
+        ),
       );
     } finally {
       if (mounted) {
@@ -176,85 +196,171 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final tokens = context.appTokens;
+
+    final expansionTileShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadii.radiusMd),
+    );
+
     return Scaffold(
       appBar: AppBar(title: const Text('New Inspection')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _clientNameController,
-              decoration: const InputDecoration(labelText: 'Client Name'),
-              validator: (value) => _requiredValidator(value, 'Client name'),
+      body: ReachZoneScaffold(
+        stickyBottom: SizedBox(
+          width: double.infinity,
+          child: AppButton(
+            label: 'Continue',
+            loadingLabel: 'Saving...',
+            isLoading: _isSaving,
+            isThumbZone: true,
+            onPressed: _isSaving ? null : _continue,
+          ),
+        ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.spacingLg,
+              vertical: AppSpacing.spacingSm,
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _clientEmailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Client Email'),
-              validator: _emailValidator,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _clientPhoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Client Phone'),
-              validator: (value) => _requiredValidator(value, 'Client phone'),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _propertyAddressController,
-              decoration: const InputDecoration(labelText: 'Property Address'),
-              validator: (value) => _requiredValidator(value, 'Property address'),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _inspectionDateController,
-              keyboardType: TextInputType.datetime,
-              decoration: const InputDecoration(
-                labelText: 'Inspection Date',
-                hintText: 'YYYY-MM-DD',
+            children: [
+              ExpansionTile(
+                title: Text(
+                  'Client Information',
+                  style: tokens.sectionHeader,
+                ),
+                initiallyExpanded: true,
+                backgroundColor: colorScheme.surface,
+                collapsedBackgroundColor: colorScheme.surface,
+                iconColor: colorScheme.primary,
+                tilePadding: AppEdgeInsets.pageHorizontal,
+                childrenPadding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.spacingLg,
+                  vertical: AppSpacing.spacingSm,
+                ),
+                shape: expansionTileShape,
+                collapsedShape: expansionTileShape,
+                children: [
+                  AppTextField(
+                    label: 'Client Name',
+                    controller: _clientNameController,
+                    validator: (value) =>
+                        _requiredValidator(value, 'Client name'),
+                    textInputAction: TextInputAction.next,
+                  ),
+                  SizedBox(height: AppSpacing.spacingMd),
+                  AppTextField(
+                    label: 'Client Email',
+                    controller: _clientEmailController,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: _emailValidator,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  SizedBox(height: AppSpacing.spacingMd),
+                  AppTextField(
+                    label: 'Client Phone',
+                    controller: _clientPhoneController,
+                    keyboardType: TextInputType.phone,
+                    validator: (value) =>
+                        _requiredValidator(value, 'Client phone'),
+                    textInputAction: TextInputAction.next,
+                  ),
+                ],
               ),
-              validator: _inspectionDateValidator,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _yearBuiltController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Year Built'),
-              validator: _yearBuiltValidator,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Enabled Forms',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            ...FormType.values.map(
-              (form) => CheckboxListTile(
-                title: Text(form.label),
-                value: _selectedForms.contains(form),
-                onChanged: (selected) {
-                  setState(() {
-                    if (selected ?? false) {
-                      _selectedForms.add(form);
-                    } else {
-                      _selectedForms.remove(form);
-                    }
-                  });
-                },
+
+              SizedBox(height: AppSpacing.spacingMd),
+
+              ExpansionTile(
+                title: Text(
+                  'Property Information',
+                  style: tokens.sectionHeader,
+                ),
+                initiallyExpanded: true,
+                backgroundColor: colorScheme.surface,
+                collapsedBackgroundColor: colorScheme.surface,
+                iconColor: colorScheme.primary,
+                tilePadding: AppEdgeInsets.pageHorizontal,
+                childrenPadding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.spacingLg,
+                  vertical: AppSpacing.spacingSm,
+                ),
+                shape: expansionTileShape,
+                collapsedShape: expansionTileShape,
+                children: [
+                  AppTextField(
+                    label: 'Property Address',
+                    controller: _propertyAddressController,
+                    validator: (value) =>
+                        _requiredValidator(value, 'Property address'),
+                    textInputAction: TextInputAction.next,
+                  ),
+                  SizedBox(height: AppSpacing.spacingMd),
+                  AppTextField(
+                    label: 'Inspection Date',
+                    hint: 'YYYY-MM-DD',
+                    controller: _inspectionDateController,
+                    keyboardType: TextInputType.datetime,
+                    validator: _inspectionDateValidator,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  SizedBox(height: AppSpacing.spacingMd),
+                  AppTextField(
+                    label: 'Year Built',
+                    controller: _yearBuiltController,
+                    keyboardType: TextInputType.number,
+                    validator: _yearBuiltValidator,
+                    textInputAction: TextInputAction.done,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: _isSaving ? null : _continue,
-              child: Text(
-                _isSaving ? 'Saving...' : 'Continue to Required Photos',
+
+              SizedBox(height: AppSpacing.spacingMd),
+
+              ExpansionTile(
+                title: Text(
+                  'Inspection Forms',
+                  style: tokens.sectionHeader,
+                ),
+                initiallyExpanded: true,
+                backgroundColor: colorScheme.surface,
+                collapsedBackgroundColor: colorScheme.surface,
+                iconColor: colorScheme.primary,
+                tilePadding: AppEdgeInsets.pageHorizontal,
+                childrenPadding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.spacingLg,
+                  vertical: AppSpacing.spacingSm,
+                ),
+                shape: expansionTileShape,
+                collapsedShape: expansionTileShape,
+                children: [
+                  for (final form in FormType.values) ...[
+                    FormTypeCard(
+                      label: form.label,
+                      description: _formDescriptions[form] ?? '',
+                      selected: _selectedForms.contains(form),
+                      onChanged: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedForms.add(form);
+                          } else {
+                            _selectedForms.remove(form);
+                          }
+                        });
+                      },
+                    ),
+                    if (form != FormType.values.last)
+                      SizedBox(height: AppSpacing.spacingSm),
+                  ],
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

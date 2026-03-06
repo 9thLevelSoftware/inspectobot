@@ -10,6 +10,7 @@ export 'status_card.dart';
 export 'inspection_card.dart';
 
 // Form
+export 'form_type_card.dart';
 export 'app_text_field.dart';
 export 'app_dropdown.dart';
 export 'app_checkbox_tile.dart';
