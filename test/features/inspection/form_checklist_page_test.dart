@@ -24,12 +24,12 @@ void main() {
       final store = FakeChecklistStore();
       await pumpChecklistPage(tester,
           draft: buildTestDraft(), repository: InspectionRepository(store));
-      expect(find.textContaining('Step 1 of'), findsOneWidget);
+      expect(find.textContaining('Step 1 of'), findsWidgets);
 
       await tester.tap(find.text('Continue to Next Step'));
       await tester.pumpAndSettle();
       expect(store.updateCalls, 1);
-      expect(find.textContaining('Step 2 of'), findsOneWidget);
+      expect(find.textContaining('Step 2 of'), findsWidgets);
       expect(find.text('Exterior Front'), findsWidgets);
     });
 
@@ -49,7 +49,7 @@ void main() {
                 status: WizardProgressStatus.inProgress),
             initialStepIndex: 2,
           ));
-      expect(find.textContaining('Step 3 of'), findsOneWidget);
+      expect(find.textContaining('Step 3 of'), findsWidgets);
     });
 
     testWidgets('roof defect prompt appears with branch context', (t) async {
@@ -464,15 +464,15 @@ void main() {
     ) async {
       await pumpChecklistPage(t, draft: buildTestDraft());
       await t.pumpAndSettle();
-      expect(find.textContaining('Step 1 of'), findsOneWidget);
+      expect(find.textContaining('Step 1 of'), findsWidgets);
       await switchToTab(t, 'Summary');
-      expect(find.text('Per-Form Summary'), findsOneWidget);
+      expect(find.text('Evidence Summary'), findsOneWidget);
       await switchToTab(t, 'Report');
       expect(find.byKey(const ValueKey('generate-pdf-button')), findsOneWidget);
       await switchToTab(t, 'Timeline');
       expect(find.textContaining('audit'), findsWidgets);
       await switchToTab(t, 'Steps');
-      expect(find.textContaining('Step 1 of'), findsOneWidget);
+      expect(find.textContaining('Step 1 of'), findsWidgets);
     });
 
     testWidgets('tab selection persists across state updates', (t) async {
@@ -481,12 +481,12 @@ void main() {
           repository: InspectionRepository(FakeChecklistStore()));
       await t.pumpAndSettle();
       await switchToTab(t, 'Summary');
-      expect(find.text('Per-Form Summary'), findsOneWidget);
+      expect(find.text('Evidence Summary'), findsOneWidget);
       await switchToTab(t, 'Steps');
       await t.tap(find.text('Continue to Next Step'));
       await t.pumpAndSettle();
       await switchToTab(t, 'Summary');
-      expect(find.text('Per-Form Summary'), findsOneWidget);
+      expect(find.text('Evidence Summary'), findsOneWidget);
     });
 
     testWidgets('Report tab shows generate button', (t) async {

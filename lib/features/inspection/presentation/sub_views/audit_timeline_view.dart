@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/theme/theme.dart';
 
 import '../../../audit/domain/audit_event.dart';
@@ -26,54 +27,78 @@ class AuditTimelineView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Card(
-        child: ListTile(
-          title: Text('Loading audit timeline...'),
-          subtitle: Text('Fetching immutable inspection events.'),
-        ),
-      );
-    }
-
-    if (errorMessage != null) {
-      return Card(
-        child: ListTile(
-          leading: Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
-          title: const Text('Audit timeline unavailable'),
-          subtitle: Text(errorMessage!),
-        ),
-      );
-    }
-
-    if (auditEvents.isEmpty) {
-      return const Card(
-        child: ListTile(
-          leading: Icon(Icons.timeline_outlined),
-          title: Text('No audit events recorded yet'),
-          subtitle: Text(
-            'Timeline entries appear after progress, signing, or delivery actions.',
+      return Padding(
+        padding: AppEdgeInsets.pagePadding,
+        child: const SectionCard(
+          title: 'Loading',
+          child: ListTile(
+            title: Text('Loading audit timeline...'),
+            subtitle: Text('Fetching immutable inspection events.'),
           ),
         ),
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Audit Timeline',
-          style: Theme.of(context).textTheme.titleMedium,
+    if (errorMessage != null) {
+      return Padding(
+        padding: AppEdgeInsets.pagePadding,
+        child: SectionCard(
+          title: 'Error',
+          child: ListTile(
+            leading: Icon(Icons.error_outline,
+                color: Theme.of(context).colorScheme.error),
+            title: const Text('Audit timeline unavailable'),
+            subtitle: Text(errorMessage!),
+          ),
         ),
-        SizedBox(height: AppSpacing.spacingSm),
-        ...auditEvents.take(maxDisplayedEvents).map(
-              (event) => Card(
-                child: ListTile(
-                  leading: const Icon(Icons.history),
-                  title: Text(event.timelineLabel),
-                  subtitle: Text(formatAuditTimestamp(event.occurredAt)),
-                ),
-              ),
+      );
+    }
+
+    if (auditEvents.isEmpty) {
+      return Padding(
+        padding: AppEdgeInsets.pagePadding,
+        child: const SectionCard(
+          title: 'Timeline',
+          child: ListTile(
+            leading: Icon(Icons.timeline_outlined),
+            title: Text('No audit events recorded yet'),
+            subtitle: Text(
+              'Timeline entries appear after progress, signing, or delivery actions.',
             ),
-      ],
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: AppEdgeInsets.pagePadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Audit Timeline', style: AppTypography.sectionTitle),
+          SizedBox(height: AppSpacing.spacingSm),
+          SectionGroup(
+            children: auditEvents
+                .take(maxDisplayedEvents)
+                .map(
+                  (event) => Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.history),
+                      title: Text(
+                        event.timelineLabel,
+                        style: AppTypography.fieldValue,
+                      ),
+                      subtitle: Text(
+                        formatAuditTimestamp(event.occurredAt),
+                        style: AppTypography.timestamp,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ),
     );
   }
 

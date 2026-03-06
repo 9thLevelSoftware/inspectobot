@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:inspectobot/common/widgets/widgets.dart';
+import 'package:inspectobot/theme/theme.dart';
+
 import '../../media/media_capture_service.dart';
 import '../../media/pending_media_sync_store.dart';
 import '../../media/media_sync_remote_store.dart';
@@ -250,18 +253,42 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Guided Inspection Wizard')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
         children: [
-          Text(
-            'Inspection for ${widget.draft.clientName}',
-            style: Theme.of(context).textTheme.titleLarge,
+          // Fixed header section (doesn't scroll)
+          Padding(
+            padding: AppEdgeInsets.pageHorizontal,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: AppSpacing.spacingLg),
+                Text(
+                  'Inspection for ${widget.draft.clientName}',
+                  style: AppTypography.subsectionTitle,
+                ),
+                Text(
+                  widget.draft.propertyAddress,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: AppSpacing.spacingLg),
+                WizardProgressIndicator(
+                  currentStep: _controller.currentStepIndex + 1,
+                  totalSteps: _controller.wizardState.steps.length,
+                  completionPercent: _controller.completionPercent,
+                ),
+                const SizedBox(height: AppSpacing.spacingLg),
+                _buildTabSelector(),
+                const SizedBox(height: AppSpacing.spacingSm),
+              ],
+            ),
           ),
-          Text(widget.draft.propertyAddress),
-          const SizedBox(height: 16),
-          _buildTabSelector(),
-          const SizedBox(height: 16),
-          _buildActiveView(),
+          const Divider(height: 1),
+          // Active view with BOUNDED height
+          Expanded(
+            child: _buildActiveView(),
+          ),
         ],
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
@@ -52,12 +53,12 @@ void main() {
 
       await tester.pumpWidget(buildSubject(wizardState: state));
 
-      expect(find.text('Per-Form Summary'), findsOneWidget);
+      expect(find.text('Evidence Summary'), findsOneWidget);
       expect(find.text(FormType.fourPoint.label), findsOneWidget);
       expect(find.text(FormType.roofCondition.label), findsOneWidget);
     });
 
-    testWidgets('complete forms show check icon', (tester) async {
+    testWidgets('complete forms show Complete status badge', (tester) async {
       // Complete all four-point requirements
       final requirements = FormRequirements.forFormRequirements(
         FormType.fourPoint,
@@ -73,16 +74,16 @@ void main() {
       await tester.pumpWidget(buildSubject(wizardState: state));
 
       expect(find.text('Complete'), findsOneWidget);
-      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      expect(find.byType(StatusBadge), findsOneWidget);
     });
 
-    testWidgets('incomplete forms show warning icon', (tester) async {
+    testWidgets('incomplete forms show missing count badge', (tester) async {
       final state = buildState(forms: {FormType.fourPoint});
 
       await tester.pumpWidget(buildSubject(wizardState: state));
 
-      expect(find.byIcon(Icons.error_outline), findsOneWidget);
-      expect(find.textContaining('Missing required'), findsOneWidget);
+      expect(find.byType(StatusBadge), findsOneWidget);
+      expect(find.textContaining('missing'), findsWidgets);
     });
 
     testWidgets('empty forms list renders info card', (tester) async {
@@ -90,7 +91,7 @@ void main() {
 
       await tester.pumpWidget(buildSubject(wizardState: state));
 
-      expect(find.text('Per-Form Summary'), findsOneWidget);
+      expect(find.text('Evidence Summary'), findsOneWidget);
       expect(find.text('No forms enabled'), findsOneWidget);
     });
 
@@ -111,8 +112,10 @@ void main() {
 
       await tester.pumpWidget(buildSubject(wizardState: state));
 
-      expect(find.byIcon(Icons.check_circle), findsOneWidget);
-      expect(find.byIcon(Icons.error_outline), findsOneWidget);
+      // Should have 2 StatusBadges (one Complete, one X missing)
+      expect(find.byType(StatusBadge), findsNWidgets(2));
+      expect(find.text('Complete'), findsOneWidget);
+      expect(find.textContaining('missing'), findsOneWidget);
     });
   });
 }

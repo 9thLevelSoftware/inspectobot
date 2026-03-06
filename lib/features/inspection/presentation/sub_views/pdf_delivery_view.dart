@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/theme/theme.dart';
 
 import '../../../delivery/domain/report_artifact.dart';
@@ -35,53 +36,70 @@ class PdfDeliveryView extends StatelessWidget {
   Widget build(BuildContext context) {
     final canGenerate = readiness.isReady;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        FilledButton.icon(
-          key: const ValueKey('generate-pdf-button'),
-          onPressed: isComplete && canGenerate && !isGenerating
-              ? onGeneratePdf
-              : null,
-          icon: isGenerating
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.picture_as_pdf),
-          label: Text(
-            isComplete && canGenerate
-                ? 'Generate PDF'
-                : 'Readiness blocked: ${readiness.missingItems.join(', ')}',
+    return SingleChildScrollView(
+      padding: AppEdgeInsets.pagePadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Report & Delivery', style: AppTypography.sectionTitle),
+          const SizedBox(height: AppSpacing.spacingLg),
+          SectionCard(
+            title: 'Generate Report',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!isComplete || !canGenerate)
+                  Text(
+                    'Blocked: ${readiness.missingItems.join(", ")}',
+                    style: AppTypography.fieldLabelRequired,
+                  ),
+                const SizedBox(height: AppSpacing.spacingSm),
+                AppButton(
+                  key: const ValueKey('generate-pdf-button'),
+                  label: isGenerating ? 'Generating...' : 'Generate PDF',
+                  icon: Icons.picture_as_pdf,
+                  onPressed: isComplete && canGenerate && !isGenerating
+                      ? onGeneratePdf
+                      : null,
+                  isLoading: isGenerating,
+                  loadingLabel: 'Generating...',
+                  isThumbZone: true,
+                ),
+              ],
+            ),
           ),
-        ),
-        if (lastPdfPath != null) ...[
-          SizedBox(height: AppSpacing.spacingMd),
-          SelectableText('Last PDF: $lastPdfPath'),
-        ],
-        if (lastArtifact != null) ...[
-          SizedBox(height: AppSpacing.spacingMd),
-          Wrap(
-            spacing: AppSpacing.spacingSm,
-            runSpacing: AppSpacing.spacingSm,
-            children: [
-              OutlinedButton.icon(
-                key: const ValueKey('delivery-download-button'),
-                onPressed: onDownload,
-                icon: const Icon(Icons.download),
-                label: const Text('Download'),
+          if (lastPdfPath != null) ...[
+            SizedBox(height: AppSpacing.spacingMd),
+            SelectableText('Last PDF: $lastPdfPath'),
+          ],
+          if (lastArtifact != null) ...[
+            SizedBox(height: AppSpacing.spacingLg),
+            SectionCard(
+              title: 'Delivery Actions',
+              child: Wrap(
+                spacing: AppSpacing.spacingSm,
+                runSpacing: AppSpacing.spacingSm,
+                children: [
+                  AppButton(
+                    key: const ValueKey('delivery-download-button'),
+                    label: 'Download',
+                    icon: Icons.download,
+                    onPressed: onDownload,
+                    variant: AppButtonVariant.outlined,
+                  ),
+                  AppButton(
+                    key: const ValueKey('delivery-secure-share-button'),
+                    label: 'Secure Share',
+                    icon: Icons.ios_share,
+                    onPressed: onShare,
+                    variant: AppButtonVariant.outlined,
+                  ),
+                ],
               ),
-              OutlinedButton.icon(
-                key: const ValueKey('delivery-secure-share-button'),
-                onPressed: onShare,
-                icon: const Icon(Icons.ios_share),
-                label: const Text('Secure Share'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

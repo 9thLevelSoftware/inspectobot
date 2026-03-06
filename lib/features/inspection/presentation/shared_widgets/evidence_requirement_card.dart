@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/theme/theme.dart';
 
 import '../../domain/evidence_requirement.dart';
@@ -7,9 +8,8 @@ import '../../domain/evidence_requirement.dart';
 /// A reusable card displaying a single evidence requirement with its capture
 /// status and an action button.
 ///
-/// Matches the UI output of the original `FormChecklistPage` monolith:
-/// - Captured: trailing green check icon, subtitle "Captured".
-/// - Missing: trailing Capture/Upload button, subtitle "Missing required item".
+/// - Captured: trailing [StatusBadge] with 'Complete'.
+/// - Missing: trailing [StatusBadge] 'Missing' with action button below.
 class EvidenceRequirementCard extends StatelessWidget {
   const EvidenceRequirementCard({
     super.key,
@@ -30,20 +30,58 @@ class EvidenceRequirementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        title: Text(requirement.label),
-        subtitle: Text(isCaptured ? 'Captured' : 'Missing required item'),
-        trailing: isCaptured
-            ? const Icon(Icons.check_circle, color: Palette.success)
-            : OutlinedButton(
-                onPressed: onCapture,
-                child: Text(
-                  requirement.mediaType == EvidenceMediaType.document
-                      ? 'Upload'
-                      : 'Capture',
+    final actionLabel = requirement.mediaType == EvidenceMediaType.document
+        ? 'Upload'
+        : 'Capture';
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: AppSpacing.thumbZoneTapTarget,
+      ),
+      child: Card(
+        child: Padding(
+          padding: AppEdgeInsets.cardPaddingCompact,
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(requirement.label,
+                        style: Theme.of(context).textTheme.bodyLarge),
+                    const SizedBox(height: AppSpacing.spacingXs),
+                    Text(
+                      isCaptured ? 'Captured' : 'Missing required item',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(width: AppSpacing.spacingSm),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  StatusBadge(
+                    label: isCaptured ? 'Complete' : 'Missing',
+                    type: isCaptured
+                        ? StatusBadgeType.success
+                        : StatusBadgeType.warning,
+                    highContrast: true,
+                  ),
+                  if (!isCaptured) ...[
+                    const SizedBox(height: AppSpacing.spacingXs),
+                    OutlinedButton(
+                      onPressed: onCapture,
+                      child: Text(actionLabel),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

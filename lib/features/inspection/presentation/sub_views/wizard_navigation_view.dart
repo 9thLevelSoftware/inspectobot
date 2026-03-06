@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/theme/theme.dart';
 
 import '../../domain/evidence_requirement.dart';
@@ -38,50 +39,75 @@ class WizardNavigationView extends StatelessWidget {
     final canContinue = wizardState.canAdvanceFrom(currentStepIndex);
     final isFinalStep = currentStepIndex >= wizardState.steps.length - 1;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildStepHeader(context, step),
-        SizedBox(height: AppSpacing.spacingSm),
-        _buildStepContent(step),
-        SizedBox(height: AppSpacing.spacingLg),
-        _buildContinueButton(canContinue, isFinalStep),
-      ],
+    return ReachZoneScaffold(
+      body: SingleChildScrollView(
+        padding: AppEdgeInsets.pagePadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildStepHeader(context, step),
+            SizedBox(height: AppSpacing.spacingSm),
+            _buildStepContent(step),
+          ],
+        ),
+      ),
+      stickyBottom: AppButton(
+        label: isFinalStep
+            ? (isSavingProgress ? 'Saving...' : 'Finish Wizard')
+            : (isSavingProgress ? 'Saving...' : 'Continue to Next Step'),
+        onPressed: canContinue && !isSavingProgress ? onContinue : null,
+        isLoading: isSavingProgress,
+        loadingLabel: 'Saving...',
+        isThumbZone: true,
+      ),
     );
   }
 
   Widget _buildStepHeader(BuildContext context, WizardStepDefinition step) {
     return Text(
       'Step ${currentStepIndex + 1} of ${wizardState.steps.length}: ${step.title}',
-      style: Theme.of(context).textTheme.titleMedium,
+      style: AppTypography.subsectionTitle,
     );
   }
 
   Widget _buildStepContent(WizardStepDefinition step) {
     if (step.requirements.isEmpty && step.form == null) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSpacing.spacingSm),
-        child: Text(
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.spacingSm),
+        child: const Text(
           'Review the inspection details and continue through each required form step.',
         ),
       );
     }
 
     final branchControls = _buildBranchInputControls(step);
+    final evidenceCards = step.requirements.map((requirement) {
+      final captured = snapshot.completion[requirement.key] == true;
+      return EvidenceRequirementCard(
+        requirement: requirement,
+        isCaptured: captured,
+        onCapture: requirement.category == null
+            ? null
+            : () => onCapture(requirement),
+      );
+    }).toList();
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ...branchControls,
-        ...step.requirements.map((requirement) {
-          final captured = snapshot.completion[requirement.key] == true;
-          return EvidenceRequirementCard(
-            requirement: requirement,
-            isCaptured: captured,
-            onCapture: requirement.category == null
-                ? null
-                : () => onCapture(requirement),
-          );
-        }),
+        if (branchControls.isNotEmpty)
+          SectionGroup(
+            title: 'Conditional Options',
+            showDividers: false,
+            children: branchControls,
+          ),
+        if (branchControls.isNotEmpty && evidenceCards.isNotEmpty)
+          SizedBox(height: AppSpacing.spacingLg),
+        if (evidenceCards.isNotEmpty)
+          SectionGroup(
+            title: 'Evidence Requirements',
+            children: evidenceCards,
+          ),
       ],
     );
   }
@@ -106,16 +132,5 @@ class WizardNavigationView extends StatelessWidget {
         onChanged: (value) => onSetBranchFlag(flag, value),
       );
     }).toList(growable: false);
-  }
-
-  Widget _buildContinueButton(bool canContinue, bool isFinalStep) {
-    return FilledButton(
-      onPressed: canContinue && !isSavingProgress ? onContinue : null,
-      child: Text(
-        isFinalStep
-            ? (isSavingProgress ? 'Saving...' : 'Finish Wizard')
-            : (isSavingProgress ? 'Saving...' : 'Continue to Next Step'),
-      ),
-    );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/theme/theme.dart';
 
 import '../../domain/inspection_wizard_state.dart';
@@ -20,38 +21,47 @@ class EvidenceCaptureView extends StatelessWidget {
   Widget build(BuildContext context) {
     final summaries = wizardState.buildFormSummaries();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Per-Form Summary',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        SizedBox(height: AppSpacing.spacingSm),
-        if (summaries.isEmpty)
-          const Card(
-            child: ListTile(
-              leading: Icon(Icons.info_outline),
-              title: Text('No forms enabled'),
-              subtitle: Text('Enable forms to see completion summaries.'),
-            ),
-          )
-        else
-          ...summaries.map((summary) {
-            final missingText = summary.isComplete
-                ? 'Complete'
-                : 'Missing required: ${summary.missingRequirements.map((r) => r.label).join(', ')}';
-            return Card(
+    return SingleChildScrollView(
+      padding: AppEdgeInsets.pagePadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Evidence Summary', style: AppTypography.sectionTitle),
+          const SizedBox(height: AppSpacing.spacingLg),
+          if (summaries.isEmpty)
+            const Card(
               child: ListTile(
-                title: Text(summary.form.label),
-                subtitle: Text(missingText),
-                trailing: summary.isComplete
-                    ? Icon(Icons.check_circle, color: Palette.success)
-                    : Icon(Icons.error_outline, color: Palette.warning),
+                leading: Icon(Icons.info_outline),
+                title: Text('No forms enabled'),
+                subtitle: Text('Enable forms to see completion summaries.'),
               ),
-            );
-          }),
-      ],
+            )
+          else
+            SectionGroup(
+              children: summaries
+                  .map((summary) => SectionCard(
+                        density: SectionCardDensity.compact,
+                        leadingBadge: StatusBadge(
+                          label: summary.isComplete
+                              ? 'Complete'
+                              : '${summary.missingRequirements.length} missing',
+                          type: summary.isComplete
+                              ? StatusBadgeType.success
+                              : StatusBadgeType.warning,
+                          highContrast: true,
+                        ),
+                        title: summary.form.label,
+                        child: Text(
+                          summary.isComplete
+                              ? 'All evidence captured'
+                              : 'Missing: ${summary.missingRequirements.map((r) => r.label).join(", ")}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ))
+                  .toList(),
+            ),
+        ],
+      ),
     );
   }
 }

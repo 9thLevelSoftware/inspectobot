@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/features/inspection/domain/evidence_requirement.dart';
 import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
@@ -40,7 +41,8 @@ void main() {
     return MaterialApp(
       theme: AppTheme.dark(),
       home: Scaffold(
-        body: SingleChildScrollView(
+        body: SizedBox(
+          height: 800,
           child: WizardNavigationView(
             wizardState: wizardState,
             currentStepIndex: currentStepIndex,
@@ -144,8 +146,10 @@ void main() {
         isSavingProgress: true,
       ));
 
-      final button = tester.widget<FilledButton>(find.byType(FilledButton));
-      expect(button.onPressed, isNull);
+      // AppButton wraps the continue action
+      final appButton = tester.widget<AppButton>(find.byType(AppButton));
+      expect(appButton.onPressed, isNull);
+      expect(appButton.isLoading, isTrue);
       expect(find.text('Saving...'), findsOneWidget);
     });
 

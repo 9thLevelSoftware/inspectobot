@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:inspectobot/theme/theme.dart';
+
 /// A reusable toggle tile for branch context flags (e.g. "Hazard present?",
 /// "Roof defect present?").
 ///
@@ -30,6 +32,10 @@ class BranchFlagToggleTile extends StatelessWidget {
     return SwitchListTile(
       key: ValueKey('branch-flag-$flagKey'),
       title: Text(label),
+      subtitle: Text(
+        'Decision Point',
+        style: AppTypography.fieldLabelRequired,
+      ),
       value: value,
       onChanged: onChanged,
     );

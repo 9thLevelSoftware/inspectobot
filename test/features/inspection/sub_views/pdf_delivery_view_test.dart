@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/features/delivery/domain/report_artifact.dart';
 import 'package:inspectobot/features/inspection/domain/report_readiness.dart';
 import 'package:inspectobot/features/inspection/presentation/sub_views/pdf_delivery_view.dart';
@@ -83,10 +84,10 @@ void main() {
         isComplete: true,
       ));
 
-      final button = tester.widget<FilledButton>(
+      final appButton = tester.widget<AppButton>(
         find.byKey(const ValueKey('generate-pdf-button')),
       );
-      expect(button.onPressed, isNull);
+      expect(appButton.onPressed, isNull);
     });
 
     testWidgets('generate button enabled when ready and complete', (
@@ -99,10 +100,10 @@ void main() {
         onGeneratePdf: () => generateCalled = true,
       ));
 
-      final button = tester.widget<FilledButton>(
+      final appButton = tester.widget<AppButton>(
         find.byKey(const ValueKey('generate-pdf-button')),
       );
-      expect(button.onPressed, isNotNull);
+      expect(appButton.onPressed, isNotNull);
 
       await tester.tap(find.byKey(const ValueKey('generate-pdf-button')));
       await tester.pump();
@@ -115,10 +116,10 @@ void main() {
         isComplete: false,
       ));
 
-      final button = tester.widget<FilledButton>(
+      final appButton = tester.widget<AppButton>(
         find.byKey(const ValueKey('generate-pdf-button')),
       );
-      expect(button.onPressed, isNull);
+      expect(appButton.onPressed, isNull);
     });
 
     testWidgets('generate button shows loading spinner when generating', (
@@ -129,11 +130,11 @@ void main() {
       ));
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      // Button should be disabled while generating
-      final button = tester.widget<FilledButton>(
+      // AppButton sets onPressed=null internally when isLoading=true
+      final appButton = tester.widget<AppButton>(
         find.byKey(const ValueKey('generate-pdf-button')),
       );
-      expect(button.onPressed, isNull);
+      expect(appButton.isLoading, isTrue);
     });
 
     testWidgets('last PDF path displays as SelectableText', (tester) async {
