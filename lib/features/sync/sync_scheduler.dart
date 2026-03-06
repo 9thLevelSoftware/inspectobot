@@ -69,7 +69,7 @@ class SyncScheduler with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
 
     if (_connectivityChanges != null) {
-      _connectivitySubscription = _connectivityChanges!.listen((event) {
+      _connectivitySubscription = _connectivityChanges.listen((event) {
         if (_isConnected(event)) {
           unawaited(runPending());
         }

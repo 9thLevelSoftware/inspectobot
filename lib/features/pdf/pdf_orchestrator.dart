@@ -53,7 +53,7 @@ class PdfOrchestrator {
           cause: cloudOutcome.error,
         );
       }
-      throw error;
+      rethrow;
     }
   }
 

@@ -185,7 +185,7 @@ class MediaCaptureService {
     final extension = mediaType == CapturedMediaType.document
         ? (sourceExtension.isEmpty ? '.pdf' : sourceExtension)
         : '.jpg';
-    final filename = '${category.name}_${timestamp}$extension';
+    final filename = '${category.name}_$timestamp$extension';
     final output = File('${captureDir.path}/$filename');
     if (mediaType == CapturedMediaType.document) {
       await File(sourcePath).copy(output.path);

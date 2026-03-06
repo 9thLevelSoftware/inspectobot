@@ -295,7 +295,7 @@ class InspectionRepository {
     if (_outboxStore == null) {
       return null;
     }
-    final operations = await _outboxStore!.listAll();
+    final operations = await _outboxStore.listAll();
     final inspectionOps = operations
         .where(
           (operation) =>

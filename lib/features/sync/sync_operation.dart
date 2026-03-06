@@ -128,12 +128,12 @@ class SyncOperation {
       status: status,
       retryCount: retryCount,
       maxRetries: maxRetries,
-      lastError: lastErrorRaw == null ? null : lastErrorRaw.toString(),
+      lastError: lastErrorRaw?.toString(),
       lastAttemptAt: lastAttemptAtRaw == null
           ? null
           : _parseDate(lastAttemptAtRaw.toString(), 'last_attempt_at'),
       dependencyOperationId:
-          dependencyIdRaw == null ? null : dependencyIdRaw.toString(),
+          dependencyIdRaw?.toString(),
     );
   }
 

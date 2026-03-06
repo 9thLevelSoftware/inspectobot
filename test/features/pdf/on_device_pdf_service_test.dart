@@ -7,8 +7,6 @@ import 'package:inspectobot/features/inspection/domain/required_photo_category.d
 import 'package:inspectobot/features/pdf/data/pdf_media_resolver.dart';
 import 'package:inspectobot/features/pdf/data/pdf_size_budget_config_store.dart';
 import 'package:inspectobot/features/pdf/data/pdf_template_asset_loader.dart';
-import 'package:inspectobot/features/pdf/domain/pdf_size_budget.dart';
-import 'package:inspectobot/features/pdf/models/pdf_field_map.dart';
 import 'package:inspectobot/features/pdf/models/pdf_template_manifest.dart';
 import 'package:inspectobot/features/pdf/on_device_pdf_service.dart';
 import 'package:inspectobot/features/pdf/pdf_generation_input.dart';
