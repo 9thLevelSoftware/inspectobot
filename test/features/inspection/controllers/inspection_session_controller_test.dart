@@ -12,10 +12,8 @@ import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
-import 'package:inspectobot/features/inspection/domain/report_readiness.dart';
 import 'package:inspectobot/features/inspection/presentation/controllers/inspection_session_controller.dart';
 import 'package:inspectobot/features/media/media_capture_service.dart';
-import 'package:inspectobot/features/media/media_capture_result.dart';
 import 'package:inspectobot/features/media/media_sync_task.dart';
 import 'package:inspectobot/features/media/pending_media_sync_store.dart';
 import 'package:inspectobot/features/pdf/cloud_pdf_service.dart';
@@ -24,7 +22,6 @@ import 'package:inspectobot/features/pdf/pdf_generation_input.dart';
 import 'package:inspectobot/features/pdf/pdf_orchestrator.dart';
 import 'package:inspectobot/features/pdf/pdf_strategy.dart';
 import 'package:inspectobot/features/signing/data/report_signature_evidence_repository.dart';
-import 'package:inspectobot/features/signing/domain/report_signature_evidence.dart';
 import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
 
 void main() {
@@ -83,12 +80,6 @@ void main() {
       deliveryService: deliveryService,
       auditRepository: auditRepository,
     );
-  }
-
-  int _trackNotifications(InspectionSessionController controller) {
-    var count = 0;
-    controller.onStateChanged = () => count += 1;
-    return count; // Capture initial value; use closure below for live count.
   }
 
   // ---------------------------------------------------------------------------
