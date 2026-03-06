@@ -184,6 +184,28 @@ void main() {
       expect(find.text('Reset Password'), findsWidgets);
     });
 
+    testWidgets(
+        'deep-link to /dashboard while isResolvingTenant redirects to sign-in',
+        (tester) async {
+      notifier.dispose();
+      repo.dispose();
+      // Session without org => isResolvingTenant = true, isAuthenticated = false
+      repo = _FakeAuthRepository(
+        initialSession: const AuthSession(userId: 'u1'),
+      );
+      notifier = AuthNotifier(repo);
+      expect(notifier.isResolvingTenant, isTrue);
+      expect(notifier.isAuthenticated, isFalse);
+
+      final router = createRouter(notifier);
+      router.go(AppRoutes.dashboard);
+      await tester.pumpWidget(_buildApp(router));
+      await tester.pumpAndSettle();
+
+      // Should redirect to sign-in because tenant is not yet resolved
+      expect(find.text('Sign In'), findsWidgets);
+    });
+
     testWidgets('resolving tenant does not redirect', (tester) async {
       notifier.dispose();
       repo.dispose();

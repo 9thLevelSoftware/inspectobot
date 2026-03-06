@@ -65,6 +65,8 @@ void main() {
         ),
       ),
     ).called(1);
+
+    verify(() => mockAuthNotifier.clearRecovery()).called(1);
   });
 
   testWidgets('failed update shows auth failure and stays on reset page', (
