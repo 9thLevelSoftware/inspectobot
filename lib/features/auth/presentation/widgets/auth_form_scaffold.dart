@@ -35,23 +35,25 @@ class AuthFormScaffold extends StatelessWidget {
           vertical: AppSpacing.spacingXl,
         ),
         children: [
-          Form(
-            key: formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (int i = 0; i < fields.length; i++) ...[
-                  if (i > 0)
+          AutofillGroup(
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (int i = 0; i < fields.length; i++) ...[
+                    if (i > 0)
+                      const SizedBox(height: AppSpacing.spacingMd),
+                    fields[i],
+                  ],
+                  if (feedbackBanner != null) ...[
                     const SizedBox(height: AppSpacing.spacingMd),
-                  fields[i],
+                    feedbackBanner!,
+                  ],
+                  const SizedBox(height: AppSpacing.spacingLg),
+                  submitButton,
                 ],
-                if (feedbackBanner != null) ...[
-                  const SizedBox(height: AppSpacing.spacingMd),
-                  feedbackBanner!,
-                ],
-                const SizedBox(height: AppSpacing.spacingLg),
-                submitButton,
-              ],
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.spacingMd),

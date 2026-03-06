@@ -138,6 +138,17 @@ void main() {
 
     verify(() => mockNav.go(AppRoutes.signUp)).called(1);
   });
+
+  testWidgets('Forgot password link navigates to forgot-password route', (
+    tester,
+  ) async {
+    await tester.pumpWidget(buildSubject());
+
+    await tester.tap(find.text('Forgot password?'));
+    await tester.pump();
+
+    verify(() => mockNav.go(AppRoutes.forgotPassword)).called(1);
+  });
 }
 
 class _SignInFakeAuthGateway implements AuthGateway {

@@ -138,6 +138,19 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('recovery link navigates to reset-password route', (
+    tester,
+  ) async {
+    await tester.pumpWidget(buildSubject());
+
+    await tester.tap(
+      find.text('Already have a recovery link? Reset password'),
+    );
+    await tester.pump();
+
+    verify(() => mockNav.go(AppRoutes.resetPassword)).called(1);
+  });
 }
 
 class _ForgotFakeAuthGateway implements AuthGateway {

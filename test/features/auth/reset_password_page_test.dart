@@ -70,6 +70,58 @@ void main() {
     verify(() => mockAuthNotifier.clearRecovery()).called(1);
   });
 
+  testWidgets('renders reset password form with expected elements', (
+    tester,
+  ) async {
+    final gateway = _ResetFakeAuthGateway();
+    final repository = AuthRepository(gateway);
+
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.dark(), home: ResetPasswordPage(repository: repository)),
+    );
+
+    expect(find.text('Reset Password'), findsOneWidget);
+    expect(find.text('New Password'), findsOneWidget);
+    expect(find.text('Update Password'), findsOneWidget);
+  });
+
+  testWidgets('shows validation error when password is too short', (
+    tester,
+  ) async {
+    final gateway = _ResetFakeAuthGateway();
+    final repository = AuthRepository(gateway);
+
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.dark(), home: ResetPasswordPage(repository: repository)),
+    );
+
+    // Submit without entering text
+    await tester.tap(find.text('Update Password'));
+    await tester.pump();
+
+    expect(
+      find.text('Password must be at least 8 characters.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('shows loading state while submitting', (
+    tester,
+  ) async {
+    final gateway = _ResetFakeAuthGateway();
+    final repository = AuthRepository(gateway);
+
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.dark(), home: ResetPasswordPage(repository: repository)),
+    );
+
+    await tester.enterText(find.byType(TextFormField), 'Password123!');
+    await tester.tap(find.text('Update Password'));
+    await tester.pump();
+
+    expect(find.text('Updating...'), findsOneWidget);
+  });
+
   testWidgets('failed update shows auth failure and stays on reset page', (
     tester,
   ) async {

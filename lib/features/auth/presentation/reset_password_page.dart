@@ -78,6 +78,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           controller: _passwordController,
           label: 'New Password',
           textInputAction: TextInputAction.done,
+          autofillHints: const [AutofillHints.newPassword],
         ),
       ],
       feedbackBanner: _error != null

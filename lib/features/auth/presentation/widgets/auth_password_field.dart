@@ -13,11 +13,13 @@ class AuthPasswordField extends StatelessWidget {
     this.controller,
     this.label = 'Password',
     this.textInputAction,
+    this.autofillHints = const [AutofillHints.password],
   });
 
   final TextEditingController? controller;
   final String? label;
   final TextInputAction? textInputAction;
+  final Iterable<String>? autofillHints;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,7 @@ class AuthPasswordField extends StatelessWidget {
       label: label,
       controller: controller,
       obscureText: true,
-      autofillHints: const [AutofillHints.password],
+      autofillHints: autofillHints,
       textInputAction: textInputAction,
       validator: _validate,
     );

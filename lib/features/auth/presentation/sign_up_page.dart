@@ -76,6 +76,7 @@ class _SignUpPageState extends State<SignUpPage> {
         AuthPasswordField(
           controller: _passwordController,
           textInputAction: TextInputAction.done,
+          autofillHints: const [AutofillHints.newPassword],
         ),
       ],
       feedbackBanner: _error != null
