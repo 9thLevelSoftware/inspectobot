@@ -225,7 +225,7 @@ void main() {
       expect(result.pagePadding.left, closeTo(24.0, 0.01));
       // BorderRadius: (8 + 20) / 2 = 14
       expect(
-        (result.radiusMd.topLeft as Radius).x,
+        (result.radiusMd.topLeft).x,
         closeTo(14.0, 0.01),
       );
     });
