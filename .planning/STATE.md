@@ -2,23 +2,23 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-04)
+See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** An inspector can complete a Florida insurance inspection workflow quickly and generate compliant, underwriter-ready PDFs with all required data and photos enforced.
-**Current focus:** Phase 18 PDF/delivery resilience and identity contract closure planning/execution.
+**Current focus:** Post-v1.0 planning - define next milestone scope and phase plan.
 
 ## Current Position
 
-**Current Phase:** 18
-**Total Phases:** 18
-**Current Phase Name:** PDF/Delivery Resilience and Identity Contract Closure
-**Current Plan:** 1
-**Total Plans in Phase:** 0
-**Status:** Phase complete — ready for verification
-**Last Activity:** 2026-03-05
-**Last Activity Description:** Completed 17-04 replay harness + sanitized live evidence closure; phase 17 verification now passed for AUTH-01/AUTH-02/FLOW-01/SEC-01.
+**Current Phase:** 19
+**Total Phases:** 20
+**Current Phase Name:** Conditional Branch Wiring and Evidence Activation
+**Current Plan:** 2
+**Total Plans in Phase:** 2
+**Status:** In progress
+**Last Activity:** 2026-03-06
+**Last Activity Description:** Completed 19-01 canonical branch contract and branch-context normalization
 
-**Progress:** [██████████] 100%
+**Progress:** [██████████] 98%
 
 ## Performance Metrics
 
@@ -74,6 +74,7 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 | Phase 17 P03 | 2 min | 3 tasks | 3 files |
 | Phase 18 P01 | 22 min | 3 tasks | 5 files |
 | Phase 18 P02 | 3 min | 3 tasks | 6 files |
+| Phase 19 P01 | 2 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,8 @@ Recent decisions affecting current work:
 - [Phase 18]: Checklist generation defaults to PdfStrategy.cloudFallback with deterministic terminal-failure inspector messaging.
 - [Phase 18]: License source keys remain explicitly non-required by default and are removed from loader allowlist unless policy is intentionally changed.
 - [Phase 18]: Phase-18 verification is the canonical EVID-02 closure source linking plan-01 resilience tests and plan-02 mapping-policy tests.
+- [Phase 19]: Canonical branch keys are defined in FormRequirements and reused by predicates/tests to prevent literal drift.
+- [Phase 19]: Repository write/decode paths persist only canonical bool branch flags while retaining enabled_forms metadata.
 
 ### Pending Todos
 
@@ -141,6 +144,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-03-05T23:38:53.471Z
-**Stopped At:** Completed 18-02-PLAN.md
+**Last session:** 2026-03-06T00:42:05.391Z
+**Stopped At:** Completed 19-01-PLAN.md
 **Resume File:** None
