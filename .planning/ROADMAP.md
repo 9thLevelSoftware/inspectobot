@@ -7,7 +7,7 @@
 - [x] Phase 3: Navigation System & App Shell (UX-04)
 - [x] Phase 4: Checklist Page Decomposition (UX-01)
 - [x] Phase 5: Field Usability & Visual Hierarchy (UX-02, UX-03)
-- [ ] Phase 6: Auth Screens Redesign (SCREEN-01)
+- [x] Phase 6: Auth Screens Redesign (SCREEN-01)
 - [x] Phase 7: Dashboard & New Inspection Redesign (SCREEN-02, SCREEN-03)
 - [ ] Phase 8: Inspector Identity & Final Polish (SCREEN-04)
 
