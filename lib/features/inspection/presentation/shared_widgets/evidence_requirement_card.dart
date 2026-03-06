@@ -71,7 +71,7 @@ class EvidenceRequirementCard extends StatelessWidget {
                     highContrast: true,
                   ),
                   if (!isCaptured) ...[
-                    const SizedBox(height: AppSpacing.spacingXs),
+                    const SizedBox(height: AppSpacing.spacingSm),
                     OutlinedButton(
                       onPressed: onCapture,
                       child: Text(actionLabel),

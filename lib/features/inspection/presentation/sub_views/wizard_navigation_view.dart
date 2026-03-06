@@ -46,15 +46,13 @@ class WizardNavigationView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildStepHeader(context, step),
-            SizedBox(height: AppSpacing.spacingSm),
+            const SizedBox(height: AppSpacing.spacingSm),
             _buildStepContent(step),
           ],
         ),
       ),
       stickyBottom: AppButton(
-        label: isFinalStep
-            ? (isSavingProgress ? 'Saving...' : 'Finish Wizard')
-            : (isSavingProgress ? 'Saving...' : 'Continue to Next Step'),
+        label: isFinalStep ? 'Finish Wizard' : 'Continue to Next Step',
         onPressed: canContinue && !isSavingProgress ? onContinue : null,
         isLoading: isSavingProgress,
         loadingLabel: 'Saving...',
@@ -102,7 +100,7 @@ class WizardNavigationView extends StatelessWidget {
             children: branchControls,
           ),
         if (branchControls.isNotEmpty && evidenceCards.isNotEmpty)
-          SizedBox(height: AppSpacing.spacingLg),
+          const SizedBox(height: AppSpacing.spacingLg),
         if (evidenceCards.isNotEmpty)
           SectionGroup(
             title: 'Evidence Requirements',

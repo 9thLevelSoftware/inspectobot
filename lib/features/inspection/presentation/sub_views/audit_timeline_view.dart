@@ -76,7 +76,7 @@ class AuditTimelineView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Audit Timeline', style: AppTypography.sectionTitle),
-          SizedBox(height: AppSpacing.spacingSm),
+          const SizedBox(height: AppSpacing.spacingSm),
           SectionGroup(
             children: auditEvents
                 .take(maxDisplayedEvents)

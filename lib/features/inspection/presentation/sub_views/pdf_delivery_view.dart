@@ -69,11 +69,11 @@ class PdfDeliveryView extends StatelessWidget {
             ),
           ),
           if (lastPdfPath != null) ...[
-            SizedBox(height: AppSpacing.spacingMd),
+            const SizedBox(height: AppSpacing.spacingMd),
             SelectableText('Last PDF: $lastPdfPath'),
           ],
           if (lastArtifact != null) ...[
-            SizedBox(height: AppSpacing.spacingLg),
+            const SizedBox(height: AppSpacing.spacingLg),
             SectionCard(
               title: 'Delivery Actions',
               child: Wrap(

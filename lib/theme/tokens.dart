@@ -102,7 +102,7 @@ abstract final class AppFieldUsability {
   /// Minimum contrast ratio for WCAG AAA (normal text).
   static const double wcagAAANormal = 7.0;
 
-  /// Minimum contrast ratio for WCAG AAA (large text, >=18sp or >=14sp bold).
+  /// Minimum contrast ratio for WCAG AAA large text (>=24sp regular or >=18.67sp bold).
   static const double wcagAAALarge = 4.5;
 
   /// Minimum contrast ratio for WCAG AA (normal text).

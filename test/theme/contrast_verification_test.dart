@@ -55,6 +55,9 @@ void main() {
   // AAA Large (4.5:1) — badges, buttons, headers, semantic colors
   // ---------------------------------------------------------------------------
   group('WCAG AAA Large text (4.5:1)', () {
+    // primary on surface: 6.93:1 — meets AA Normal (4.5:1).
+    // Note: fieldLabelRequired (14sp bold) is normal text by WCAG (bold large = >=18.67sp).
+    // Accepted as AA per design review.
     test('primary on surface meets AAA Large', () {
       final ratio = ContrastHelpers.contrastRatio(
         Palette.primary,

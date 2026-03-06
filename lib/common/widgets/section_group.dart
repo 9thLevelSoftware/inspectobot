@@ -44,7 +44,7 @@ class SectionGroup extends StatelessWidget {
         children: [
           if (title != null) ...[
             Text(title!, style: AppTypography.sectionTitle),
-            SizedBox(height: AppSpacing.spacingSm),
+            const SizedBox(height: AppSpacing.spacingSm),
           ],
           for (int i = 0; i < children.length; i++) ...[
             children[i],
