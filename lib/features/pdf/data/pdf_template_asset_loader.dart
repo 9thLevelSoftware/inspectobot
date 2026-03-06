@@ -24,6 +24,26 @@ class PdfTemplateAssetBundle {
 }
 
 class PdfTemplateAssetLoader {
+  /// AUTH-04 POLICY: Inspector license data (licenseType, licenseNumber) is
+  /// captured in InspectorProfile and persisted to Supabase for profile
+  /// continuity, but is intentionally excluded from PDF output.
+  ///
+  /// Rationale: Florida's standard inspection forms (Four-Point, Roof
+  /// Condition, Wind Mitigation OIR-B1-1802) do not include designated
+  /// inspector license number fields. Adding them would create non-standard
+  /// content in official form PDFs.
+  ///
+  /// License data is available for:
+  ///   - Inspector identity display in the app
+  ///   - Future multi-state form expansion (EXP-01) where forms may require
+  ///     license fields
+  ///
+  /// To reverse this policy:
+  ///   1. Remove these keys from [inspectorLicenseSourceKeys]
+  ///   2. Add resolver cases in PdfMediaResolver._resolveTextValue()
+  ///   3. Add field entries to the relevant JSON map files
+  ///   4. Update pdf_profile_mapping_contract_test.dart to assert consumer status
+  ///   5. Load InspectorProfile during PDF input assembly
   static const Set<String> inspectorLicenseSourceKeys = <String>{
     'license_type',
     'license_number',
@@ -49,6 +69,7 @@ class PdfTemplateAssetLoader {
                     'property_address',
                     'inspector_signature',
                   },
+            // AUTH-04 POLICY: Exclude license keys from allowlist — see policy doc above.
             )..removeAll(inspectorLicenseSourceKeys);
 
   final PdfTemplateManifest manifest;

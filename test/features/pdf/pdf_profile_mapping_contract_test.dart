@@ -22,7 +22,7 @@ void main() {
     );
   });
 
-  test('inspector license source keys are explicitly documented by map audit', () async {
+  test('AUTH-04 POLICY: pinned maps must not reference license keys (non-consumer policy)', () async {
     final sourceKeys = await _loadPinnedMapSourceKeys();
     const licenseKeys = PdfTemplateAssetLoader.inspectorLicenseSourceKeys;
     final requiredLicenseKeys = sourceKeys.intersection(licenseKeys);
@@ -31,14 +31,16 @@ void main() {
       requiredLicenseKeys,
       isEmpty,
       reason:
-          'Pinned maps now require inspector license keys: $requiredLicenseKeys. '
-          'Intentional policy change required: update loader policy + runtime '
-          'text mapping in lib/features/pdf/data/pdf_media_resolver.dart and '
-          'keep map/contract changes in the same PR.',
+          'AUTH-04 non-consumer policy violated: pinned maps now require '
+          'inspector license keys: $requiredLicenseKeys. '
+          'Florida inspection forms have no designated license fields. '
+          'If this is an intentional policy change, update loader policy + '
+          'runtime text mapping in PdfMediaResolver and keep map/contract '
+          'changes in the same PR.',
     );
   });
 
-  test('loader allowlist keeps license keys non-required by default policy', () {
+  test('AUTH-04 POLICY: loader allowlist excludes license keys by design', () {
     final allowlist = PdfTemplateAssetLoader().allowedSourceKeys;
     const licenseKeys = PdfTemplateAssetLoader.inspectorLicenseSourceKeys;
 
@@ -46,9 +48,34 @@ void main() {
       allowlist.intersection(licenseKeys),
       isEmpty,
       reason:
-          'Default loader policy drifted: license keys moved into allowlist. '
-          'If this is intentional, update explicit policy and runtime mapping '
-          'contracts in the same PR.',
+          'AUTH-04 non-consumer policy violated: license keys moved into '
+          'allowlist. To intentionally reverse this policy: '
+          '1) Remove keys from inspectorLicenseSourceKeys, '
+          '2) Add resolver cases in PdfMediaResolver._resolveTextValue(), '
+          '3) Add field entries to JSON map files, '
+          '4) Update these tests to assert consumer status, '
+          '5) Load InspectorProfile during PDF input assembly.',
+    );
+  });
+
+  test('AUTH-04 POLICY: license data is persisted but intentionally not consumed by PDF pipeline', () {
+    // This test documents the AUTH-04 resolution as a "policy-bound non-consumer."
+    // InspectorProfile stores licenseType and licenseNumber for profile continuity.
+    // Florida inspection forms do not have license number fields.
+    //
+    // To reverse this policy, follow the steps documented in
+    // PdfTemplateAssetLoader.inspectorLicenseSourceKeys.
+
+    const licenseKeys = PdfTemplateAssetLoader.inspectorLicenseSourceKeys;
+    expect(licenseKeys, containsAll(['license_type', 'license_number']));
+
+    final allowlist = PdfTemplateAssetLoader().allowedSourceKeys;
+    expect(
+      allowlist.intersection(licenseKeys),
+      isEmpty,
+      reason: 'AUTH-04 non-consumer policy: license keys must not appear in '
+          'loader allowlist. If forms change to require license fields, '
+          'follow the reversal steps in PdfTemplateAssetLoader source doc.',
     );
   });
 }
