@@ -137,7 +137,7 @@
 | 3. Navigation System | 3 | 3 | Complete |
 | 4. Checklist Decomposition | 5 | 5 | Complete |
 | 5. Field Usability & Hierarchy | 4 | 4 | Complete |
-| 6. Auth Screens | 3 | 0 | Not started |
+| 6. Auth Screens | 3 | 3 | Complete |
 | 7. Dashboard & New Inspection | 4 | 0 | Not started |
 | 8. Identity & Final Polish | 3 | 0 | Not started |
-| **Total** | **30** | **20** | **67%** |
+| **Total** | **30** | **23** | **77%** |
