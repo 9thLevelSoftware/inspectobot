@@ -1,0 +1,623 @@
+import 'dart:typed_data';
+
+import '../../../media/media_capture_service.dart';
+import '../../../media/media_sync_task.dart';
+import '../../../media/pending_media_sync_store.dart';
+import '../../../media/media_sync_remote_store.dart';
+import '../../../delivery/domain/report_artifact.dart';
+import '../../../delivery/services/delivery_service.dart';
+import '../../../audit/data/audit_event_repository.dart';
+import '../../../audit/domain/audit_event.dart';
+import '../../../pdf/cloud_pdf_service.dart';
+import '../../../pdf/data/pdf_media_resolver.dart';
+import '../../../pdf/on_device_pdf_service.dart';
+import '../../../pdf/pdf_generation_input.dart';
+import '../../../pdf/pdf_orchestrator.dart';
+import '../../../pdf/pdf_strategy.dart';
+import '../../../signing/data/report_signature_evidence_repository.dart';
+import '../../../signing/domain/report_signature_evidence.dart';
+import '../../../identity/data/signature_repository.dart';
+import '../../data/inspection_repository.dart';
+import '../../domain/evidence_requirement.dart';
+import '../../domain/form_requirements.dart';
+import '../../domain/form_type.dart';
+import '../../domain/inspection_draft.dart';
+import '../../domain/inspection_wizard_state.dart';
+import '../../domain/report_readiness.dart';
+import '../../domain/required_photo_category.dart';
+
+// ---------------------------------------------------------------------------
+// Result types
+// ---------------------------------------------------------------------------
+
+enum ContinueStepResult { advanced, finished, blocked, error }
+
+enum CaptureResult { captured, cancelled }
+
+class PdfGenerationResult {
+  const PdfGenerationResult({
+    required this.success,
+    this.errorMessage,
+    this.isCloudTerminalFailure = false,
+    this.sizeKb,
+  });
+
+  final bool success;
+  final String? errorMessage;
+  final bool isCloudTerminalFailure;
+  final String? sizeKb;
+}
+
+class DeliveryResult {
+  const DeliveryResult({required this.success, this.url, this.errorMessage});
+
+  final bool success;
+  final String? url;
+  final String? errorMessage;
+}
+
+// ---------------------------------------------------------------------------
+// InspectionSessionController
+// ---------------------------------------------------------------------------
+
+/// Owns all business logic and mutable state extracted from
+/// `_FormChecklistPageState`. Pure Dart -- no Flutter imports.
+///
+/// The parent `StatefulWidget` sets [onStateChanged] to
+/// `() => setState(() {})` so that every state mutation triggers a rebuild.
+class InspectionSessionController {
+  InspectionSessionController({
+    required this.draft,
+    InspectionRepository? repository,
+    SignatureRepository? signatureRepository,
+    ReportSignatureEvidenceRepository? signatureEvidenceRepository,
+    DeliveryService? deliveryService,
+    MediaSyncRemoteStore? mediaSyncRemoteStore,
+    PendingMediaSyncStore? pendingMediaSyncStore,
+    PdfOrchestrator? pdfOrchestrator,
+    CloudPdfService? cloudPdfService,
+    AuditEventRepository? auditRepository,
+    MediaCaptureService? mediaCapture,
+  })  : _repository = repository ?? InspectionRepository.live(),
+        _signatureRepository =
+            signatureRepository ?? SignatureRepository.live(),
+        _signatureEvidenceRepository = signatureEvidenceRepository ??
+            ReportSignatureEvidenceRepository.live(),
+        _deliveryService = deliveryService ?? DeliveryService.live(),
+        _mediaSyncRemoteStore = mediaSyncRemoteStore,
+        _pendingMediaSyncStore =
+            pendingMediaSyncStore ?? PendingMediaSyncStore(),
+        _auditRepository = auditRepository ?? AuditEventRepository.live(),
+        _mediaCapture = mediaCapture ?? MediaCaptureService(),
+        _providedPdfOrchestrator = pdfOrchestrator,
+        _cloudPdfService = cloudPdfService;
+
+  final InspectionDraft draft;
+
+  // -- Dependencies ----------------------------------------------------------
+
+  final InspectionRepository _repository;
+  final SignatureRepository _signatureRepository;
+  final ReportSignatureEvidenceRepository _signatureEvidenceRepository;
+  final DeliveryService _deliveryService;
+  final MediaSyncRemoteStore? _mediaSyncRemoteStore;
+  final PendingMediaSyncStore _pendingMediaSyncStore;
+  final AuditEventRepository _auditRepository;
+  final MediaCaptureService _mediaCapture;
+  final PdfOrchestrator? _providedPdfOrchestrator;
+  final CloudPdfService? _cloudPdfService;
+
+  late final PdfOrchestrator _pdfOrchestrator;
+
+  // -- Callback hook ---------------------------------------------------------
+
+  /// Parent sets this to `() => setState(() {})`.
+  void Function()? onStateChanged;
+
+  // -- State fields (public getters, private setters) ------------------------
+
+  WizardProgressSnapshot _snapshot = WizardProgressSnapshot.empty;
+  WizardProgressSnapshot get snapshot => _snapshot;
+
+  int _currentStepIndex = 0;
+  int get currentStepIndex => _currentStepIndex;
+
+  bool _isGenerating = false;
+  bool get isGenerating => _isGenerating;
+
+  bool _isSavingProgress = false;
+  bool get isSavingProgress => _isSavingProgress;
+
+  String? _lastPdfPath;
+  String? get lastPdfPath => _lastPdfPath;
+
+  ReportReadiness? _persistedReadiness;
+  ReportReadiness? get persistedReadiness => _persistedReadiness;
+
+  ReportArtifact? _lastArtifact;
+  ReportArtifact? get lastArtifact => _lastArtifact;
+
+  List<AuditEvent> _auditEvents = const <AuditEvent>[];
+  List<AuditEvent> get auditEvents => _auditEvents;
+
+  bool _isLoadingAuditEvents = false;
+  bool get isLoadingAuditEvents => _isLoadingAuditEvents;
+
+  String? _auditTimelineError;
+  String? get auditTimelineError => _auditTimelineError;
+
+  // -- Computed getters ------------------------------------------------------
+
+  InspectionWizardState get wizardState => InspectionWizardState(
+        enabledForms: draft.enabledForms,
+        snapshot: _snapshot,
+      );
+
+  ReportReadiness get effectiveReadiness =>
+      _persistedReadiness ?? _evaluateReadiness();
+
+  // -- Static maps -----------------------------------------------------------
+
+  static const Map<FormType, List<String>> branchFlagsByForm = {
+    FormType.fourPoint: [FormRequirements.hazardPresentBranchFlag],
+    FormType.roofCondition: [FormRequirements.roofDefectPresentBranchFlag],
+    FormType.windMitigation: [
+      FormRequirements.windRoofDeckDocumentRequiredBranchFlag,
+      FormRequirements.windOpeningDocumentRequiredBranchFlag,
+      FormRequirements.windPermitDocumentRequiredBranchFlag,
+    ],
+  };
+
+  static const Map<String, String> branchFlagLabels = {
+    FormRequirements.hazardPresentBranchFlag: 'Hazard present?',
+    FormRequirements.roofDefectPresentBranchFlag: 'Roof defect present?',
+    FormRequirements.windRoofDeckDocumentRequiredBranchFlag:
+        'Roof deck supporting document required?',
+    FormRequirements.windOpeningDocumentRequiredBranchFlag:
+        'Opening protection document required?',
+    FormRequirements.windPermitDocumentRequiredBranchFlag:
+        'Permit/age document required?',
+  };
+
+  // -- Public methods --------------------------------------------------------
+
+  /// Must be called once by parent in `initState`.
+  ///
+  /// Initialises the PDF orchestrator, hydrates captured state from the
+  /// wizard snapshot, clamps the step index, and loads readiness + audit.
+  void initialize() {
+    final remoteStore = _mediaSyncRemoteStore;
+    _pdfOrchestrator = _providedPdfOrchestrator ??
+        PdfOrchestrator(
+          onDevice: OnDevicePdfService(
+            mediaResolver: PdfMediaResolver(
+              remoteReadBytes: remoteStore == null
+                  ? null
+                  : (storagePath) => remoteStore.readBytesByStoragePath(
+                        storagePath: storagePath,
+                      ),
+            ),
+          ),
+          cloud: _cloudPdfService ?? const CloudPdfService(),
+          primaryStrategy: PdfStrategy.cloudFallback,
+          readinessLookup: (input) => _repository.fetchReportReadiness(
+            inspectionId: input.inspectionId,
+            organizationId: input.organizationId,
+            userId: input.userId,
+          ),
+        );
+
+    _snapshot = draft.wizardSnapshot;
+    _hydrateCapturedFromSnapshot();
+
+    final requestedStep = draft.initialStepIndex;
+    final maxStep = wizardState.steps.length - 1;
+    _currentStepIndex = requestedStep.clamp(0, maxStep < 0 ? 0 : maxStep);
+
+    _loadReadiness();
+    _loadAuditEvents();
+  }
+
+  /// Advances the wizard to the next step or finishes it.
+  ///
+  /// Returns [ContinueStepResult.blocked] when current step requirements are
+  /// incomplete, [ContinueStepResult.error] when save fails.
+  Future<ContinueStepResult> continueStep() async {
+    if (_isSavingProgress) {
+      return ContinueStepResult.blocked;
+    }
+
+    final state = wizardState;
+    if (!state.canAdvanceFrom(_currentStepIndex)) {
+      return ContinueStepResult.blocked;
+    }
+
+    _isSavingProgress = true;
+    _notify();
+    try {
+      final isLastStep = _currentStepIndex >= state.steps.length - 1;
+      await _saveProgress(markComplete: isLastStep);
+      if (isLastStep) {
+        _isSavingProgress = false;
+        _notify();
+        return ContinueStepResult.finished;
+      }
+      _currentStepIndex += 1;
+      _isSavingProgress = false;
+      _notify();
+      return ContinueStepResult.advanced;
+    } catch (_) {
+      _isSavingProgress = false;
+      _notify();
+      return ContinueStepResult.error;
+    }
+  }
+
+  /// Captures evidence for [requirement] via the media capture service.
+  Future<CaptureResult> capture(EvidenceRequirement requirement) async {
+    final category = requirement.category;
+    if (category == null) {
+      return CaptureResult.cancelled;
+    }
+    final result = await _mediaCapture.captureRequiredPhoto(
+      inspectionId: draft.inspectionId,
+      organizationId: draft.organizationId,
+      userId: draft.userId,
+      category: category,
+      requirementKey: requirement.key,
+      mediaType: requirement.mediaType == EvidenceMediaType.document
+          ? CapturedMediaType.document
+          : CapturedMediaType.photo,
+      evidenceInstanceId: requirement.key,
+    );
+    if (result == null) {
+      return CaptureResult.cancelled;
+    }
+
+    final completion = Map<String, bool>.from(_snapshot.completion)
+      ..[requirement.key] = true;
+
+    draft.capturedCategories.add(category);
+    draft.capturedPhotoPaths[category] = result.filePath;
+    draft.capturedEvidencePaths[requirement.key] = <String>[result.filePath];
+    _snapshot = _snapshot.copyWith(completion: completion);
+    _notify();
+
+    await _syncReadinessFromSnapshot();
+    return CaptureResult.captured;
+  }
+
+  /// Generates a PDF report for the current inspection.
+  ///
+  /// State machine:
+  /// ```
+  /// isGenerating=true
+  ///   -> load evidence media paths
+  ///   -> validate no missing evidence
+  ///   -> load signature
+  ///   -> build PdfGenerationInput
+  ///   -> orchestrator.generate()
+  ///   -> persist signature evidence
+  ///   -> persist delivery artifact
+  ///   -> success: set lastArtifact, lastPdfPath, isGenerating=false
+  ///   -> PdfCloudGenerationTerminalFailure: return cloudTerminalFailure
+  ///   -> other error: return error with message
+  /// ```
+  Future<PdfGenerationResult> generatePdf() async {
+    _isGenerating = true;
+    _notify();
+    try {
+      final evidenceMediaPaths = await _loadEvidenceMediaPaths();
+      final missingEvidenceKeys =
+          _missingCompletedEvidenceKeys(evidenceMediaPaths);
+      if (missingEvidenceKeys.isNotEmpty) {
+        throw StateError(
+          'Missing required evidence media paths for: '
+          '${missingEvidenceKeys.join(', ')}',
+        );
+      }
+
+      final loadedSignature =
+          await _signatureRepository.loadSignatureForGeneration(
+        organizationId: draft.organizationId,
+        userId: draft.userId,
+      );
+      if (loadedSignature == null) {
+        throw StateError('Stored inspector signature metadata is required.');
+      }
+
+      final input = PdfGenerationInput(
+        inspectionId: draft.inspectionId,
+        organizationId: draft.organizationId,
+        userId: draft.userId,
+        clientName: draft.clientName,
+        propertyAddress: draft.propertyAddress,
+        enabledForms: draft.enabledForms,
+        capturedCategories: draft.capturedCategories,
+        wizardCompletion: _snapshot.completion,
+        branchContext: _snapshot.branchContext,
+        evidenceMediaPaths: evidenceMediaPaths,
+        signatureBytes: Uint8List.fromList(loadedSignature.bytes),
+      );
+      final file = await _pdfOrchestrator.generate(input);
+      final payloadHash =
+          ReportSignatureEvidenceRepository.computePayloadHash(input);
+      await _signatureEvidenceRepository.persist(
+        input: input,
+        signerRole: 'inspector',
+        signatureHash: loadedSignature.record.fileHash,
+        signedAt: DateTime.now().toUtc(),
+        attribution: const ReportSignatureAttribution(
+          appVersion: null,
+          device: null,
+          sessionId: null,
+          network: null,
+        ),
+      );
+      final bytes = await file.readAsBytes();
+      final length = bytes.length;
+      final artifact = await _deliveryService.persistGeneratedArtifact(
+        input: input,
+        localFilePath: file.path,
+        bytes: bytes,
+        sizeBytes: length,
+        signatureHash: loadedSignature.record.fileHash,
+        payloadHash: payloadHash,
+      );
+      final sizeKb = (length / 1024).toStringAsFixed(1);
+
+      _lastPdfPath = file.path;
+      _lastArtifact = artifact;
+      _isGenerating = false;
+      _notify();
+      return PdfGenerationResult(success: true, sizeKb: sizeKb);
+    } on PdfCloudGenerationTerminalFailure {
+      _isGenerating = false;
+      _notify();
+      return const PdfGenerationResult(
+        success: false,
+        isCloudTerminalFailure: true,
+        errorMessage:
+            'Cloud PDF generation failed and on-device fallback was not attempted.',
+      );
+    } catch (error) {
+      _isGenerating = false;
+      _notify();
+      return PdfGenerationResult(
+        success: false,
+        errorMessage: 'PDF generation failed: $error',
+      );
+    }
+  }
+
+  /// Downloads the last generated artifact.
+  Future<DeliveryResult> downloadArtifact() async {
+    final artifact = _lastArtifact;
+    if (artifact == null) {
+      return const DeliveryResult(
+        success: false,
+        errorMessage: 'No artifact available.',
+      );
+    }
+    try {
+      final result = await _deliveryService.startDownload(artifact: artifact);
+      return DeliveryResult(success: true, url: result.url);
+    } catch (error) {
+      return DeliveryResult(
+        success: false,
+        errorMessage: 'Download failed: $error',
+      );
+    }
+  }
+
+  /// Shares the last generated artifact via secure share link.
+  Future<DeliveryResult> shareArtifact() async {
+    final artifact = _lastArtifact;
+    if (artifact == null) {
+      return const DeliveryResult(
+        success: false,
+        errorMessage: 'No artifact available.',
+      );
+    }
+    try {
+      final result =
+          await _deliveryService.startSecureShare(artifact: artifact);
+      return DeliveryResult(success: true, url: result.url);
+    } catch (error) {
+      return DeliveryResult(
+        success: false,
+        errorMessage: 'Secure share failed: $error',
+      );
+    }
+  }
+
+  /// Loads audit events for the current inspection.
+  Future<void> loadAuditEvents() => _loadAuditEvents();
+
+  /// Updates a branch flag in the wizard snapshot.
+  void setBranchFlag(String key, bool value) {
+    final updatedContext = Map<String, dynamic>.from(_snapshot.branchContext)
+      ..[key] = value;
+    _snapshot = _snapshot.copyWith(branchContext: updatedContext);
+    _notify();
+    _syncReadinessFromSnapshot();
+  }
+
+  // -- Private helpers -------------------------------------------------------
+
+  void _notify() {
+    onStateChanged?.call();
+  }
+
+  Future<void> _loadAuditEvents() async {
+    _isLoadingAuditEvents = true;
+    _auditTimelineError = null;
+    _notify();
+    try {
+      final events = await _auditRepository.listByInspection(
+        inspectionId: draft.inspectionId,
+        organizationId: draft.organizationId,
+        userId: draft.userId,
+      );
+      events.sort((a, b) {
+        final occurredComparison = b.occurredAt.compareTo(a.occurredAt);
+        if (occurredComparison != 0) {
+          return occurredComparison;
+        }
+        final createdComparison = b.createdAt.compareTo(a.createdAt);
+        if (createdComparison != 0) {
+          return createdComparison;
+        }
+        return b.id.compareTo(a.id);
+      });
+      _auditEvents = events;
+    } catch (_) {
+      _auditTimelineError =
+          'Unable to load audit timeline right now. Please retry shortly.';
+    } finally {
+      _isLoadingAuditEvents = false;
+      _notify();
+    }
+  }
+
+  Future<void> _loadReadiness() async {
+    final existing = await _repository.fetchReportReadiness(
+      inspectionId: draft.inspectionId,
+      organizationId: draft.organizationId,
+      userId: draft.userId,
+    );
+    if (existing != null) {
+      _persistedReadiness = existing;
+      _notify();
+      return;
+    }
+    await _syncReadinessFromSnapshot();
+  }
+
+  Future<void> _syncReadinessFromSnapshot() async {
+    final evaluated = _evaluateReadiness();
+    final saved = await _repository.upsertReportReadiness(evaluated);
+    _persistedReadiness = saved;
+    _notify();
+  }
+
+  ReportReadiness _evaluateReadiness() {
+    return ReportReadiness.evaluate(
+      inspectionId: draft.inspectionId,
+      organizationId: draft.organizationId,
+      userId: draft.userId,
+      enabledForms: draft.enabledForms,
+      completion: _snapshot.completion,
+      branchContext: _snapshot.branchContext,
+    );
+  }
+
+  void _hydrateCapturedFromSnapshot() {
+    for (final entry in _snapshot.completion.entries) {
+      if (entry.value != true) {
+        continue;
+      }
+      final category = _categoryForRequirementKey(entry.key);
+      if (category != null) {
+        draft.capturedCategories.add(category);
+      }
+    }
+  }
+
+  RequiredPhotoCategory? _categoryForRequirementKey(String key) {
+    final normalizedKey =
+        key.contains('#') ? key.substring(0, key.indexOf('#')) : key;
+    return FormRequirements.categoryForRequirementKey(normalizedKey);
+  }
+
+  Future<void> _saveProgress({required bool markComplete}) async {
+    final branchContext = Map<String, dynamic>.from(_snapshot.branchContext)
+      ..['enabled_forms'] = draft.enabledForms
+          .map((form) => form.code)
+          .toList(growable: false);
+    final updated = _snapshot.copyWith(
+      lastStepIndex: _currentStepIndex,
+      status: markComplete
+          ? WizardProgressStatus.complete
+          : WizardProgressStatus.inProgress,
+      branchContext: branchContext,
+    );
+    await _repository.updateWizardProgress(
+      inspectionId: draft.inspectionId,
+      organizationId: draft.organizationId,
+      userId: draft.userId,
+      snapshot: updated,
+    );
+    await _repository.upsertReportReadiness(_evaluateReadiness());
+    _snapshot = updated;
+  }
+
+  Future<Map<String, List<String>>> _loadEvidenceMediaPaths() async {
+    final evidence = <String, List<String>>{};
+
+    for (final entry in draft.capturedEvidencePaths.entries) {
+      _mergeEvidencePaths(evidence, entry.key, entry.value);
+    }
+
+    final pending = await _pendingMediaSyncStore.loadEvidenceMediaPaths(
+      inspectionId: draft.inspectionId,
+      organizationId: draft.organizationId,
+      userId: draft.userId,
+    );
+    for (final entry in pending.entries) {
+      _mergeEvidencePaths(evidence, entry.key, entry.value);
+    }
+
+    final remoteStore = _mediaSyncRemoteStore;
+    if (remoteStore != null) {
+      final persisted = await remoteStore.loadEvidenceMediaPaths(
+        inspectionId: draft.inspectionId,
+        organizationId: draft.organizationId,
+        userId: draft.userId,
+      );
+      for (final entry in persisted.entries) {
+        _mergeEvidencePaths(evidence, entry.key, entry.value);
+      }
+    }
+
+    return evidence;
+  }
+
+  void _mergeEvidencePaths(
+    Map<String, List<String>> evidence,
+    String requirementKey,
+    Iterable<String> candidatePaths,
+  ) {
+    if (requirementKey.trim().isEmpty) {
+      return;
+    }
+    final existing = evidence.putIfAbsent(requirementKey, () => <String>[]);
+    existing.addAll(
+      candidatePaths
+          .map((path) => path.trim())
+          .where((path) => path.isNotEmpty),
+    );
+    evidence[requirementKey] =
+        existing.toSet().toList(growable: false)..sort();
+  }
+
+  List<String> _missingCompletedEvidenceKeys(
+    Map<String, List<String>> evidenceMediaPaths,
+  ) {
+    final requirements = FormRequirements.evaluate(
+      draft.enabledForms,
+      branchContext: _snapshot.branchContext,
+    );
+    final missing = <String>[];
+    for (final requirement in requirements) {
+      if (_snapshot.completion[requirement.key] != true) {
+        continue;
+      }
+      final paths = evidenceMediaPaths[requirement.key];
+      if (paths == null || paths.isEmpty) {
+        missing.add(requirement.key);
+      }
+    }
+    return missing;
+  }
+}
