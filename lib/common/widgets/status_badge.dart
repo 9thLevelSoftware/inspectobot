@@ -49,12 +49,12 @@ class StatusBadge extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.spacingSm,
-        vertical: AppSpacing.spacingXxs,
+        horizontal: tokens.spacingSm,
+        vertical: tokens.spacingXxs,
       ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: AppRadii.full,
+        borderRadius: tokens.radiusFull,
       ),
       child: Text(
         label,

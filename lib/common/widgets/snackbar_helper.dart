@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:inspectobot/theme/theme.dart';
+
 /// Visual severity for snack-bar messages.
 enum AppSnackBarType {
   /// Critical error.
@@ -27,8 +29,10 @@ abstract final class AppSnackBar {
     String message, {
     AppSnackBarType type = AppSnackBarType.info,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final iconColor = colorScheme.onInverseSurface;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final tokens = theme.extension<AppTokens>()!;
+    final iconColor = _iconColorFor(type, colorScheme, tokens);
     final icon = _iconFor(type);
 
     ScaffoldMessenger.of(context)
@@ -39,11 +43,13 @@ abstract final class AppSnackBar {
           content: Row(
             children: [
               Icon(icon, color: iconColor),
-              const SizedBox(width: 8),
+              SizedBox(width: AppSpacing.spacingSm),
               Expanded(
                 child: Text(
                   message,
-                  style: TextStyle(color: iconColor),
+                  style: theme.textTheme.bodyMedium!.copyWith(
+                    color: colorScheme.onInverseSurface,
+                  ),
                 ),
               ),
             ],
@@ -67,6 +73,19 @@ abstract final class AppSnackBar {
   /// Shows a warning snack bar.
   static void warning(BuildContext context, String message) =>
       show(context, message, type: AppSnackBarType.warning);
+
+  static Color _iconColorFor(
+    AppSnackBarType type,
+    ColorScheme colorScheme,
+    AppTokens tokens,
+  ) {
+    return switch (type) {
+      AppSnackBarType.error => colorScheme.error,
+      AppSnackBarType.success => tokens.success,
+      AppSnackBarType.info => tokens.info,
+      AppSnackBarType.warning => tokens.warning,
+    };
+  }
 
   static IconData _iconFor(AppSnackBarType type) {
     return switch (type) {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:inspectobot/theme/theme.dart';
+
 /// Variants for [AppButton].
 enum AppButtonVariant { filled, outlined, text, icon }
 
@@ -34,7 +36,7 @@ class AppButton extends StatelessWidget {
     // Icon-only variant
     if (variant == AppButtonVariant.icon && icon != null) {
       return ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 48),
+        constraints: const BoxConstraints(minHeight: AppSpacing.spacing4xl),
         child: IconButton(
           icon: Icon(icon),
           onPressed: effectiveOnPressed,
@@ -44,8 +46,8 @@ class AppButton extends StatelessWidget {
 
     final loadingIndicator = isLoading
         ? const SizedBox(
-            width: 16,
-            height: 16,
+            width: AppSpacing.spacingLg,
+            height: AppSpacing.spacingLg,
             child: CircularProgressIndicator(strokeWidth: 2),
           )
         : null;
@@ -53,7 +55,7 @@ class AppButton extends StatelessWidget {
     final textWidget = Text(effectiveLabel);
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 48),
+      constraints: const BoxConstraints(minHeight: AppSpacing.spacing4xl),
       child: _buildButton(
         effectiveOnPressed,
         textWidget,

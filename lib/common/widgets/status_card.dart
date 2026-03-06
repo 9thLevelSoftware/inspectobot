@@ -64,7 +64,7 @@ class StatusCard extends StatelessWidget {
       StatusType.complete =>
         Icon(Icons.check_circle, color: tokens.success),
       StatusType.incomplete =>
-        Icon(Icons.error_outline, color: tokens.warning),
+        Icon(Icons.warning_amber, color: tokens.warning),
       StatusType.error =>
         Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
       StatusType.none => null,

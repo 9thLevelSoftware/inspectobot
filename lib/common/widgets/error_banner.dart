@@ -46,7 +46,13 @@ class ErrorBanner extends StatelessWidget {
           Icon(icon, color: color),
           SizedBox(width: tokens.spacingSm),
           Expanded(
-            child: Text(message, style: TextStyle(color: color)),
+            child: Text(
+              message,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium!
+                  .copyWith(color: color),
+            ),
           ),
         ],
       ),

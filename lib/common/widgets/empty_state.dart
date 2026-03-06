@@ -6,6 +6,8 @@ import 'package:inspectobot/theme/theme.dart';
 ///
 /// Optionally displays a large [icon] and an action [FilledButton].
 class EmptyState extends StatelessWidget {
+  static const double _iconSize = 64;
+
   const EmptyState({
     super.key,
     required this.message,
@@ -39,7 +41,7 @@ class EmptyState extends StatelessWidget {
             if (icon != null) ...[
               Icon(
                 icon!,
-                size: 64,
+                size: _iconSize,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               SizedBox(height: tokens.spacingLg),

@@ -36,12 +36,12 @@ void main() {
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
     });
 
-    testWidgets('incomplete status shows error_outline icon', (tester) async {
+    testWidgets('incomplete status shows warning_amber icon', (tester) async {
       await tester.pumpWidget(_wrap(
         const StatusCard(title: 'Pending', status: StatusType.incomplete),
       ));
 
-      expect(find.byIcon(Icons.error_outline), findsOneWidget);
+      expect(find.byIcon(Icons.warning_amber), findsOneWidget);
     });
 
     testWidgets('error status shows error_outline icon', (tester) async {
