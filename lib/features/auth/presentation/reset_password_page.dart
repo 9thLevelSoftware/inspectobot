@@ -3,8 +3,10 @@ import 'package:get_it/get_it.dart';
 import 'package:inspectobot/app/auth_notifier.dart';
 import 'package:inspectobot/app/navigation_service.dart';
 import 'package:inspectobot/app/routes.dart';
+import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
 import 'package:inspectobot/features/auth/presentation/sign_in_page.dart';
+import 'package:inspectobot/features/auth/presentation/widgets/auth_widgets.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key, AuthRepository? repository})
@@ -22,7 +24,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   bool _submitting = false;
   String? _error;
 
-  AuthRepository get _repository => widget._repository ?? AuthRepository.live();
+  AuthRepository get _repository =>
+      widget._repository ?? AuthRepository.live();
 
   @override
   void dispose() {
@@ -67,35 +70,25 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Reset Password')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Form(
-            key: _formKey,
-            child: TextFormField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'New Password'),
-              obscureText: true,
-              validator: (value) {
-                if ((value ?? '').length < 8) {
-                  return 'Password must be at least 8 characters.';
-                }
-                return null;
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _submitting ? null : _submit,
-            child: Text(_submitting ? 'Updating...' : 'Update Password'),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: Colors.red)),
-          ],
-        ],
+    return AuthFormScaffold(
+      title: 'Reset Password',
+      formKey: _formKey,
+      fields: [
+        AuthPasswordField(
+          controller: _passwordController,
+          label: 'New Password',
+          textInputAction: TextInputAction.done,
+        ),
+      ],
+      feedbackBanner: _error != null
+          ? ErrorBanner(message: _error!, type: ErrorBannerType.error)
+          : null,
+      submitButton: AppButton(
+        label: 'Update Password',
+        onPressed: _submit,
+        isLoading: _submitting,
+        loadingLabel: 'Updating...',
+        variant: AppButtonVariant.filled,
       ),
     );
   }

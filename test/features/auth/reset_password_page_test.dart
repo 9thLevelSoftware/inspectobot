@@ -10,6 +10,7 @@ import 'package:inspectobot/app/service_locator.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
 import 'package:inspectobot/features/auth/presentation/reset_password_page.dart';
 import 'package:inspectobot/features/auth/presentation/sign_in_page.dart';
+import 'package:inspectobot/theme/app_theme.dart';
 
 class _MockNavigationService extends Mock implements NavigationService {}
 class _MockAuthNotifier extends Mock implements AuthNotifier {}
@@ -38,7 +39,7 @@ void main() {
     final repository = AuthRepository(gateway);
 
     await tester.pumpWidget(
-      MaterialApp(home: ResetPasswordPage(repository: repository)),
+      MaterialApp(theme: AppTheme.dark(), home: ResetPasswordPage(repository: repository)),
     );
 
     await tester.enterText(find.byType(TextFormField), 'Password123!');
@@ -81,7 +82,7 @@ void main() {
     final repository = AuthRepository(gateway);
 
     await tester.pumpWidget(
-      MaterialApp(home: ResetPasswordPage(repository: repository)),
+      MaterialApp(theme: AppTheme.dark(), home: ResetPasswordPage(repository: repository)),
     );
 
     await tester.enterText(find.byType(TextFormField), 'Password123!');

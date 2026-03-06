@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:inspectobot/app/navigation_service.dart';
 import 'package:inspectobot/app/routes.dart';
+import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
+import 'package:inspectobot/features/auth/presentation/widgets/auth_widgets.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key, AuthRepository? repository})
@@ -21,7 +23,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   String? _message;
   String? _error;
 
-  AuthRepository get _repository => widget._repository ?? AuthRepository.live();
+  AuthRepository get _repository =>
+      widget._repository ?? AuthRepository.live();
 
   @override
   void dispose() {
@@ -63,54 +66,52 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Forgot Password')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Form(
-            key: _formKey,
-            child: TextFormField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                final trimmed = value?.trim() ?? '';
-                if (trimmed.isEmpty || !trimmed.contains('@')) {
-                  return 'Enter a valid email address.';
-                }
-                return null;
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _submitting ? null : _submit,
-            child: Text(_submitting ? 'Sending...' : 'Send Recovery Link'),
-          ),
-          if (_message != null) ...[
-            const SizedBox(height: 12),
-            Text(_message!, style: const TextStyle(color: Colors.green)),
-          ],
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: Colors.red)),
-          ],
-          const SizedBox(height: 8),
-          // TODO(ux): This navigates to reset-password without an active
-          // recovery session. Supabase will reject the updatePassword call,
-          // so the user sees an error. A future UX pass should either disable
-          // this button until recovery is confirmed or show an explanatory
-          // message. See: https://supabase.com/docs/reference/dart/auth-updateuser
-          TextButton(
-            onPressed: _submitting
-                ? null
-                : () =>
-                      GetIt.I<NavigationService>().go(AppRoutes.resetPassword),
-            child: const Text('Already have a recovery link? Reset password'),
-          ),
-        ],
+    return AuthFormScaffold(
+      title: 'Forgot Password',
+      formKey: _formKey,
+      fields: [
+        AuthEmailField(
+          controller: _emailController,
+          textInputAction: TextInputAction.done,
+        ),
+      ],
+      feedbackBanner: _error != null || _message != null
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_error != null)
+                  ErrorBanner(message: _error!, type: ErrorBannerType.error),
+                if (_message != null)
+                  ErrorBanner(
+                    message: _message!,
+                    type: ErrorBannerType.success,
+                  ),
+              ],
+            )
+          : null,
+      submitButton: AppButton(
+        label: 'Send Recovery Link',
+        onPressed: _submit,
+        isLoading: _submitting,
+        loadingLabel: 'Sending...',
+        variant: AppButtonVariant.filled,
       ),
+      actions: [
+        TextButton(
+          onPressed: _submitting
+              ? null
+              : () =>
+                    GetIt.I<NavigationService>().go(AppRoutes.resetPassword),
+          child: const Text('Already have a recovery link? Reset password'),
+        ),
+        Text(
+          'Check your email for the recovery link before proceeding.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
