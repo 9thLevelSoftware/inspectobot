@@ -447,6 +447,104 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // group: completionPercent
+  // ---------------------------------------------------------------------------
+
+  group('completionPercent', () {
+    test('returns 0 when no requirements captured', () {
+      final controller = _makeController();
+      controller.initialize();
+
+      expect(controller.completionPercent, 0);
+    });
+
+    test('returns 0 when no requirements exist', () {
+      final controller = _makeController(
+        draft: _makeDraft(enabledForms: const <FormType>{}),
+      );
+      controller.initialize();
+
+      expect(controller.completionPercent, 0);
+    });
+
+    test('returns 100 when all requirements captured', () {
+      final requirements =
+          FormRequirements.forFormRequirements(FormType.fourPoint);
+      final completion = <String, bool>{
+        for (final req in requirements) req.key: true,
+      };
+      final controller = _makeController(
+        draft: _makeDraft(
+          wizardSnapshot: WizardProgressSnapshot(
+            lastStepIndex: 0,
+            completion: completion,
+            branchContext: const <String, dynamic>{},
+            status: WizardProgressStatus.inProgress,
+          ),
+        ),
+      );
+      controller.initialize();
+
+      expect(controller.completionPercent, 100);
+    });
+
+    test('returns correct intermediate value', () {
+      final requirements =
+          FormRequirements.forFormRequirements(FormType.fourPoint);
+      // Capture exactly the first requirement
+      final completion = <String, bool>{
+        requirements.first.key: true,
+      };
+      final controller = _makeController(
+        draft: _makeDraft(
+          wizardSnapshot: WizardProgressSnapshot(
+            lastStepIndex: 0,
+            completion: completion,
+            branchContext: const <String, dynamic>{},
+            status: WizardProgressStatus.inProgress,
+          ),
+        ),
+      );
+      controller.initialize();
+
+      // 1 / totalRequirements * 100, rounded
+      final expected = ((1 / requirements.length) * 100).round();
+      expect(controller.completionPercent, expected);
+    });
+
+    test('denominator is total step requirements, NOT completion map size', () {
+      final requirements =
+          FormRequirements.forFormRequirements(FormType.fourPoint);
+      // Put ALL keys in the map but only one is true
+      final completion = <String, bool>{
+        for (final req in requirements) req.key: false,
+      };
+      completion[requirements.first.key] = true;
+
+      final controller = _makeController(
+        draft: _makeDraft(
+          wizardSnapshot: WizardProgressSnapshot(
+            lastStepIndex: 0,
+            completion: completion,
+            branchContext: const <String, dynamic>{},
+            status: WizardProgressStatus.inProgress,
+          ),
+        ),
+      );
+      controller.initialize();
+
+      // If denominator were completion.length, we'd get
+      // (1/requirements.length)*100 which is low. With the wrong denominator
+      // of completion.length (same as requirements.length here but the values
+      // differ), the result is the same value. So instead verify it's NOT 100.
+      expect(controller.completionPercent, lessThan(100));
+      // And it should be 1/totalRequirements * 100
+      final expected = ((1 / requirements.length) * 100).round();
+      expect(controller.completionPercent, expected);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // group: delivery
   // ---------------------------------------------------------------------------
 

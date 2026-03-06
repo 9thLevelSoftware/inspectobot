@@ -96,5 +96,70 @@ void main() {
         expect(find.text(type.name), findsOneWidget);
       }
     });
+
+    testWidgets('highContrast=false renders same as before (no border)',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        const StatusBadge(
+          label: 'OK',
+          type: StatusBadgeType.success,
+          highContrast: false,
+        ),
+      ));
+
+      final container = tester.widget<Container>(find.byType(Container).last);
+      final decoration = container.decoration! as BoxDecoration;
+      // Default: no border
+      expect(decoration.border, isNull);
+      // Background is translucent
+      expect(decoration.color!.a, closeTo(0.15, 0.01));
+    });
+
+    testWidgets('highContrast=true renders with border decoration',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        const StatusBadge(
+          label: 'OK',
+          type: StatusBadgeType.success,
+          highContrast: true,
+        ),
+      ));
+
+      final container = tester.widget<Container>(find.byType(Container).last);
+      final decoration = container.decoration! as BoxDecoration;
+      expect(decoration.border, isNotNull);
+    });
+
+    testWidgets(
+        'highContrast=true success badge has distinct background from non-highContrast',
+        (tester) async {
+      // Render non-high-contrast
+      await tester.pumpWidget(_wrap(
+        const StatusBadge(
+          label: 'OK',
+          type: StatusBadgeType.success,
+          highContrast: false,
+        ),
+      ));
+      final normalContainer =
+          tester.widget<Container>(find.byType(Container).last);
+      final normalBg =
+          (normalContainer.decoration! as BoxDecoration).color!;
+
+      // Render high-contrast
+      await tester.pumpWidget(_wrap(
+        const StatusBadge(
+          label: 'OK',
+          type: StatusBadgeType.success,
+          highContrast: true,
+        ),
+      ));
+      final hcContainer =
+          tester.widget<Container>(find.byType(Container).last);
+      final hcBg = (hcContainer.decoration! as BoxDecoration).color!;
+
+      // The two backgrounds must differ (high contrast is fully opaque)
+      expect(hcBg, isNot(equals(normalBg)));
+    });
   });
 }

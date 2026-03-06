@@ -19,6 +19,7 @@ class AppButton extends StatelessWidget {
     this.variant = AppButtonVariant.filled,
     this.icon,
     this.loadingLabel,
+    this.isThumbZone = false,
   });
 
   final String label;
@@ -28,15 +29,22 @@ class AppButton extends StatelessWidget {
   final IconData? icon;
   final String? loadingLabel;
 
+  /// When `true`, increases the minimum tap target to [AppSpacing.thumbZoneTapTarget]
+  /// (56dp) for easier thumb-zone access on mobile devices.
+  final bool isThumbZone;
+
   @override
   Widget build(BuildContext context) {
     final effectiveOnPressed = isLoading ? null : onPressed;
     final effectiveLabel = isLoading ? (loadingLabel ?? label) : label;
+    final minHeight = isThumbZone
+        ? AppSpacing.thumbZoneTapTarget
+        : AppSpacing.spacing4xl;
 
     // Icon-only variant
     if (variant == AppButtonVariant.icon && icon != null) {
       return ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppSpacing.spacing4xl),
+        constraints: BoxConstraints(minHeight: minHeight),
         child: IconButton(
           icon: Icon(icon),
           onPressed: effectiveOnPressed,
@@ -55,7 +63,7 @@ class AppButton extends StatelessWidget {
     final textWidget = Text(effectiveLabel);
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: AppSpacing.spacing4xl),
+      constraints: BoxConstraints(minHeight: minHeight),
       child: _buildButton(
         effectiveOnPressed,
         textWidget,

@@ -161,5 +161,43 @@ void main() {
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
+
+    testWidgets('isThumbZone=true button has 56dp min height', (tester) async {
+      await tester.pumpWidget(_wrap(
+        AppButton(
+          label: 'Thumb',
+          onPressed: () {},
+          variant: AppButtonVariant.filled,
+          isThumbZone: true,
+        ),
+      ));
+
+      final finder = find.descendant(
+        of: find.byType(AppButton),
+        matching: find.byType(ConstrainedBox),
+      );
+      final constrainedBox = tester.widget<ConstrainedBox>(finder.first);
+      expect(constrainedBox.constraints.minHeight, 56.0);
+    });
+
+    testWidgets('isThumbZone=true icon variant also has 56dp min height',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        AppButton(
+          label: 'Delete',
+          onPressed: () {},
+          variant: AppButtonVariant.icon,
+          icon: Icons.delete,
+          isThumbZone: true,
+        ),
+      ));
+
+      final finder = find.descendant(
+        of: find.byType(AppButton),
+        matching: find.byType(ConstrainedBox),
+      );
+      final constrainedBox = tester.widget<ConstrainedBox>(finder.first);
+      expect(constrainedBox.constraints.minHeight, 56.0);
+    });
   });
 }

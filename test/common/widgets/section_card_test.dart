@@ -92,5 +92,62 @@ void main() {
         findsNothing,
       );
     });
+
+    testWidgets('density=compact uses compact padding', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const SectionCard(
+          density: SectionCardDensity.compact,
+          child: Text('compact'),
+        ),
+      ));
+
+      final paddingFinder = find.ancestor(
+        of: find.text('compact'),
+        matching: find.byType(Padding),
+      );
+
+      final padding = tester.widget<Padding>(paddingFinder.first);
+      expect(padding.padding, AppEdgeInsets.cardPaddingCompact);
+    });
+
+    testWidgets('density=spacious uses 24dp padding', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const SectionCard(
+          density: SectionCardDensity.spacious,
+          child: Text('spacious'),
+        ),
+      ));
+
+      final paddingFinder = find.ancestor(
+        of: find.text('spacious'),
+        matching: find.byType(Padding),
+      );
+
+      final padding = tester.widget<Padding>(paddingFinder.first);
+      expect(padding.padding, const EdgeInsets.all(24.0));
+    });
+
+    testWidgets('leadingBadge renders before title', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const SectionCard(
+          title: 'Section',
+          leadingBadge: Icon(Icons.check_circle, key: Key('badge-icon')),
+          child: Text('body'),
+        ),
+      ));
+
+      // Badge icon is present
+      expect(find.byKey(const Key('badge-icon')), findsOneWidget);
+      // Title is still present
+      expect(find.text('Section'), findsOneWidget);
+      // Both are inside a Row
+      expect(
+        find.descendant(
+          of: find.byType(Row),
+          matching: find.byKey(const Key('badge-icon')),
+        ),
+        findsOneWidget,
+      );
+    });
   });
 }

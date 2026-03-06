@@ -20,6 +20,7 @@ export 'section_header.dart';
 export 'status_badge.dart';
 export 'completion_chip.dart';
 export 'progress_bar.dart';
+export 'wizard_progress_indicator.dart';
 
 // Layout
 export 'reach_zone_scaffold.dart';

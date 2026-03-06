@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:inspectobot/theme/theme.dart';
 
+/// Density levels for [SectionCard] padding.
+enum SectionCardDensity { compact, normal, spacious }
+
 /// A themed card that optionally displays a title above its [child].
 ///
 /// Inherits all visual properties (color, elevation, shape, margin) from the
@@ -12,6 +15,8 @@ class SectionCard extends StatelessWidget {
     this.title,
     required this.child,
     this.padding,
+    this.density = SectionCardDensity.normal,
+    this.leadingBadge,
   });
 
   /// Optional section title displayed above [child].
@@ -20,22 +25,49 @@ class SectionCard extends StatelessWidget {
   /// The main content of the card.
   final Widget child;
 
-  /// Overrides the default [AppEdgeInsets.cardPadding] inside the card.
+  /// Overrides the default density-based padding inside the card.
   final EdgeInsetsGeometry? padding;
+
+  /// Controls the internal padding density of the card.
+  final SectionCardDensity density;
+
+  /// Optional widget displayed before the title in the header row.
+  final Widget? leadingBadge;
+
+  EdgeInsetsGeometry get _densityPadding => switch (density) {
+        SectionCardDensity.compact => AppEdgeInsets.cardPaddingCompact,
+        SectionCardDensity.normal => AppEdgeInsets.cardPadding,
+        SectionCardDensity.spacious =>
+          const EdgeInsets.all(AppSpacing.spacingXxl),
+      };
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.appTokens;
 
+    Widget? titleWidget;
+    if (title != null) {
+      final titleText = Text(title!, style: tokens.sectionHeader);
+      titleWidget = leadingBadge != null
+          ? Row(
+              children: [
+                leadingBadge!,
+                const SizedBox(width: AppSpacing.spacingSm),
+                Expanded(child: titleText),
+              ],
+            )
+          : titleText;
+    }
+
     return Card(
       child: Padding(
-        padding: padding ?? AppEdgeInsets.cardPadding,
-        child: title != null
+        padding: padding ?? _densityPadding,
+        child: titleWidget != null
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title!, style: tokens.sectionHeader),
+                  titleWidget,
                   SizedBox(height: tokens.spacingSm),
                   child,
                 ],

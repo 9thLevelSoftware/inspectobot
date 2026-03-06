@@ -156,6 +156,19 @@ class InspectionSessionController {
   ReportReadiness get effectiveReadiness =>
       _persistedReadiness ?? _evaluateReadiness();
 
+  /// Percentage of visible requirements that have been captured (0-100).
+  ///
+  /// The denominator is the total requirement count across all wizard steps,
+  /// NOT the size of the completion map (which only tracks captured items).
+  int get completionPercent {
+    final totalRequirements = wizardState.steps
+        .expand((step) => step.requirements)
+        .length;
+    if (totalRequirements == 0) return 0;
+    final captured = snapshot.completion.values.where((v) => v == true).length;
+    return ((captured / totalRequirements) * 100).round();
+  }
+
   // -- Static maps (delegated to domain layer) --------------------------------
 
   static const Map<FormType, List<String>> branchFlagsByForm =
