@@ -6,7 +6,7 @@
 - [x] Phase 2: Reusable Component Library (THEME-02)
 - [x] Phase 3: Navigation System & App Shell (UX-04)
 - [x] Phase 4: Checklist Page Decomposition (UX-01)
-- [ ] Phase 5: Field Usability & Visual Hierarchy (UX-02, UX-03)
+- [x] Phase 5: Field Usability & Visual Hierarchy (UX-02, UX-03)
 - [ ] Phase 6: Auth Screens Redesign (SCREEN-01)
 - [ ] Phase 7: Dashboard & New Inspection Redesign (SCREEN-02, SCREEN-03)
 - [ ] Phase 8: Inspector Identity & Final Polish (SCREEN-04)
@@ -136,8 +136,8 @@
 | 2. Component Library | 4 | 4 | Complete |
 | 3. Navigation System | 3 | 3 | Complete |
 | 4. Checklist Decomposition | 5 | 5 | Complete |
-| 5. Field Usability & Hierarchy | 4 | 0 | Not started |
+| 5. Field Usability & Hierarchy | 4 | 4 | Complete |
 | 6. Auth Screens | 3 | 0 | Not started |
 | 7. Dashboard & New Inspection | 4 | 0 | Not started |
 | 8. Identity & Final Polish | 3 | 0 | Not started |
-| **Total** | **30** | **16** | **53%** |
+| **Total** | **30** | **20** | **67%** |
