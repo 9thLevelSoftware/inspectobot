@@ -369,6 +369,9 @@ class _FakeTemplateLoader extends PdfTemplateAssetLoader {
           if (assetPath.contains('rcf1')) {
             return _roofMap;
           }
+          if (assetPath.contains('oir_b1')) {
+            return _windMap;
+          }
           return _fourPointMap;
         },
         readTemplateAsset: (assetPath) async {
@@ -384,6 +387,9 @@ class _EmptyTemplateLoader extends PdfTemplateAssetLoader {
         readMapAsset: (assetPath) async {
           if (assetPath.contains('rcf1')) {
             return _roofMap;
+          }
+          if (assetPath.contains('oir_b1')) {
+            return _windMap;
           }
           return _fourPointMap;
         },
@@ -412,6 +418,17 @@ const String _fourPointMap = '''
   "fields": [
     {"key": "text.client_name", "source_key": "client_name", "type": "text", "page": 1, "x": 40, "y": 700, "width": 180, "height": 14},
     {"key": "image.photo_exterior_front", "source_key": "photo:exterior_front", "type": "image", "page": 1, "x": 40, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_exterior_rear", "source_key": "photo:exterior_rear", "type": "image", "page": 2, "x": 40, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_exterior_left", "source_key": "photo:exterior_left", "type": "image", "page": 2, "x": 200, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_exterior_right", "source_key": "photo:exterior_right", "type": "image", "page": 2, "x": 360, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_roof_slope_main", "source_key": "photo:roof_slope_main", "type": "image", "page": 2, "x": 40, "y": 400, "width": 120, "height": 90},
+    {"key": "image.photo_roof_slope_secondary", "source_key": "photo:roof_slope_secondary", "type": "image", "page": 2, "x": 200, "y": 400, "width": 120, "height": 90},
+    {"key": "image.photo_water_heater_tpr_valve", "source_key": "photo:water_heater_tpr_valve", "type": "image", "page": 3, "x": 40, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_plumbing_under_sink", "source_key": "photo:plumbing_under_sink", "type": "image", "page": 3, "x": 200, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_electrical_panel_label", "source_key": "photo:electrical_panel_label", "type": "image", "page": 3, "x": 360, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_electrical_panel_open", "source_key": "photo:electrical_panel_open", "type": "image", "page": 3, "x": 40, "y": 400, "width": 120, "height": 90},
+    {"key": "image.photo_hvac_data_plate", "source_key": "photo:hvac_data_plate", "type": "image", "page": 3, "x": 200, "y": 400, "width": 120, "height": 90},
+    {"key": "image.photo_hazard_photo", "source_key": "photo:hazard_photo", "type": "image", "page": 3, "x": 360, "y": 400, "width": 120, "height": 90},
     {"key": "signature.inspector", "source_key": "inspector_signature", "type": "signature", "page": 1, "x": 360, "y": 86, "width": 170, "height": 36}
   ]
 }
@@ -424,6 +441,29 @@ const String _roofMap = '''
   "fields": [
     {"key": "text.client_name", "source_key": "client_name", "type": "text", "page": 1, "x": 40, "y": 700, "width": 180, "height": 14},
     {"key": "image.photo_roof_condition_main_slope", "source_key": "photo:roof_condition_main_slope", "type": "image", "page": 1, "x": 40, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_roof_condition_secondary_slope", "source_key": "photo:roof_condition_secondary_slope", "type": "image", "page": 1, "x": 200, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_roof_defect", "source_key": "photo:roof_defect", "type": "image", "page": 1, "x": 360, "y": 520, "width": 120, "height": 90},
+    {"key": "signature.inspector", "source_key": "inspector_signature", "type": "signature", "page": 1, "x": 360, "y": 86, "width": 170, "height": 36}
+  ]
+}
+''';
+
+const String _windMap = '''
+{
+  "form_code": "wind_mitigation",
+  "map_version": "v1",
+  "fields": [
+    {"key": "text.client_name", "source_key": "client_name", "type": "text", "page": 1, "x": 40, "y": 700, "width": 180, "height": 14},
+    {"key": "image.photo_wind_roof_deck", "source_key": "photo:wind_roof_deck", "type": "image", "page": 1, "x": 40, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_wind_roof_to_wall", "source_key": "photo:wind_roof_to_wall", "type": "image", "page": 2, "x": 40, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_wind_roof_shape", "source_key": "photo:wind_roof_shape", "type": "image", "page": 2, "x": 200, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_wind_secondary_water_resistance", "source_key": "photo:wind_secondary_water_resistance", "type": "image", "page": 2, "x": 360, "y": 520, "width": 120, "height": 90},
+    {"key": "image.photo_wind_opening_protection", "source_key": "photo:wind_opening_protection", "type": "image", "page": 2, "x": 40, "y": 400, "width": 120, "height": 90},
+    {"key": "image.photo_wind_opening_type", "source_key": "photo:wind_opening_type", "type": "image", "page": 2, "x": 200, "y": 400, "width": 120, "height": 90},
+    {"key": "image.photo_wind_permit_year", "source_key": "photo:wind_permit_year", "type": "image", "page": 2, "x": 360, "y": 400, "width": 120, "height": 90},
+    {"key": "image.document_wind_roof_deck", "source_key": "document:wind_roof_deck", "type": "image", "page": 3, "x": 40, "y": 520, "width": 120, "height": 90},
+    {"key": "image.document_wind_opening_protection", "source_key": "document:wind_opening_protection", "type": "image", "page": 3, "x": 200, "y": 520, "width": 120, "height": 90},
+    {"key": "image.document_wind_permit_year", "source_key": "document:wind_permit_year", "type": "image", "page": 3, "x": 360, "y": 520, "width": 120, "height": 90},
     {"key": "signature.inspector", "source_key": "inspector_signature", "type": "signature", "page": 1, "x": 360, "y": 86, "width": 170, "height": 36}
   ]
 }
