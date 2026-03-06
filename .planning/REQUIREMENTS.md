@@ -11,7 +11,7 @@
 - [x] **EVID-03**: User can capture required plumbing, HVAC, electrical, and hazard photos based on selected form logic.
 - [x] **EVID-04**: User can capture evidence for all seven wind mitigation categories, including supporting documents when required.
 - [x] **PDF-02**: Generated PDFs include mapped data, mapped images, and inspector signature in required locations.
-- [ ] **AUTH-04**: User can save inspector profile details including license type and license number, and the contract is explicitly consumed or policy-bound.
+- [x] **AUTH-04**: User can save inspector profile details including license type and license number, and the contract is explicitly consumed or policy-bound.
 
 ## Candidate v1.1+ Requirements
 
@@ -38,7 +38,7 @@
 | EVID-03 | Phase 19 | Complete |
 | EVID-04 | Phase 19 | Complete |
 | PDF-02 | Phase 20 | Complete |
-| AUTH-04 | Phase 20 | Pending |
+| AUTH-04 | Phase 20 | Complete |
 | DIFF-01 | TBD | Planned |
 | DIFF-02 | TBD | Planned |
 | DIFF-03 | TBD | Planned |
@@ -51,4 +51,4 @@
 ---
 *v1.0 requirements archive: `.planning/milestones/v1.0-REQUIREMENTS.md`*
 
-*Gap closure coverage (current milestone planning): 4/6 checked, 6/6 mapped to phases*
+*Gap closure coverage (current milestone planning): 6/6 checked, 6/6 mapped to phases*
