@@ -2,39 +2,43 @@
 
 ## Milestones
 
-- ✅ **v1.0 MVP** - Phases 1-18 shipped on 2026-03-05. Full archive: `.planning/milestones/v1.0-ROADMAP.md`
+- ✅ **v1.0 MVP** — Phases 1-20 (shipped 2026-03-06). Archive: `.planning/milestones/v1.0-ROADMAP.md`
 
-## Next Milestone (Planning)
+## Phases
 
-- Gap closure scope created from latest milestone audit.
-- [x] **Phase 19: Conditional Branch Wiring and Evidence Activation** - Restore live conditional wizard/evidence activation by wiring branch-input capture and persistence into requirement evaluation paths.
-- [x] **Phase 20: PDF Mapping Completeness and Identity Contract Reconciliation** - Close mapped-content coverage risk and reconcile inspector identity profile/license contract usage policy. (completed 2026-03-06)
+<details>
+<summary>✅ v1.0 MVP (Phases 1-20) — SHIPPED 2026-03-06</summary>
 
-## Gap Closure Phase Details
+- [x] Phase 01: Auth, Tenant Isolation, and Inspector Identity (4 plans) — completed 2026-03-04
+- [x] Phase 02: Property Setup and Inspection Initialization (2 plans) — completed 2026-03-04
+- [x] Phase 03: Inspection Wizard and Form Navigation (2 plans) — completed 2026-03-04
+- [x] Phase 04: Offline Capture and Sync (4 plans) — completed 2026-03-04
+- [x] Phase 05: Evidence Management and Categorization (3 plans) — completed 2026-03-04
+- [x] Phase 06: Compliance Gating and Readiness Checks (3 plans) — completed 2026-03-04
+- [x] Phase 07: PDF Generation and Template Rendering (3 plans) — completed 2026-03-05
+- [x] Phase 08: Report Delivery, Audit, and Retention (4 plans) — completed 2026-03-05
+- [x] Phase 09: End-to-End Integration and Tenant Wiring (3 plans) — completed 2026-03-05
+- [x] Phase 10: Wizard Polish and Evidence Capture Hardening (3 plans) — completed 2026-03-05
+- [x] Phase 11: PDF Integrity and Template Map Enforcement (3 plans) — completed 2026-03-05
+- [x] Phase 12: Delivery Durability and Sync Dependency Contracts (3 plans) — completed 2026-03-05
+- [x] Phase 13: Milestone Audit Gap Closure — Phases 01-04 (3 plans) — completed 2026-03-05
+- [x] Phase 14: Milestone Audit Gap Closure — Phases 05-08 (3 plans) — completed 2026-03-05
+- [x] Phase 15: Milestone Audit Gap Closure — Phases 09-12 (3 plans) — completed 2026-03-05
+- [x] Phase 16: Verification Traceability Reconciliation (3 plans) — completed 2026-03-05
+- [x] Phase 17: Live Validation and Human-Needed Closure (3 plans) — completed 2026-03-05
+- [x] Phase 18: Cloud PDF Resilience and Mapping Policy Closure (2 plans) — completed 2026-03-06
+- [x] Phase 19: Conditional Branch Wiring and Evidence Activation (2 plans) — completed 2026-03-06
+- [x] Phase 20: PDF Mapping Completeness and Identity Contract Reconciliation (2 plans) — completed 2026-03-06
 
-### Phase 19: Conditional Branch Wiring and Evidence Activation
-**Goal:** Ensure conditional wizard progression and conditional evidence requirements activate from real user inputs, not only from synthetic test context.
-**Depends on:** Phase 18
-**Requirements:** FLOW-03, EVID-02, EVID-03, EVID-04
-**Gap Closure:** Closes blocking milestone audit findings for missing branch-input wiring and broken setup -> wizard -> conditional evidence flow.
-**Plans:** 2/2 plans executed
+**Full phase details:** `.planning/milestones/v1.0-ROADMAP.md`
 
-Plans:
-- [x] 19-conditional-branch-wiring-and-evidence-activation-01-PLAN.md - Normalize canonical branch-flag contract and persistence/decode boundaries so resume-time branching uses strict, durable context.
-- [x] 19-conditional-branch-wiring-and-evidence-activation-02-PLAN.md - Wire live branch-input capture through setup/wizard/resume and prove conditional evidence activation/readiness parity end-to-end.
+</details>
 
-### Phase 20: PDF Mapping Completeness and Identity Contract Reconciliation
-**Goal:** Validate and enforce PDF mapped-content completeness against requirement breadth and reconcile the AUTH-04 profile/license contract as explicit consumer wiring or explicit policy-bound non-consumer.
-**Depends on:** Phase 19
-**Requirements:** PDF-02, AUTH-04
-**Gap Closure:** Closes non-blocking but high-risk map-coverage integration warning and identity contract consumer-path ambiguity from milestone audit.
-**Plans:** 2/2 plans complete
+### 📋 Next Milestone (Not yet defined)
 
-Plans:
-- [ ] 20-01-PLAN.md — Expand JSON field maps to cover every canonical evidence source key and add coverage enforcement test (PDF-02)
-- [ ] 20-02-PLAN.md — Formalize inspector license non-consumer policy with documentation, strengthened contract tests, and requirement closure (AUTH-04)
+Run `/gsd-new-milestone` to define scope, requirements, and phases for v1.1.
 
 ## Notes
 
-- Milestone v1.0 was closed with one known carried gap: `FLOW-03` (wizard conditional branching remains pending in requirements traceability).
 - Historical audit snapshots are archived under `.planning/milestones/`.
+- Full requirement archives: `.planning/milestones/v1.0-REQUIREMENTS.md`
