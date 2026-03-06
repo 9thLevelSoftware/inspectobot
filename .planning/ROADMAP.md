@@ -7,7 +7,7 @@
 ## Next Milestone (Planning)
 
 - Gap closure scope created from latest milestone audit.
-- [ ] **Phase 19: Conditional Branch Wiring and Evidence Activation** - Restore live conditional wizard/evidence activation by wiring branch-input capture and persistence into requirement evaluation paths.
+- [x] **Phase 19: Conditional Branch Wiring and Evidence Activation** - Restore live conditional wizard/evidence activation by wiring branch-input capture and persistence into requirement evaluation paths.
 - [ ] **Phase 20: PDF Mapping Completeness and Identity Contract Reconciliation** - Close mapped-content coverage risk and reconcile inspector identity profile/license contract usage policy.
 
 ## Gap Closure Phase Details
@@ -17,11 +17,11 @@
 **Depends on:** Phase 18
 **Requirements:** FLOW-03, EVID-02, EVID-03, EVID-04
 **Gap Closure:** Closes blocking milestone audit findings for missing branch-input wiring and broken setup -> wizard -> conditional evidence flow.
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans executed
 
 Plans:
 - [x] 19-conditional-branch-wiring-and-evidence-activation-01-PLAN.md - Normalize canonical branch-flag contract and persistence/decode boundaries so resume-time branching uses strict, durable context.
-- [ ] 19-conditional-branch-wiring-and-evidence-activation-02-PLAN.md - Wire live branch-input capture through setup/wizard/resume and prove conditional evidence activation/readiness parity end-to-end.
+- [x] 19-conditional-branch-wiring-and-evidence-activation-02-PLAN.md - Wire live branch-input capture through setup/wizard/resume and prove conditional evidence activation/readiness parity end-to-end.
 
 ### Phase 20: PDF Mapping Completeness and Identity Contract Reconciliation
 **Goal:** Validate and enforce PDF mapped-content completeness against requirement breadth and reconcile the AUTH-04 profile/license contract as explicit consumer wiring or explicit policy-bound non-consumer.

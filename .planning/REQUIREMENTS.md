@@ -7,9 +7,9 @@
 ## Carryover from v1.0
 
 - [x] **FLOW-03**: User can complete a linear wizard with required-step progression and conditional branching.
-- [ ] **EVID-02**: User can capture required roof evidence including slope-specific photos and defect photos when present.
-- [ ] **EVID-03**: User can capture required plumbing, HVAC, electrical, and hazard photos based on selected form logic.
-- [ ] **EVID-04**: User can capture evidence for all seven wind mitigation categories, including supporting documents when required.
+- [x] **EVID-02**: User can capture required roof evidence including slope-specific photos and defect photos when present.
+- [x] **EVID-03**: User can capture required plumbing, HVAC, electrical, and hazard photos based on selected form logic.
+- [x] **EVID-04**: User can capture evidence for all seven wind mitigation categories, including supporting documents when required.
 - [ ] **PDF-02**: Generated PDFs include mapped data, mapped images, and inspector signature in required locations.
 - [ ] **AUTH-04**: User can save inspector profile details including license type and license number, and the contract is explicitly consumed or policy-bound.
 
@@ -34,9 +34,9 @@
 | Requirement | Target Phase | Status |
 |-------------|--------------|--------|
 | FLOW-03 | Phase 19 | Complete |
-| EVID-02 | Phase 19 | Pending |
-| EVID-03 | Phase 19 | Pending |
-| EVID-04 | Phase 19 | Pending |
+| EVID-02 | Phase 19 | Complete |
+| EVID-03 | Phase 19 | Complete |
+| EVID-04 | Phase 19 | Complete |
 | PDF-02 | Phase 20 | Pending |
 | AUTH-04 | Phase 20 | Pending |
 | DIFF-01 | TBD | Planned |
@@ -51,4 +51,4 @@
 ---
 *v1.0 requirements archive: `.planning/milestones/v1.0-REQUIREMENTS.md`*
 
-*Gap closure coverage (current milestone planning): 1/6 checked, 6/6 mapped to phases*
+*Gap closure coverage (current milestone planning): 4/6 checked, 6/6 mapped to phases*
