@@ -103,7 +103,7 @@ void main() {
     });
 
     test('onError', () {
-      expect(Palette.onError.value, 0xFFFFFFFF);
+      expect(Palette.onError.value, 0xFF1C1C22);
     });
 
     test('errorContainer', () {

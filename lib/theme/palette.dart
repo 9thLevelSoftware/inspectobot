@@ -49,7 +49,7 @@ abstract final class Palette {
   // Error
   // ---------------------------------------------------------------------------
   static const error = Color(0xFFF2564B);
-  static const onError = Color(0xFFFFFFFF);
+  static const onError = Color(0xFF1C1C22);
   static const errorContainer = Color(0xFF3D1410);
   static const onErrorContainer = Color(0xFFF5897F);
 
