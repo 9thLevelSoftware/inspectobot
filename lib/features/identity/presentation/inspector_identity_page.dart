@@ -1,9 +1,13 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+
+import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/features/identity/data/inspector_profile_repository.dart';
 import 'package:inspectobot/features/identity/data/signature_repository.dart';
 import 'package:inspectobot/features/identity/domain/inspector_profile.dart';
+import 'package:inspectobot/theme/theme.dart';
 
 class InspectorIdentityPage extends StatefulWidget {
   const InspectorIdentityPage({
@@ -12,8 +16,8 @@ class InspectorIdentityPage extends StatefulWidget {
     required this.userId,
     InspectorProfileRepository? profileRepository,
     SignatureRepository? signatureRepository,
-  }) : _profileRepository = profileRepository,
-       _signatureRepository = signatureRepository;
+  })  : _profileRepository = profileRepository,
+        _signatureRepository = signatureRepository;
 
   final String organizationId;
   final String userId;
@@ -29,7 +33,8 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
   final _licenseNumberController = TextEditingController();
   final _signaturePoints = <Offset>[];
   bool _saving = false;
-  String? _status;
+  bool _loading = true;
+  String? _errorMessage;
   SignatureRecord? _signatureRecord;
 
   InspectorProfileRepository get _profileRepository =>
@@ -44,22 +49,28 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
   }
 
   Future<void> _loadExisting() async {
-    final profile = await _profileRepository.loadProfile(
-      organizationId: widget.organizationId,
-      userId: widget.userId,
-    );
-    final signature = await _signatureRepository.loadSignature(
-      organizationId: widget.organizationId,
-      userId: widget.userId,
-    );
-    if (!mounted) {
-      return;
+    setState(() => _loading = true);
+    try {
+      final profile = await _profileRepository.loadProfile(
+        organizationId: widget.organizationId,
+        userId: widget.userId,
+      );
+      final signature = await _signatureRepository.loadSignature(
+        organizationId: widget.organizationId,
+        userId: widget.userId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _licenseTypeController.text = profile?.licenseType ?? '';
+        _licenseNumberController.text = profile?.licenseNumber ?? '';
+        _signatureRecord = signature;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _errorMessage = 'Failed to load identity data.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
-    setState(() {
-      _licenseTypeController.text = profile?.licenseType ?? '';
-      _licenseNumberController.text = profile?.licenseNumber ?? '';
-      _signatureRecord = signature;
-    });
   }
 
   @override
@@ -72,7 +83,7 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
   Future<void> _save() async {
     setState(() {
       _saving = true;
-      _status = null;
+      _errorMessage = null;
     });
 
     try {
@@ -85,11 +96,13 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
       await _profileRepository.upsertProfile(profile);
 
       if (_signaturePoints.isNotEmpty) {
-        final encoded = utf8.encode(
-          jsonEncode(
-            _signaturePoints
-                .map((point) => {'x': point.dx, 'y': point.dy})
-                .toList(),
+        final encoded = Uint8List.fromList(
+          utf8.encode(
+            jsonEncode(
+              _signaturePoints
+                  .map((point) => {'x': point.dx, 'y': point.dy})
+                  .toList(),
+            ),
           ),
         );
         _signatureRecord = await _signatureRepository.saveSignature(
@@ -99,105 +112,130 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
         );
       }
 
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _status = 'Identity saved.';
-      });
+      if (!mounted) return;
+      setState(() {});
+      AppSnackBar.success(context, 'Identity saved.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _errorMessage = 'Failed to save identity.');
     } finally {
-      if (mounted) {
-        setState(() {
-          _saving = false;
-        });
-      }
+      if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Widget _metadataRow(String label, String value) {
+    final tokens = context.appTokens;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: tokens.fieldLabel),
+        SizedBox(width: tokens.spacingSm),
+        Expanded(
+          child: Text(
+            value,
+            style: Theme.of(context).textTheme.bodySmall,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Inspector Identity')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          TextField(
-            controller: _licenseTypeController,
-            decoration: const InputDecoration(labelText: 'License Type'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _licenseNumberController,
-            decoration: const InputDecoration(labelText: 'License Number'),
-          ),
-          const SizedBox(height: 20),
-          const Text('Draw Signature'),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: ColoredBox(
-              color: Colors.white,
-              child: GestureDetector(
-                onPanUpdate: (details) {
-                  setState(() => _signaturePoints.add(details.localPosition));
-                },
-                child: SizedBox(
-                  height: 180,
-                  child: CustomPaint(
-                    painter: _SignaturePainter(points: _signaturePoints),
-                  ),
+      body: LoadingOverlay(
+        isLoading: _loading,
+        child: ReachZoneScaffold(
+          body: ListView(
+            padding: AppEdgeInsets.pagePadding,
+            children: [
+              SectionCard(
+                title: 'License Information',
+                child: Column(
+                  children: [
+                    AppTextField(
+                      label: 'License Type',
+                      controller: _licenseTypeController,
+                    ),
+                    SizedBox(height: AppSpacing.spacingMd),
+                    AppTextField(
+                      label: 'License Number',
+                      controller: _licenseNumberController,
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              TextButton(
-                onPressed: () => setState(_signaturePoints.clear),
-                child: const Text('Clear Signature'),
+              SizedBox(height: AppSpacing.spacingLg),
+              SectionCard(
+                title: 'Signature',
+                child: Column(
+                  children: [
+                    SignaturePad(
+                      points: _signaturePoints,
+                      onPointsChanged: (pts) => setState(() {
+                        _signaturePoints
+                          ..clear()
+                          ..addAll(pts);
+                      }),
+                      height: 200,
+                    ),
+                    SizedBox(height: AppSpacing.spacingSm),
+                    Row(
+                      children: [
+                        AppButton(
+                          variant: AppButtonVariant.text,
+                          label: 'Clear',
+                          icon: Icons.clear,
+                          onPressed: () =>
+                              setState(() => _signaturePoints.clear()),
+                        ),
+                        const Spacer(),
+                        if (_signatureRecord != null)
+                          const StatusBadge(
+                            label: 'Saved',
+                            type: StatusBadgeType.success,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              const Spacer(),
-              FilledButton(
-                onPressed: _saving ? null : _save,
-                child: Text(_saving ? 'Saving...' : 'Save Identity'),
-              ),
+              if (_signatureRecord != null) ...[
+                SizedBox(height: AppSpacing.spacingMd),
+                SectionCard(
+                  title: 'Signature Details',
+                  density: SectionCardDensity.compact,
+                  child: Column(
+                    children: [
+                      _metadataRow('Hash', _signatureRecord!.fileHash),
+                      SizedBox(height: AppSpacing.spacingXs),
+                      _metadataRow(
+                        'Captured',
+                        _signatureRecord!.capturedAt.toLocal().toString(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (_errorMessage != null) ...[
+                SizedBox(height: AppSpacing.spacingMd),
+                ErrorBanner(message: _errorMessage!),
+              ],
             ],
           ),
-          if (_signatureRecord != null) ...[
-            const SizedBox(height: 8),
-            Text('Latest signature hash: ${_signatureRecord!.fileHash}'),
-            Text('Stored at: ${_signatureRecord!.storagePath}'),
-          ],
-          if (_status != null) ...[
-            const SizedBox(height: 8),
-            Text(_status!, style: const TextStyle(color: Colors.green)),
-          ],
-        ],
+          stickyBottom: AppButton(
+            label: 'Save Identity',
+            loadingLabel: 'Saving...',
+            onPressed: _save,
+            isLoading: _saving,
+            isThumbZone: true,
+            icon: Icons.save,
+          ),
+        ),
       ),
     );
-  }
-}
-
-class _SignaturePainter extends CustomPainter {
-  const _SignaturePainter({required this.points});
-
-  final List<Offset> points;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 3;
-
-    for (var i = 0; i < points.length - 1; i++) {
-      canvas.drawLine(points[i], points[i + 1], paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _SignaturePainter oldDelegate) {
-    return oldDelegate.points != points;
   }
 }

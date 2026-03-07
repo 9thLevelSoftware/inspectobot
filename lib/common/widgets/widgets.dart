@@ -27,6 +27,9 @@ export 'wizard_progress_indicator.dart';
 export 'reach_zone_scaffold.dart';
 export 'section_group.dart';
 
+// Signature
+export 'signature_pad.dart';
+
 // Feedback
 export 'loading_overlay.dart';
 export 'error_banner.dart';
