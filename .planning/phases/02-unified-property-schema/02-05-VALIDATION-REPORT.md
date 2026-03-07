@@ -330,12 +330,12 @@
 
 | ID | Gap | Severity | Impact on Schema | Remediation |
 |----|-----|----------|-----------------|-------------|
-| GAP-01 | WDO form (FDACS-13645) not in docs/ | High | Schema complete -- all 51 fields mapped from retrieved form | Download local copy for reference |
-| GAP-03 | Sinkhole page 1 missing | High | 8 inferred fields all map to universal/shared -- low schema risk | Obtain complete form from Citizens |
-| GAP-04 | No Mold Assessment template | High | 21 fields based on statutory knowledge -- schema may need additions | Source MRSA-compliant template from DBPR before Phase 7 |
-| GAP-05 | Insurance variant PDFs not analyzed | Medium | May contain different field layouts for 4-Point | Analyze citizens4point.pdf, statefarm4point.pdf when tools available |
-| GAP-06 | Sinkhole form from 2012 | Medium | Schema extensible via List<Map> for checklist items | Verify with Citizens for newer version |
-| GAP-07 | 4point50.doc not analyzed | Low | Likely a variant; primary form (Insp4pt 03-25) fully mapped | Convert and compare |
+| GAP-01 | WDO form (FDACS-13645) not in docs/ | High | Schema complete -- all 51 fields mapped from retrieved form | Download local copy for reference | **Phase 3 prerequisite** |
+| GAP-03 | Sinkhole page 1 missing | High | 8 inferred fields all map to universal/shared -- low schema risk | Obtain complete form from Citizens | **Phase 4 prerequisite** (before Sinkhole impl) |
+| GAP-04 | No Mold Assessment template | High | 21 fields based on statutory knowledge -- schema may need additions | Source MRSA-compliant template from DBPR | **Phase 6 prerequisite** (before Mold impl) |
+| GAP-05 | Insurance variant PDFs not analyzed | Medium | May contain different field layouts for 4-Point | Analyze citizens4point.pdf, statefarm4point.pdf when tools available | **Phase 10** (testing & polish) |
+| GAP-06 | Sinkhole form from 2012 | Medium | Schema extensible via List<Map> for checklist items | Verify with Citizens for newer version | **Phase 4 prerequisite** |
+| GAP-07 | 4point50.doc not analyzed | Low | Likely a variant; primary form (Insp4pt 03-25) fully mapped | Convert and compare | **Phase 10** (testing & polish) |
 
 ### 3.3 Schema Design Risks
 

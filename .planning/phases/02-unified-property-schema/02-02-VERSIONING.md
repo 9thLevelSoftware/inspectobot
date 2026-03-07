@@ -153,7 +153,13 @@ abstract final class PropertyDataMigrations {
     //   version = 3;
     // }
 
-    data['schema_version'] = currentVersion;
+    // Preserve future versions — do not downgrade schema_version from a newer app.
+    // Only upgrade from older versions to currentVersion.
+    if (version < currentVersion) {
+      data['schema_version'] = currentVersion;
+    }
+    // If version >= currentVersion, preserve the original version number
+    // to avoid information loss during round-trips across app versions.
     return data;
   }
 
@@ -216,14 +222,14 @@ void main() {
       // All other fields unchanged
     });
 
-    test('migrate handles future version gracefully', () {
+    test('migrate preserves future version gracefully', () {
       final input = <String, dynamic>{
         'schema_version': 999,
         'universal': { 'property_address': '123 Main St', /* ... */ },
       };
-      // Should not throw; sets to currentVersion
+      // Should not throw; preserves higher version to avoid data loss
       final result = PropertyDataMigrations.migrate(input);
-      expect(result['schema_version'], PropertyDataMigrations.currentVersion);
+      expect(result['schema_version'], 999);
     });
   });
 }

@@ -352,10 +352,15 @@ FormType.generalInspection: <EvidenceRequirement>[
     form: FormType.generalInspection,
     category: RequiredPhotoCategory.generalDeficiency,
     when: _boolFlag('general_safety_hazard'),
-    // Note: _boolFlag('general_safety_hazard') is used as a proxy.
-    // The controller sets this when ANY section has a Poor rating
-    // or safety hazard. More granular per-section evidence could
-    // be implemented in Phase 7 when the General form is built.
+    // KNOWN LIMITATION: _boolFlag('general_safety_hazard') is a proxy.
+    // It triggers on safety hazards and Life Safety "Poor" items, but
+    // does NOT trigger on "Poor" ratings in other sections (e.g., a
+    // plumbing item rated Poor triggers general_plumbing_has_poor — a
+    // derived flag — but not general_safety_hazard). This means
+    // deficiency photos are only required for safety-related deficiencies,
+    // not all Poor-rated items. Phase 8 implementation should replace
+    // this with a proper aggregate predicate that checks
+    // general_{section}_has_poor across all 12 sections.
   ),
 ],
 ```
@@ -457,7 +462,7 @@ Each form maintains its own evidence key, but the underlying file path can be sh
 | `generalDataPlate` | | | | | | | x | 4-Point (HVAC data plate) |
 | `generalDeficiency` | | | | | | | x | -- |
 | `generalPressureTest` | | | | | | | x | -- |
-| `generalRoomPhoto` | | | | | | | x | -- |
+| `generalRoomPhoto` | | | | | | | x | -- | (Reserved for Phase 8 — per-room documentation; no evidence requirement defined yet) |
 
 ### 7.4 Sharing Priority Groups
 

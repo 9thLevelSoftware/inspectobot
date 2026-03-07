@@ -130,6 +130,8 @@ extension RatingScaleConversion on RatingScale {
       'S': RatingScale.satisfactory,
       'Unsatisfactory': RatingScale.deficient,
       'U': RatingScale.deficient,
+      'N/A': RatingScale.notApplicable,  // Fixture matrix only
+      'NA': RatingScale.notApplicable,
     },
     FormType.roofCondition: {
       'Good': RatingScale.satisfactory,
@@ -189,6 +191,7 @@ extension RatingScaleConversion on RatingScale {
     FormType.fourPoint: {
       RatingScale.satisfactory: 'Satisfactory',
       RatingScale.deficient: 'Unsatisfactory',
+      RatingScale.notApplicable: 'N/A',  // Fixture matrix only
     },
     FormType.roofCondition: {
       RatingScale.satisfactory: 'Good',
@@ -291,6 +294,8 @@ This matrix verifies that every form-specific rating value round-trips correctly
 | `"S"` | satisfactory | `satisfactory` | `"Satisfactory"` | CANONICAL | Short form normalizes to long form |
 | `"Unsatisfactory"` | deficient | `deficient` | `"Unsatisfactory"` | EXACT | |
 | `"U"` | deficient | `deficient` | `"Unsatisfactory"` | CANONICAL | Short form normalizes to long form |
+| `"N/A"` | notApplicable | `notApplicable` | `"N/A"` | EXACT | Fixture matrix only |
+| `"NA"` | notApplicable | `notApplicable` | `"N/A"` | CANONICAL | Fixture matrix only |
 
 **Lossy conversions INTO 4-Point**:
 
@@ -298,7 +303,6 @@ This matrix verifies that every form-specific rating value round-trips correctly
 |-------------|------------------------|------|------------|
 | `marginal` | `null` | YES - 4-Point has no "Fair" | UI must prevent selecting marginal for 4-Point fields. If data originates from General/RCF-1, it cannot be represented on 4-Point. |
 | `failed` | `null` | YES - 4-Point has no "Failed" | Same as above. RCF-1 "Failed" has no 4-Point equivalent. |
-| `notApplicable` | `null` | YES | 4-Point does not use N/A for system ratings (uses it only in plumbing fixture matrix as "N/A"). |
 | `notVisible` | `null` | YES | HUD-only concept. |
 | `missing` | `null` | YES | HUD-only concept. |
 
@@ -417,45 +421,23 @@ From FIELD_INVENTORY Section 5.2, the 14 distinct input patterns include Pattern
 
 The 4-Point form has a fixture condition matrix with 10 items rated S/U/NA. The "N/A" here means "Not Applicable" (the fixture does not exist), which maps to `RatingScale.notApplicable`. However, the 4-Point system overall is 2-tier (S/U). The N/A option exists only in this fixture matrix.
 
-This means:
-- `fromFormValue("N/A", FormType.fourPoint)` should return `notApplicable`
-- `toFormString(FormType.fourPoint)` for `notApplicable` should return `"N/A"`
-
-Updated ingestion table for 4-Point to include N/A:
-
-```dart
-FormType.fourPoint: {
-  'Satisfactory': RatingScale.satisfactory,
-  'S': RatingScale.satisfactory,
-  'Unsatisfactory': RatingScale.deficient,
-  'U': RatingScale.deficient,
-  'N/A': RatingScale.notApplicable,  // Fixture matrix only
-  'NA': RatingScale.notApplicable,
-},
-```
-
-Updated emission table for 4-Point:
-
-```dart
-FormType.fourPoint: {
-  RatingScale.satisfactory: 'Satisfactory',
-  RatingScale.deficient: 'Unsatisfactory',
-  RatingScale.notApplicable: 'N/A',  // Fixture matrix only
-},
-```
-
-Updated round-trip for 4-Point:
-
-| Form String (input) | fromFormValue() | RatingScale | toFormString() (output) | Round-Trip |
-|---------------------|-----------------|-------------|------------------------|------------|
-| `"N/A"` | notApplicable | `notApplicable` | `"N/A"` | EXACT |
-| `"NA"` | notApplicable | `notApplicable` | `"N/A"` | CANONICAL |
-
-This reduces the lossy conversions INTO 4-Point by one entry.
+**NOTE**: The N/A mappings have been consolidated into the main ingestion/emission tables in Section 4 and the round-trip table in Section 5.1 above. No separate handling needed — the `_ingestTables` and `_emitTables` include N/A entries for `FormType.fourPoint` with a `// Fixture matrix only` comment.
 
 ---
 
-## 9. Summary of Lossy Conversions
+## 9. HUD Report Rating Tables: Documentation Status
+
+The `_ingestTables` and `_emitTables` in Section 4 include entries for `FormType.hudReport`. **HUD Report is NOT one of the 7 in-scope form types** (see FIELD_INVENTORY Section 5 and 02-05-VALIDATION-REPORT.md GAP-HUD). The HUD entries are speculative design documentation: they document how HUD's 8-code system would map to `RatingScale` if HUD becomes a form type in the future.
+
+**Implementation note**: When implementing `RatingScale` in Phase 3, the `FormType.hudReport` entries should be either:
+- (a) Omitted from compiled code until `FormType.hudReport` is added to the enum, OR
+- (b) Placed behind a comment with a note that uncommenting requires adding the enum value first.
+
+The HUD mappings serve as documentation. They will not compile until/unless `FormType.hudReport` is added to the `FormType` enum.
+
+---
+
+## 10. Summary of Lossy Conversions
 
 | Conversion | Lost Information | Impact | Mitigation |
 |------------|-----------------|--------|------------|

@@ -60,28 +60,28 @@ These are already implemented in `form_requirements.dart` and documented here fo
 
 | # | Branch Flag | Trigger Condition | Affected Fields | Schema Path (Trigger) | Regulatory Citation |
 |---|------------|-------------------|-----------------|----------------------|---------------------|
-| W1 | `wdo_visible_evidence` | Section 2.B selected (VISIBLE evidence of WDOs observed) -- mutually exclusive with 2.A (no visible signs) | Sub-checks B.1, B.2, B.3 become available; at least one must be checked | `wdo.section2.visibleEvidence` (bool) | FDACS-13645 Section 2; Rule 5E-14.142 |
-| W2 | `wdo_live_wdo` | Section 2.B.1 checked (LIVE WDOs found) | Description field: common name + location | `wdo.section2.liveWdo` (bool) | FDACS-13645 Section 2.B.1 |
-| W3 | `wdo_evidence_of_wdo` | Section 2.B.2 checked (EVIDENCE of WDOs found) | Description field: common name + description + location | `wdo.section2.evidenceOfWdo` (bool) | FDACS-13645 Section 2.B.2 |
-| W4 | `wdo_damage_by_wdo` | Section 2.B.3 checked (DAMAGE caused by WDOs) | Description field: common name + description + location of damage | `wdo.section2.damageByWdo` (bool) | FDACS-13645 Section 2.B.3 |
-| W5 | `wdo_previous_treatment` | Section 4.1 = Yes (evidence of previous treatment observed) | Previous treatment description field | `wdo.section4.previousTreatment` (bool) | FDACS-13645 Section 4.1; Chapter 482, F.S. |
-| W6 | `wdo_treated_at_inspection` | Section 4.3 = Yes (company treated structure at time of inspection) | Organism, pesticide, terms, method, treatment notice location fields | `wdo.section4.treatedAtInspection` (bool) | FDACS-13645 Section 4.3; Chapter 482, F.S. |
+| W1 | `wdo_visible_evidence` | Section 2.B selected (VISIBLE evidence of WDOs observed) -- mutually exclusive with 2.A (no visible signs) | Sub-checks B.1, B.2, B.3 become available; at least one must be checked | `wdo.findings.visibleEvidence` (bool) | FDACS-13645 Section 2; Rule 5E-14.142 |
+| W2 | `wdo_live_wdo` | Section 2.B.1 checked (LIVE WDOs found) | Description field: common name + location | `wdo.findings.liveWdo` (bool) | FDACS-13645 Section 2.B.1 |
+| W3 | `wdo_evidence_of_wdo` | Section 2.B.2 checked (EVIDENCE of WDOs found) | Description field: common name + description + location | `wdo.findings.evidenceOfWdo` (bool) | FDACS-13645 Section 2.B.2 |
+| W4 | `wdo_damage_by_wdo` | Section 2.B.3 checked (DAMAGE caused by WDOs) | Description field: common name + description + location of damage | `wdo.findings.damageByWdo` (bool) | FDACS-13645 Section 2.B.3 |
+| W5 | `wdo_previous_treatment` | Section 4.1 = Yes (evidence of previous treatment observed) | Previous treatment description field | `wdo.treatment.previousTreatment` (bool) | FDACS-13645 Section 4.1; Chapter 482, F.S. |
+| W6 | `wdo_treated_at_inspection` | Section 4.3 = Yes (company treated structure at time of inspection) | Organism, pesticide, terms, method, treatment notice location fields | `wdo.treatment.treatedAtInspection` (bool) | FDACS-13645 Section 4.3; Chapter 482, F.S. |
 
 ### 3.2 Inaccessible Area Flags (5 independent toggles)
 
 | # | Branch Flag | Trigger Condition | Affected Fields | Schema Path (Trigger) | Regulatory Citation |
 |---|------------|-------------------|-----------------|----------------------|---------------------|
-| W7 | `wdo_attic_inaccessible` | Section 3.1 checked | Specific areas + reason text fields | `wdo.section3.atticInaccessible` (bool) | FDACS-13645 Section 3 |
-| W8 | `wdo_interior_inaccessible` | Section 3.2 checked | Specific areas + reason text fields | `wdo.section3.interiorInaccessible` (bool) | FDACS-13645 Section 3 |
-| W9 | `wdo_exterior_inaccessible` | Section 3.3 checked | Specific areas + reason text fields | `wdo.section3.exteriorInaccessible` (bool) | FDACS-13645 Section 3 |
-| W10 | `wdo_crawlspace_inaccessible` | Section 3.4 checked | Specific areas + reason text fields | `wdo.section3.crawlspaceInaccessible` (bool) | FDACS-13645 Section 3 |
-| W11 | `wdo_other_inaccessible` | Section 3.5 checked | Specific areas + reason text fields | `wdo.section3.otherInaccessible` (bool) | FDACS-13645 Section 3 |
+| W7 | `wdo_attic_inaccessible` | Section 3.1 checked | Specific areas + reason text fields | `wdo.inaccessible.attic.flag` (bool) | FDACS-13645 Section 3 |
+| W8 | `wdo_interior_inaccessible` | Section 3.2 checked | Specific areas + reason text fields | `wdo.inaccessible.interior.flag` (bool) | FDACS-13645 Section 3 |
+| W9 | `wdo_exterior_inaccessible` | Section 3.3 checked | Specific areas + reason text fields | `wdo.inaccessible.exterior.flag` (bool) | FDACS-13645 Section 3 |
+| W10 | `wdo_crawlspace_inaccessible` | Section 3.4 checked | Specific areas + reason text fields | `wdo.inaccessible.crawlspace.flag` (bool) | FDACS-13645 Section 3 |
+| W11 | `wdo_other_inaccessible` | Section 3.5 checked | Specific areas + reason text fields | `wdo.inaccessible.other.flag` (bool) | FDACS-13645 Section 3 |
 
 ### 3.3 Treatment Method Sub-Branch
 
 | # | Branch Flag | Trigger Condition | Affected Fields | Schema Path (Trigger) | Regulatory Citation |
 |---|------------|-------------------|-----------------|----------------------|---------------------|
-| W12 | `wdo_spot_treatment` | Section 4.3e checked (spot treatment selected; mutually exclusive with 4.3d whole structure) | Spot treatment description field | `wdo.section4.methodSpotTreatment` (bool) | FDACS-13645 Section 4.3e |
+| W12 | `wdo_spot_treatment` | Section 4.3e checked (spot treatment selected; mutually exclusive with 4.3d whole structure) | Spot treatment description field | `wdo.treatment.methodSpotTreatment` (bool) | FDACS-13645 Section 4.3e |
 
 ### 3.4 Branch Hierarchy
 
@@ -112,10 +112,10 @@ Section 4 Treatment:
 
 | Rule | Enforcement | Citation |
 |------|-------------|----------|
-| Exactly one of 2.A or 2.B must be selected | Mutex validation: `wdo.section2.noVisibleSigns` XOR `wdo.section2.visibleEvidence` | FDACS-13645 Section 2 |
+| Exactly one of 2.A or 2.B must be selected | Mutex validation: `wdo.findings.noVisibleSigns` XOR `wdo.findings.visibleEvidence` | FDACS-13645 Section 2 |
 | If 2.B selected, at least one of B.1/B.2/B.3 | `W1 == true` implies `W2 OR W3 OR W4` | FDACS-13645 Section 2.B |
 | Each checked sub-item requires non-empty description | `W2 == true` implies `liveWdoDescription` non-empty | FDACS-13645 Section 2.B.1a-B.3a |
-| Treatment method is mutex | `wdo.section4.methodWholeStructure` XOR `wdo.section4.methodSpotTreatment` | FDACS-13645 Section 4.3d/4.3e |
+| Treatment method is mutex | `wdo.treatment.methodWholeStructure` XOR `wdo.treatment.methodSpotTreatment` | FDACS-13645 Section 4.3d/4.3e |
 | Form integrity: no additional disclaimers allowed | Enforced at PDF generation; no user-facing field | Rule 5E-14.142 |
 | Notice of Inspection location always required (field 4.2) | Not conditional; always present | Chapter 482, F.S. |
 
@@ -131,16 +131,16 @@ Each of the 19 checklist items across Sections 1-4 follows the same pattern: a "
 
 | # | Branch Flag Pattern | Trigger Condition | Affected Fields | Schema Path Pattern | Regulatory Citation |
 |---|---------------------|-------------------|-----------------|---------------------|---------------------|
-| S1 | `sinkhole_item_{section}_{number}_yes` | Checklist item answered "Yes" | Detail text field for that item | `sinkhole.section{N}.item{M}` = "yes" | Citizens Sinkhole Form ver. 2, Ed. 6/2012 |
+| S1 | `sinkhole_item_{section}_{number}_yes` | Checklist item answered "Yes" | Detail text field for that item | `sinkhole.{section}.item{M}` = "yes" | Citizens Sinkhole Form ver. 2, Ed. 6/2012 |
 
 **Concrete instances (19 items)**:
 
 | Section | Items | Branch Flags (derived from item value) | Detail Fields Activated |
 |---------|-------|---------------------------------------|------------------------|
-| 1: Exterior | 1.1-1.5 (5 items) | `sinkhole_item_1_1_yes` through `sinkhole_item_1_5_yes` | `sinkhole.section1.item1Detail` through `sinkhole.section1.item5Detail` |
-| 2: Interior | 2.1-2.8 (8 items) | `sinkhole_item_2_1_yes` through `sinkhole_item_2_8_yes` | `sinkhole.section2.item1Detail` through `sinkhole.section2.item8Detail` |
-| 3: Garage | 3.1-3.2 (2 items) | `sinkhole_item_3_1_yes` through `sinkhole_item_3_2_yes` | `sinkhole.section3.item1Detail` through `sinkhole.section3.item2Detail` |
-| 4: Appurtenant | 4.1-4.4 (4 items) | `sinkhole_item_4_1_yes` through `sinkhole_item_4_4_yes` | `sinkhole.section4.item1Detail` through `sinkhole.section4.item4Detail` |
+| 1: Exterior | 1.1-1.5 (5 items) | `sinkhole_item_1_1_yes` through `sinkhole_item_1_5_yes` | `sinkhole.exterior.item1Detail` through `sinkhole.exterior.item5Detail` |
+| 2: Interior | 2.1-2.8 (8 items) | `sinkhole_item_2_1_yes` through `sinkhole_item_2_8_yes` | `sinkhole.interior.item1Detail` through `sinkhole.interior.item8Detail` |
+| 3: Garage | 3.1-3.2 (2 items) | `sinkhole_item_3_1_yes` through `sinkhole_item_3_2_yes` | `sinkhole.garage.item1Detail` through `sinkhole.garage.item2Detail` |
+| 4: Appurtenant | 4.1-4.4 (4 items) | `sinkhole_item_4_1_yes` through `sinkhole_item_4_4_yes` | `sinkhole.appurtenant.item1Detail` through `sinkhole.appurtenant.item4Detail` |
 
 **Design decision**: Rather than register all 19 flags in `canonicalBranchFlags`, use a **predicate function** that reads the item value directly from `branchContext`. This avoids canonicalBranchFlags bloat while maintaining the existing pattern. The controller derives detail-field visibility from the item's tri-state value without needing a separate boolean flag.
 
@@ -150,18 +150,18 @@ These higher-level flags aggregate across checklist items for evidence requireme
 
 | # | Branch Flag | Trigger Condition | Affected Fields | Schema Path (Trigger) | Regulatory Citation |
 |---|------------|-------------------|-----------------|----------------------|---------------------|
-| S2 | `sinkhole_any_exterior_yes` | Any Section 1 item (1.1-1.5) = "Yes" | Per-item close-up + perspective photos | Derived: any `sinkhole.section1.item{N}` == "yes" | Citizens form instructions |
-| S3 | `sinkhole_any_interior_yes` | Any Section 2 item (2.1-2.8) = "Yes" | Per-item close-up + perspective photos | Derived: any `sinkhole.section2.item{N}` == "yes" | Citizens form instructions |
-| S4 | `sinkhole_any_garage_yes` | Any Section 3 item (3.1-3.2) = "Yes" | Per-item photos showing crack pattern | Derived: any `sinkhole.section3.item{N}` == "yes" | Citizens form instructions |
-| S5 | `sinkhole_any_appurtenant_yes` | Any Section 4 item (4.1-4.4) = "Yes" | Per-item photos | Derived: any `sinkhole.section4.item{N}` == "yes" | Citizens form instructions |
+| S2 | `sinkhole_any_exterior_yes` | Any Section 1 item (1.1-1.5) = "Yes" | Per-item close-up + perspective photos | Derived: any `sinkhole.exterior.item{N}` == "yes" | Citizens form instructions |
+| S3 | `sinkhole_any_interior_yes` | Any Section 2 item (2.1-2.8) = "Yes" | Per-item close-up + perspective photos | Derived: any `sinkhole.interior.item{N}` == "yes" | Citizens form instructions |
+| S4 | `sinkhole_any_garage_yes` | Any Section 3 item (3.1-3.2) = "Yes" | Per-item photos showing crack pattern | Derived: any `sinkhole.garage.item{N}` == "yes" | Citizens form instructions |
+| S5 | `sinkhole_any_appurtenant_yes` | Any Section 4 item (4.1-4.4) = "Yes" | Per-item photos | Derived: any `sinkhole.appurtenant.item{N}` == "yes" | Citizens form instructions |
 | S6 | `sinkhole_any_yes` | Any checklist item across all sections = "Yes" | General finding documentation | Derived: S2 OR S3 OR S4 OR S5 | FL Stat 627.706 |
 
 ### 4.3 Additional Conditional Flags
 
 | # | Branch Flag | Trigger Condition | Affected Fields | Schema Path (Trigger) | Regulatory Citation |
 |---|------------|-------------------|-----------------|----------------------|---------------------|
-| S7 | `sinkhole_townhouse` | Property type is townhouse or row house | Adjacent building description (Section 5.2) + photo of adjoining structures within 1/4 mile | `sinkhole.section5.propertyType` == "townhouse" or "row_house" | Citizens form Section 5.2 |
-| S8 | `sinkhole_unable_to_schedule` | Inspection could not be completed | Scheduling attempts section (Section 6), explanation field (Section 5.5) | `sinkhole.section5.unableToSchedule` (bool) | Citizens form Section 5.5/6 |
+| S7 | `sinkhole_townhouse` | Property type is townhouse or row house | Adjacent building description (Section 5.2) + photo of adjoining structures within 1/4 mile | `sinkhole.additional.propertyType` == "townhouse" or "row_house" | Citizens form Section 5.2 |
+| S8 | `sinkhole_unable_to_schedule` | Inspection could not be completed | Scheduling attempts section (Section 6), explanation field (Section 5.5) | `sinkhole.additional.unableToSchedule` (bool) | Citizens form Section 5.5/6 |
 | S9 | `sinkhole_crack_significant` | Any crack >= 1/8 inch | Owner interview fields: first occurrence date, change timeline | Derived from detail fields where crack width >= 0.125 | FL Stat 627.7072 |
 
 ### 4.4 Branch Hierarchy
