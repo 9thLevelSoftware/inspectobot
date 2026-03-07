@@ -1,4 +1,8 @@
 import 'form_type.dart';
+// Circular import: inspection_draft.dart also imports this file.
+// Acceptable during Strategy B coexistence (Phases 3-10) because PropertyData
+// needs InspectionDraft for factory constructors and InspectionDraft holds an
+// optional PropertyData field. Dart handles this without issue at compile time.
 import 'inspection_draft.dart';
 import 'inspection_wizard_state.dart';
 import 'property_data_migrations.dart';
@@ -183,6 +187,12 @@ class PropertyData {
   /// 1. Universal fields (snake_case keys)
   /// 2. Shared fields (snake_case keys, only non-null)
   /// 3. Form-specific entries, prefixed with `{formPrefix}.`
+  ///
+  /// **Note**: Form-specific keys are prefixed (e.g., `fourPoint.hazard_present`).
+  /// This format is for external consumers and cross-form data views. It is NOT
+  /// directly compatible with [FormRequirements] predicates, which expect
+  /// unprefixed keys (e.g., `hazard_present`). The wizard uses
+  /// [WizardProgressSnapshot.branchContext] for predicate evaluation.
   Map<String, dynamic> get branchContext {
     final context = <String, dynamic>{};
 
@@ -261,7 +271,9 @@ class PropertyData {
       'captured_photo_paths': capturedPhotoPaths.map(
         (category, path) => MapEntry(category.name, path),
       ),
-      'captured_evidence_paths': capturedEvidencePaths,
+      'captured_evidence_paths': capturedEvidencePaths.map(
+        (key, value) => MapEntry(key, List<String>.of(value)),
+      ),
       'schema_version': schemaVersion,
     };
   }
@@ -337,7 +349,7 @@ class PropertyData {
     final capturedEvidencePaths = rawEvidencePaths.map(
       (key, value) => MapEntry(
         key,
-        (value as List<dynamic>).cast<String>(),
+        (value as List<dynamic>).map((e) => e as String).toList(),
       ),
     );
 
@@ -435,16 +447,23 @@ class PropertyData {
       userId: userId ?? this.userId,
       clientEmail: clientEmail ?? this.clientEmail,
       clientPhone: clientPhone ?? this.clientPhone,
-      enabledForms: enabledForms ?? this.enabledForms,
+      enabledForms: enabledForms ?? Set<FormType>.of(this.enabledForms),
       wizardSnapshot: wizardSnapshot ?? this.wizardSnapshot,
       initialStepIndex: initialStepIndex ?? this.initialStepIndex,
       universal: universal ?? this.universal,
       shared: shared ?? this.shared,
-      formData: formData ?? this.formData,
-      capturedCategories: capturedCategories ?? this.capturedCategories,
-      capturedPhotoPaths: capturedPhotoPaths ?? this.capturedPhotoPaths,
-      capturedEvidencePaths:
-          capturedEvidencePaths ?? this.capturedEvidencePaths,
+      formData: formData ??
+          this.formData.map(
+            (k, v) => MapEntry(k, Map<String, dynamic>.of(v)),
+          ),
+      capturedCategories: capturedCategories ??
+          Set<RequiredPhotoCategory>.of(this.capturedCategories),
+      capturedPhotoPaths: capturedPhotoPaths ??
+          Map<RequiredPhotoCategory, String>.of(this.capturedPhotoPaths),
+      capturedEvidencePaths: capturedEvidencePaths ??
+          this.capturedEvidencePaths.map(
+            (k, v) => MapEntry(k, List<String>.of(v)),
+          ),
       schemaVersion: schemaVersion ?? this.schemaVersion,
     );
   }

@@ -1,8 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
+import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
 import 'package:inspectobot/features/inspection/domain/property_data.dart';
 import 'package:inspectobot/features/inspection/domain/property_data_migrations.dart';
+import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
+import 'package:inspectobot/features/inspection/domain/shared_building_system_fields.dart';
+import 'package:inspectobot/features/inspection/domain/rating_scale.dart';
 
 void main() {
   group('PropertyData', () {
@@ -98,6 +102,103 @@ void main() {
       final json = pd.toJson();
 
       expect(json['schema_version'], PropertyDataMigrations.currentVersion);
+    });
+
+    test('toJson -> fromJson round-trip preserves all fields including media state', () {
+      final draft = buildDraft();
+      draft.capturedCategories.add(RequiredPhotoCategory.exteriorFront);
+      draft.capturedPhotoPaths[RequiredPhotoCategory.exteriorFront] =
+          '/photos/front.jpg';
+      draft.capturedEvidencePaths['photo:exterior_front'] = [
+        '/photos/front.jpg',
+      ];
+
+      var pd = PropertyData.fromInspectionDraft(draft);
+      pd = pd.copyWith(
+        wizardSnapshot: const WizardProgressSnapshot(
+          lastStepIndex: 2,
+          completion: {'step_a': true},
+          branchContext: {'hazard_present': true},
+          status: WizardProgressStatus.inProgress,
+        ),
+        shared: SharedBuildingSystemFields(
+          yearBuilt: 1990,
+          roofCondition: RatingScale.satisfactory,
+          roofAge: 15,
+        ),
+      );
+      pd = pd.setFormValue(FormType.fourPoint, 'rating', 'Good');
+
+      final json = pd.toJson();
+      final restored = PropertyData.fromJson(json);
+
+      expect(restored.clientPhone, pd.clientPhone);
+      expect(restored.wizardSnapshot.lastStepIndex, 2);
+      expect(restored.wizardSnapshot.completion, {'step_a': true});
+      expect(restored.wizardSnapshot.branchContext['hazard_present'], true);
+      expect(restored.shared.roofCondition, RatingScale.satisfactory);
+      expect(restored.shared.roofAge, 15);
+      expect(restored.capturedCategories,
+          contains(RequiredPhotoCategory.exteriorFront));
+      expect(restored.capturedPhotoPaths[RequiredPhotoCategory.exteriorFront],
+          '/photos/front.jpg');
+      expect(restored.capturedEvidencePaths['photo:exterior_front'],
+          ['/photos/front.jpg']);
+      expect(
+          restored.getFormValue(FormType.fourPoint, 'rating'), 'Good');
+    });
+
+    test('toInspectionDraft preserves expected fields and media state', () {
+      final draft = buildDraft();
+      draft.capturedCategories.add(RequiredPhotoCategory.exteriorFront);
+      draft.capturedPhotoPaths[RequiredPhotoCategory.exteriorFront] =
+          '/photos/front.jpg';
+      draft.capturedEvidencePaths['photo:exterior_front'] = [
+        '/photos/front.jpg',
+      ];
+
+      final pd = PropertyData.fromInspectionDraft(draft);
+      final restored = pd.toInspectionDraft();
+
+      expect(restored.inspectionId, 'insp-001');
+      expect(restored.clientName, 'Alice');
+      expect(restored.propertyAddress, '456 Oak Ave');
+      expect(restored.yearBuilt, 1990);
+      expect(restored.capturedCategories,
+          contains(RequiredPhotoCategory.exteriorFront));
+      expect(restored.capturedPhotoPaths[RequiredPhotoCategory.exteriorFront],
+          '/photos/front.jpg');
+      expect(restored.capturedEvidencePaths['photo:exterior_front'],
+          ['/photos/front.jpg']);
+    });
+
+    test('copyWith creates independent collection copies', () {
+      final draft = buildDraft();
+      var pd1 = PropertyData.fromInspectionDraft(draft);
+      pd1 = pd1.setFormValue(FormType.fourPoint, 'key', 'original');
+
+      final pd2 = pd1.copyWith(clientEmail: 'new@test.com');
+
+      // Mutate pd1's formData inner map via a new setFormValue
+      final pd1b = pd1.setFormValue(FormType.fourPoint, 'key', 'mutated');
+
+      // pd2 should still have the original value
+      expect(pd2.getFormValue(FormType.fourPoint, 'key'), 'original');
+      expect(pd1b.getFormValue(FormType.fourPoint, 'key'), 'mutated');
+    });
+
+    test('fromJson gracefully skips unknown form codes', () {
+      final draft = buildDraft();
+      final pd = PropertyData.fromInspectionDraft(draft);
+      final json = pd.toJson();
+
+      // Inject unknown form code into enabled_forms and form_data
+      (json['enabled_forms'] as List).add('unknown_future_form');
+      (json['form_data'] as Map)['unknown_future_form'] = {'key': 'val'};
+
+      final restored = PropertyData.fromJson(json);
+      expect(restored.enabledForms, {FormType.fourPoint});
+      expect(restored.formData.containsKey(FormType.fourPoint), isFalse);
     });
   });
 }

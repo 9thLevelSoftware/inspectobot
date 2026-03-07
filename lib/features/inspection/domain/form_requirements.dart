@@ -412,6 +412,12 @@ class FormRequirements {
         category: RequiredPhotoCategory.generalDeficiency,
         when: _boolFlag(generalSafetyHazardBranchFlag),
       ),
+      _photo(
+        key: 'photo:general_room_photo',
+        label: 'General Room Photo',
+        form: FormType.generalInspection,
+        category: RequiredPhotoCategory.generalRoomPhoto,
+      ),
     ],
   };
 
