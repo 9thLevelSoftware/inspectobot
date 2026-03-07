@@ -12,7 +12,6 @@ class SignaturePad extends StatelessWidget {
     super.key,
     required this.points,
     required this.onPointsChanged,
-    this.onClear,
     this.height = 200,
     this.strokeWidth = 3.0,
     this.strokeColor,
@@ -28,9 +27,6 @@ class SignaturePad extends StatelessWidget {
 
   /// Called whenever the user draws, with the updated point list.
   final ValueChanged<List<Offset>> onPointsChanged;
-
-  /// Optional callback invoked when the signature is cleared.
-  final VoidCallback? onClear;
 
   /// Height of the drawing area.
   final double height;

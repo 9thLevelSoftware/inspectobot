@@ -37,9 +37,9 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
   String? _errorMessage;
   SignatureRecord? _signatureRecord;
 
-  InspectorProfileRepository get _profileRepository =>
+  late final InspectorProfileRepository _profileRepository =
       widget._profileRepository ?? InspectorProfileRepository.live();
-  SignatureRepository get _signatureRepository =>
+  late final SignatureRepository _signatureRepository =
       widget._signatureRepository ?? SignatureRepository.live();
 
   @override
@@ -95,6 +95,7 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
       );
       await _profileRepository.upsertProfile(profile);
 
+      SignatureRecord? newRecord;
       if (_signaturePoints.isNotEmpty) {
         final encoded = Uint8List.fromList(
           utf8.encode(
@@ -105,7 +106,7 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
             ),
           ),
         );
-        _signatureRecord = await _signatureRepository.saveSignature(
+        newRecord = await _signatureRepository.saveSignature(
           organizationId: widget.organizationId,
           userId: widget.userId,
           bytes: encoded,
@@ -113,7 +114,7 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
       }
 
       if (!mounted) return;
-      setState(() {});
+      setState(() => _signatureRecord = newRecord ?? _signatureRecord);
       AppSnackBar.success(context, 'Identity saved.');
     } catch (e) {
       if (!mounted) return;
