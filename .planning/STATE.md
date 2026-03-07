@@ -1,9 +1,9 @@
 # Project State
 
 ## Current Position
-- **Phase**: 8 of 8 (executed, pending review)
-- **Status**: Phase 8 complete -- all plans executed successfully
-- **Last Activity**: Phase 8 execution (2026-03-06)
+- **Phase**: 8 of 8 (complete)
+- **Status**: Phase 8 complete -- review passed (1 cycle)
+- **Last Activity**: Phase 8 review passed (2026-03-06)
 
 ## Progress
 ```
@@ -17,6 +17,8 @@
 - main.dart error fallback: 2 hardcoded values accepted as documented exceptions
 - Explicit Uint8List.fromList() cast for signature bytes (pre-existing fix)
 - Audit regression tests as automated gate (source file scanning via dart:io)
+- Removed unused onClear prop from SignaturePad (review finding)
+- Changed repository getters to late final fields (review finding)
 
 ## GitHub
 - Issue #2: Phase 2 -- Reusable Component Library
@@ -28,4 +30,4 @@
 - Issue #8: Phase 8 -- Inspector Identity & Final Polish
 
 ## Next Action
-Run `/legion:review` to verify Phase 8: Inspector Identity & Final Polish
+All phases complete — project review finished!
