@@ -1,9 +1,9 @@
 # Project State
 
 ## Current Position
-- **Phase**: 1 of 10 (executed, pending review)
-- **Status**: Phase 1 complete — all 5 plans executed successfully
-- **Last Activity**: Phase 1 execution (2026-03-07)
+- **Phase**: 1 of 10 (complete)
+- **Status**: Phase 1 complete — review passed (2 cycles)
+- **Last Activity**: Phase 1 review passed (2026-03-07)
 
 ## Progress
 ```
@@ -18,6 +18,8 @@
 - Workflow: autonomous execution, deep analysis, premium agent coverage
 - Old Phase 1 plans (design-token-system) archived to .planning/archive/
 - Phase 1 findings: current field maps are photo-evidence overlays only; FDACS-13645 not in docs/; HUDreport.doc is HUD REO not mold; no MRSA template in docs/
+- Phase 1 review: 3 blockers fixed (grouped field enumeration, normalized keys, FGS descoped), 12 warnings fixed, all verified in cycle 2
+- FGS Subsidence Incident Report formally descoped (geologist-facing, not inspector-facing)
 
 ## Next Action
-Run `/legion:review` to verify Phase 1: Ground Truth Extraction
+Run `/legion:plan 2` to plan the next phase: Unified Property Schema Design

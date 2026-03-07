@@ -2,7 +2,7 @@
 
 ## Phases
 
-- [ ] Phase 1: Ground Truth Extraction (SCHEMA-01)
+- [x] Phase 1: Ground Truth Extraction (SCHEMA-01)
 - [ ] Phase 2: Unified Property Schema Design (SCHEMA-02)
 - [ ] Phase 3: Data Model Evolution (DATA-01)
 - [ ] Phase 4: WDO Form Implementation (FORM-01)
@@ -174,7 +174,7 @@
 
 | Phase | Plans | Completed | Status |
 |-------|-------|-----------|--------|
-| 1. Ground Truth Extraction | 5 | 5 | Complete |
+| 1. Ground Truth Extraction | 5 | 5 | Complete (reviewed) |
 | 2. Unified Schema Design | 5 | 0 | Pending |
 | 3. Data Model Evolution | 5 | 0 | Pending |
 | 4. WDO Form | 5 | 0 | Pending |
