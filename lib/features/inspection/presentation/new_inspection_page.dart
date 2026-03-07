@@ -20,6 +20,13 @@ const _formDescriptions = {
       'Roof age, condition, and remaining useful life assessment',
   FormType.windMitigation:
       'Wind resistance features and discount qualification',
+  FormType.wdo: 'Wood-destroying organism inspection (FDACS-13645)',
+  FormType.sinkholeInspection:
+      'Sinkhole indicators and foundation assessment',
+  FormType.moldAssessment:
+      'Mold assessment per Chapter 468 MRSA requirements',
+  FormType.generalInspection:
+      'Full home inspection per Rule 61-30.801',
 };
 
 class NewInspectionPage extends StatefulWidget {

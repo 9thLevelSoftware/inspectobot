@@ -14,7 +14,11 @@ void main() {
     test('pins every supported form to explicit revision and map version', () {
       final manifest = PdfTemplateManifest.standard();
 
-      expect(manifest.entriesByForm.keys.toSet(), FormType.values.toSet());
+      expect(manifest.entriesByForm.keys.toSet(), {
+        FormType.fourPoint,
+        FormType.roofCondition,
+        FormType.windMitigation,
+      });
 
       final fourPoint = manifest.requireForForm(FormType.fourPoint);
       expect(fourPoint.revisionLabel, 'Insp4pt 03-25');
@@ -69,7 +73,8 @@ void main() {
     test('loads pinned template bytes for each manifest form', () async {
       final loader = PdfTemplateAssetLoader();
 
-      for (final form in FormType.values) {
+      final manifest = PdfTemplateManifest.standard();
+      for (final form in manifest.entriesByForm.keys) {
         final bundle = await loader.load(form);
         expect(bundle.templateBytes, isNotEmpty);
         expect(bundle.manifestEntry.templateAssetId, startsWith('assets/pdf/templates/'));

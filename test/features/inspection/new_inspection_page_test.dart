@@ -235,7 +235,7 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.byType(FormTypeCard), findsNWidgets(3));
+      expect(find.byType(FormTypeCard), findsNWidgets(FormType.values.length));
     });
 
     testWidgets('sections can be collapsed and expanded', (tester) async {
@@ -289,7 +289,7 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.byType(FormTypeCard), findsNWidgets(3));
+      expect(find.byType(FormTypeCard), findsNWidgets(FormType.values.length));
     });
   });
 
@@ -313,7 +313,7 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
 
-      expect(find.byType(FormTypeCard), findsNWidgets(3));
+      expect(find.byType(FormTypeCard), findsNWidgets(FormType.values.length));
 
       expect(
         find.text(
@@ -407,9 +407,9 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
-      // create() should have been called with only 2 forms
+      // create() should have been called with all forms minus the deselected one
       expect(store.createCalls, 1);
-      expect(store.lastFormsEnabled, hasLength(2));
+      expect(store.lastFormsEnabled, hasLength(FormType.values.length - 1));
       expect(store.lastFormsEnabled, isNot(contains('four_point')));
       expect(store.lastFormsEnabled, contains('roof_condition'));
       expect(store.lastFormsEnabled, contains('wind_mitigation'));
