@@ -65,7 +65,10 @@ void main() {
         ),
       ));
 
-      await tester.drag(find.byType(GestureDetector), const Offset(50, 50));
+      await tester.drag(find.descendant(
+        of: find.byType(SignaturePad),
+        matching: find.byType(RawGestureDetector),
+      ), const Offset(50, 50));
       await tester.pump();
 
       expect(capturedPoints, isNotNull);
@@ -100,7 +103,10 @@ void main() {
         ),
       ));
 
-      await tester.drag(find.byType(GestureDetector), const Offset(50, 50));
+      await tester.drag(find.descendant(
+        of: find.byType(SignaturePad),
+        matching: find.byType(RawGestureDetector),
+      ), const Offset(50, 50));
       await tester.pump();
 
       expect(called, isFalse);

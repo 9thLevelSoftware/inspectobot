@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:inspectobot/theme/theme.dart';
@@ -70,17 +71,27 @@ class SignaturePad extends StatelessWidget {
             border: Border.all(color: effectiveBorderColor),
             borderRadius: AppRadii.md,
           ),
-          child: GestureDetector(
-            onPanStart: enabled
-                ? (details) {
-                    onPointsChanged([...points, details.localPosition]);
-                  }
-                : null,
-            onPanUpdate: enabled
-                ? (details) {
-                    onPointsChanged([...points, details.localPosition]);
-                  }
-                : null,
+          child: RawGestureDetector(
+            gestures: <Type, GestureRecognizerFactory>{
+              if (enabled)
+                _EagerPanGestureRecognizer:
+                    GestureRecognizerFactoryWithHandlers<
+                        _EagerPanGestureRecognizer>(
+                  _EagerPanGestureRecognizer.new,
+                  (_EagerPanGestureRecognizer instance) {
+                    instance
+                      ..onStart = (details) {
+                        onPointsChanged(
+                            [...points, details.localPosition]);
+                      }
+                      ..onUpdate = (details) {
+                        onPointsChanged(
+                            [...points, details.localPosition]);
+                      };
+                  },
+                ),
+            },
+            behavior: HitTestBehavior.opaque,
             child: SizedBox(
               height: height,
               width: double.infinity,
@@ -139,5 +150,15 @@ class _SignaturePainter extends CustomPainter {
     return oldDelegate.points != points ||
         oldDelegate.color != color ||
         oldDelegate.strokeWidth != strokeWidth;
+  }
+}
+
+/// A [PanGestureRecognizer] that immediately claims victory in the gesture
+/// arena, preventing parent scrollables from stealing the drag.
+class _EagerPanGestureRecognizer extends PanGestureRecognizer {
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    super.addAllowedPointer(event);
+    resolve(GestureDisposition.accepted);
   }
 }
