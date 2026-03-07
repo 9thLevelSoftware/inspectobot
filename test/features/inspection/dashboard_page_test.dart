@@ -29,7 +29,7 @@ void main() {
   setUp(() {
     mockNav = _MockNavigationService();
     when(() => mockNav.push<void>(any(), extra: any(named: 'extra')))
-        .thenAnswer((_) async => null);
+        .thenAnswer((_) async {});
     when(() => mockNav.go(any(), extra: any(named: 'extra'))).thenReturn(null);
     when(() => mockNav.go(any())).thenReturn(null);
     setupTestServiceLocator(navigationService: mockNav);

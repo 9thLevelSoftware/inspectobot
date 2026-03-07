@@ -45,12 +45,25 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
   @override
   void initState() {
     super.initState();
-    _signatureController = SignatureController(
-      penStrokeWidth: 3.0,
-      exportBackgroundColor: Colors.transparent,
-    );
     _loadExisting();
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize / re-initialize the controller with the current theme color
+    // so the pen is visible on a dark canvas.
+    if (!_controllerInitialized) {
+      _signatureController = SignatureController(
+        penStrokeWidth: 3.0,
+        penColor: Theme.of(context).colorScheme.onSurface,
+        exportBackgroundColor: Colors.transparent,
+      );
+      _controllerInitialized = true;
+    }
+  }
+
+  bool _controllerInitialized = false;
 
   Future<void> _loadExisting() async {
     setState(() => _loading = true);
@@ -183,6 +196,9 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
                     SignaturePad(
                       controller: _signatureController,
                       height: 200,
+                      hintText: _signatureRecord != null
+                          ? 'Draw to replace saved signature'
+                          : null,
                     ),
                     SizedBox(height: AppSpacing.spacingSm),
                     Row(

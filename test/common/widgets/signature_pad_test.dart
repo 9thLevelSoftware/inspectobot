@@ -76,7 +76,9 @@ void main() {
         of: find.byType(SignaturePad),
         matching: find.byType(DecoratedBox),
       );
-      final decoratedBox = tester.widget<DecoratedBox>(decoratedBoxFinder);
+      // Pick the first DecoratedBox — that's our themed border/background.
+      final decoratedBox =
+          tester.widget<DecoratedBox>(decoratedBoxFinder.first);
       final decoration = decoratedBox.decoration as BoxDecoration;
 
       final theme = AppTheme.dark();

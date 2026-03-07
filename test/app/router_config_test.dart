@@ -7,7 +7,6 @@ import 'package:inspectobot/app/auth_notifier.dart';
 import 'package:inspectobot/app/router_config.dart';
 import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
-import 'package:inspectobot/features/auth/presentation/sign_in_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthChangeEvent;
 
 // ---------------------------------------------------------------------------

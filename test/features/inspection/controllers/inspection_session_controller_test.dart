@@ -31,7 +31,7 @@ void main() {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  InspectionDraft _makeDraft({
+  InspectionDraft makeDraft({
     String inspectionId = 'insp-1',
     Set<FormType> enabledForms = const {FormType.fourPoint},
     WizardProgressSnapshot? wizardSnapshot,
@@ -53,7 +53,7 @@ void main() {
     );
   }
 
-  InspectionSessionController _makeController({
+  InspectionSessionController makeController({
     InspectionDraft? draft,
     _FakeStore? store,
     MediaCaptureService? mediaCapture,
@@ -66,7 +66,7 @@ void main() {
   }) {
     final effectiveStore = store ?? _FakeStore();
     return InspectionSessionController(
-      draft: draft ?? _makeDraft(),
+      draft: draft ?? makeDraft(),
       repository: InspectionRepository(effectiveStore),
       mediaCapture: mediaCapture ?? _NoOpMediaCaptureService(),
       pdfOrchestrator: pdfOrchestrator ??
@@ -90,8 +90,8 @@ void main() {
 
   group('initialization', () {
     test('initializes snapshot from draft and clamps step index', () {
-      final controller = _makeController(
-        draft: _makeDraft(initialStepIndex: 99),
+      final controller = makeController(
+        draft: makeDraft(initialStepIndex: 99),
       );
       controller.initialize();
 
@@ -103,7 +103,7 @@ void main() {
 
     test('initialize loads readiness and triggers onStateChanged', () async {
       var notifyCount = 0;
-      final controller = _makeController();
+      final controller = makeController();
       controller.onStateChanged = () => notifyCount += 1;
       controller.initialize();
 
@@ -117,7 +117,7 @@ void main() {
       final gateway = _FakeAuditEventGateway(events: [
         _auditEventJson('evt-1', 'inspection_progress_updated'),
       ]);
-      final controller = _makeController(
+      final controller = makeController(
         auditRepository: AuditEventRepository(gateway),
       );
       controller.initialize();
@@ -131,8 +131,8 @@ void main() {
       final requirements =
           FormRequirements.forFormRequirements(FormType.fourPoint);
       final firstKey = requirements.first.key;
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 0,
             completion: {firstKey: true},
@@ -152,7 +152,7 @@ void main() {
 
   group('wizard navigation', () {
     test('continueStep advances from overview (no requirements)', () async {
-      final controller = _makeController();
+      final controller = makeController();
       controller.initialize();
 
       final result = await controller.continueStep();
@@ -162,8 +162,8 @@ void main() {
     });
 
     test('continueStep returns blocked when requirements not met', () async {
-      final controller = _makeController(
-        draft: _makeDraft(initialStepIndex: 1),
+      final controller = makeController(
+        draft: makeDraft(initialStepIndex: 1),
       );
       controller.initialize();
 
@@ -178,8 +178,8 @@ void main() {
       final completion = <String, bool>{
         for (final req in requirements) req.key: true,
       };
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 1,
             completion: completion,
@@ -198,7 +198,7 @@ void main() {
     });
 
     test('continueStep returns error when save fails', () async {
-      final controller = _makeController(store: _FailingSaveStore());
+      final controller = makeController(store: _FailingSaveStore());
       controller.initialize();
 
       final result = await controller.continueStep();
@@ -208,7 +208,7 @@ void main() {
 
     test('continueStep triggers onStateChanged', () async {
       var count = 0;
-      final controller = _makeController();
+      final controller = makeController();
       controller.onStateChanged = () => count += 1;
       controller.initialize();
       await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -227,8 +227,8 @@ void main() {
   group('branch flags', () {
     test('setBranchFlag updates snapshot and calls onStateChanged', () {
       var notifyCount = 0;
-      final controller = _makeController(
-        draft: _makeDraft(enabledForms: {FormType.roofCondition}),
+      final controller = makeController(
+        draft: makeDraft(enabledForms: {FormType.roofCondition}),
       );
       controller.onStateChanged = () => notifyCount += 1;
       controller.initialize();
@@ -244,8 +244,8 @@ void main() {
     });
 
     test('setBranchFlag false removes requirement from wizard steps', () {
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           enabledForms: {FormType.fourPoint},
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 1,
@@ -289,8 +289,8 @@ void main() {
       final signatureRepository = await _seededSignatureRepository();
       final deliveryService = _testDeliveryService();
 
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 1,
             completion: completion,
@@ -330,8 +330,8 @@ void main() {
       });
       final signatureRepository = await _seededSignatureRepository();
 
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 1,
             completion: completion,
@@ -383,8 +383,8 @@ void main() {
         metadata: emptySignatureGateway,
       );
 
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 1,
             completion: completion,
@@ -407,8 +407,8 @@ void main() {
 
     test('generatePdf toggles isGenerating and notifies', () async {
       var generatingSeenTrue = false;
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 1,
             completion: {
@@ -452,15 +452,15 @@ void main() {
 
   group('completionPercent', () {
     test('returns 0 when no requirements captured', () {
-      final controller = _makeController();
+      final controller = makeController();
       controller.initialize();
 
       expect(controller.completionPercent, 0);
     });
 
     test('returns 0 when no requirements exist', () {
-      final controller = _makeController(
-        draft: _makeDraft(enabledForms: const <FormType>{}),
+      final controller = makeController(
+        draft: makeDraft(enabledForms: const <FormType>{}),
       );
       controller.initialize();
 
@@ -473,8 +473,8 @@ void main() {
       final completion = <String, bool>{
         for (final req in requirements) req.key: true,
       };
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 0,
             completion: completion,
@@ -495,8 +495,8 @@ void main() {
       final completion = <String, bool>{
         requirements.first.key: true,
       };
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 0,
             completion: completion,
@@ -521,8 +521,8 @@ void main() {
       };
       completion[requirements.first.key] = true;
 
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 0,
             completion: completion,
@@ -550,7 +550,7 @@ void main() {
 
   group('delivery', () {
     test('downloadArtifact returns error when no artifact', () async {
-      final controller = _makeController();
+      final controller = makeController();
       controller.initialize();
 
       final result = await controller.downloadArtifact();
@@ -560,7 +560,7 @@ void main() {
     });
 
     test('shareArtifact returns error when no artifact', () async {
-      final controller = _makeController();
+      final controller = makeController();
       controller.initialize();
 
       final result = await controller.shareArtifact();
@@ -582,8 +582,8 @@ void main() {
           FormRequirements.forFormRequirements(FormType.fourPoint);
       final firstReq = requirements.first;
       final mediaCapture = _SuccessfulMediaCaptureService();
-      final controller = _makeController(
-        draft: _makeDraft(),
+      final controller = makeController(
+        draft: makeDraft(),
         mediaCapture: mediaCapture,
       );
       controller.onStateChanged = () => notifyCount += 1;
@@ -600,7 +600,7 @@ void main() {
 
     test('capture returns cancelled when requirement has null category',
         () async {
-      final controller = _makeController();
+      final controller = makeController();
       controller.initialize();
 
       final nullCategoryRequirement = EvidenceRequirement(
@@ -619,7 +619,7 @@ void main() {
 
     test('capture returns cancelled when media service returns null', () async {
       // _NoOpMediaCaptureService always returns null from captureRequiredPhoto
-      final controller = _makeController(
+      final controller = makeController(
         mediaCapture: _NoOpMediaCaptureService(),
       );
       controller.initialize();
@@ -652,8 +652,8 @@ void main() {
       final signatureRepository = await _seededSignatureRepository();
       final deliveryService = _testDeliveryService();
 
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 1,
             completion: completion,
@@ -692,8 +692,8 @@ void main() {
       final signatureRepository = await _seededSignatureRepository();
       final deliveryService = _testDeliveryService();
 
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 1,
             completion: completion,
@@ -733,8 +733,8 @@ void main() {
       final signatureRepository = await _seededSignatureRepository();
       final failingDeliveryService = _failingDeliveryService();
 
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 1,
             completion: completion,
@@ -773,8 +773,8 @@ void main() {
       final signatureRepository = await _seededSignatureRepository();
       final failingDeliveryService = _failingDeliveryService();
 
-      final controller = _makeController(
-        draft: _makeDraft(
+      final controller = makeController(
+        draft: makeDraft(
           wizardSnapshot: WizardProgressSnapshot(
             lastStepIndex: 1,
             completion: completion,
@@ -811,7 +811,7 @@ void main() {
         _auditEventJson('evt-1', 'inspection_progress_updated'),
         _auditEventJson('evt-2', 'delivery_artifact_saved'),
       ]);
-      final controller = _makeController(
+      final controller = makeController(
         auditRepository: AuditEventRepository(gateway),
       );
       controller.initialize();
@@ -823,7 +823,7 @@ void main() {
     });
 
     test('loadAuditEvents sets error on failure', () async {
-      final controller = _makeController(
+      final controller = makeController(
         auditRepository: AuditEventRepository(_FailingAuditGateway()),
       );
       controller.initialize();
@@ -846,7 +846,7 @@ void main() {
           occurredAt: '2026-03-05T11:00:00.000Z',
         ),
       ]);
-      final controller = _makeController(
+      final controller = makeController(
         auditRepository: AuditEventRepository(gateway),
       );
       controller.initialize();
@@ -858,7 +858,7 @@ void main() {
 
     test('loadAuditEvents triggers onStateChanged', () async {
       var count = 0;
-      final controller = _makeController(
+      final controller = makeController(
         auditRepository: AuditEventRepository(
           _FakeAuditEventGateway(events: [
             _auditEventJson('evt-1', 'inspection_progress_updated'),

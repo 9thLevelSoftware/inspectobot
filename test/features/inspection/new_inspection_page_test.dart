@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:inspectobot/app/navigation_service.dart';
-import 'package:inspectobot/app/routes.dart';
 import 'package:inspectobot/app/service_locator.dart';
 import 'package:inspectobot/common/widgets/form_type_card.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
