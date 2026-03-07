@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:inspectobot/theme/theme.dart';
@@ -5,9 +6,13 @@ import 'package:inspectobot/theme/theme.dart';
 /// A reusable signature capture widget that renders user-drawn strokes on a
 /// canvas.
 ///
+/// Uses a [StatefulWidget] to own a single [PanGestureRecognizer] instance that
+/// survives parent rebuilds, preventing the parent [ListView] from stealing
+/// the drag mid-stroke.
+///
 /// All visual defaults are derived from the current theme -- no hardcoded
 /// colors, spacing, or radii.
-class SignaturePad extends StatelessWidget {
+class SignaturePad extends StatefulWidget {
   const SignaturePad({
     super.key,
     required this.points,
@@ -53,15 +58,46 @@ class SignaturePad extends StatelessWidget {
   final bool enabled;
 
   @override
+  State<SignaturePad> createState() => _SignaturePadState();
+}
+
+class _SignaturePadState extends State<SignaturePad> {
+  late final _EagerPanGestureRecognizer _recognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _recognizer = _EagerPanGestureRecognizer()
+      ..onStart = _onPanStart
+      ..onUpdate = _onPanUpdate;
+  }
+
+  @override
+  void dispose() {
+    _recognizer.dispose();
+    super.dispose();
+  }
+
+  void _onPanStart(DragStartDetails details) {
+    if (!widget.enabled) return;
+    widget.onPointsChanged([...widget.points, details.localPosition]);
+  }
+
+  void _onPanUpdate(DragUpdateDetails details) {
+    if (!widget.enabled) return;
+    widget.onPointsChanged([...widget.points, details.localPosition]);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final effectiveStrokeColor = strokeColor ?? colorScheme.onSurface;
+    final effectiveStrokeColor = widget.strokeColor ?? colorScheme.onSurface;
     final effectiveBackgroundColor =
-        backgroundColor ?? colorScheme.surfaceContainerHighest;
-    final effectiveBorderColor = borderColor ?? colorScheme.outline;
+        widget.backgroundColor ?? colorScheme.surfaceContainerHighest;
+    final effectiveBorderColor = widget.borderColor ?? colorScheme.outline;
 
     return Semantics(
-      label: semanticLabel ?? 'Signature capture area',
+      label: widget.semanticLabel ?? 'Signature capture area',
       child: ClipRRect(
         borderRadius: AppRadii.md,
         child: DecoratedBox(
@@ -70,31 +106,33 @@ class SignaturePad extends StatelessWidget {
             border: Border.all(color: effectiveBorderColor),
             borderRadius: AppRadii.md,
           ),
-          child: Listener(
-            onPointerDown: enabled
-                ? (event) {
-                    onPointsChanged([...points, event.localPosition]);
-                  }
-                : null,
-            onPointerMove: enabled
-                ? (event) {
-                    onPointsChanged([...points, event.localPosition]);
-                  }
-                : null,
+          child: RawGestureDetector(
+            gestures: <Type, GestureRecognizerFactory>{
+              _EagerPanGestureRecognizer:
+                  GestureRecognizerFactoryWithHandlers<
+                      _EagerPanGestureRecognizer>(
+                () => _recognizer,
+                (_EagerPanGestureRecognizer instance) {
+                  instance
+                    ..onStart = _onPanStart
+                    ..onUpdate = _onPanUpdate;
+                },
+              ),
+            },
             behavior: HitTestBehavior.opaque,
             child: SizedBox(
-              height: height,
+              height: widget.height,
               width: double.infinity,
               child: CustomPaint(
                 painter: _SignaturePainter(
-                  points: points,
+                  points: widget.points,
                   color: effectiveStrokeColor,
-                  strokeWidth: strokeWidth,
+                  strokeWidth: widget.strokeWidth,
                 ),
-                child: points.isEmpty
+                child: widget.points.isEmpty
                     ? Center(
                         child: Text(
-                          hintText ?? 'Draw your signature here',
+                          widget.hintText ?? 'Draw your signature here',
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
@@ -140,5 +178,15 @@ class _SignaturePainter extends CustomPainter {
     return oldDelegate.points != points ||
         oldDelegate.color != color ||
         oldDelegate.strokeWidth != strokeWidth;
+  }
+}
+
+/// A [PanGestureRecognizer] that immediately claims victory in the gesture
+/// arena, preventing parent scrollables from stealing the drag.
+class _EagerPanGestureRecognizer extends PanGestureRecognizer {
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    super.addAllowedPointer(event);
+    resolve(GestureDisposition.accepted);
   }
 }
