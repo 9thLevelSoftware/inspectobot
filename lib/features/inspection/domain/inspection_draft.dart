@@ -1,5 +1,6 @@
 import 'form_type.dart';
 import 'inspection_wizard_state.dart';
+import 'property_data.dart';
 import 'required_photo_category.dart';
 
 class InspectionDraft {
@@ -16,6 +17,7 @@ class InspectionDraft {
     required this.enabledForms,
     WizardProgressSnapshot? wizardSnapshot,
     int? initialStepIndex,
+    this.propertyData,
   })  : wizardSnapshot = wizardSnapshot ?? WizardProgressSnapshot.empty,
         initialStepIndex = initialStepIndex ?? 0;
 
@@ -31,6 +33,7 @@ class InspectionDraft {
   final Set<FormType> enabledForms;
   final WizardProgressSnapshot wizardSnapshot;
   final int initialStepIndex;
+  final PropertyData? propertyData;
 
   final Set<RequiredPhotoCategory> capturedCategories =
       <RequiredPhotoCategory>{};
