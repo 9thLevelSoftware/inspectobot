@@ -15,7 +15,7 @@
 |----------|-------|----------|-----------|
 | Blockers | 3 | 3 | 0 |
 | Warnings | 12 | 12 | 0 |
-| Suggestions | 5 | 0 (deferred) | 5 |
+| Suggestions | 5 | 5 | 0 |
 
 ## Findings Detail
 
@@ -36,11 +36,11 @@
 | 13 | WARNING | docs/ directory | 3-4 files not classified (2012spreedsheet.xls, 4point50.doc, 4Point4.jpg) | All classified in 01-02 Document Classification table | 1 |
 | 14 | WARNING | FIELD_INVENTORY.md §4.5/4.6 | Inferred/statutory fields lack confidence markers | Added Confidence column to Section 1.1 summary table | 1 |
 | 15 | WARNING | FIELD_INVENTORY.md §2.3 | Overlap matrix covers only header fields, not building systems | Added Section 2.4 "Building System Overlap" mapping 4-Point vs General Inspection | 1 |
-| 16 | SUGGESTION | FIELD_INVENTORY.md §5 | Rating scale normalization doesn't cover all response patterns | Deferred — noted for Phase 2 | — |
-| 17 | SUGGESTION | FIELD_INVENTORY.md | Table schemas inconsistent across sections | Deferred — functional as-is | — |
-| 18 | SUGGESTION | FIELD_INVENTORY.md §6.3 | Schema design recommendations lack priority ordering | Deferred — Phase 2 will sequence | — |
-| 19 | SUGGESTION | FIELD_INVENTORY.md §1 | No consolidated field type distribution across all 7 forms | Deferred — Phase 2 input | — |
-| 20 | SUGGESTION | FIELD_INVENTORY.md §7 | 4-Point gap count reconciliation vague | Deferred — approximate counts acknowledged | — |
+| 16 | SUGGESTION | FIELD_INVENTORY.md §5 | Rating scale normalization doesn't cover all response patterns | Added Section 5.2 Response Pattern Taxonomy (14 patterns) | 2 |
+| 17 | SUGGESTION | FIELD_INVENTORY.md | Table schemas inconsistent across sections | Standardized all tables to consistent 8-column schema | 2 |
+| 18 | SUGGESTION | FIELD_INVENTORY.md §6.3 | Schema design recommendations lack priority ordering | Reordered by dependency with "Depends On" column | 2 |
+| 19 | SUGGESTION | FIELD_INVENTORY.md §1 | No consolidated field type distribution across all 7 forms | Added Section 1.4 Field Type Distribution table | 2 |
+| 20 | SUGGESTION | FIELD_INVENTORY.md §7 | 4-Point gap count reconciliation vague | Clarified ~80 estimate vs ~99 expanded with explanation | 2 |
 
 ## Reviewer Verdicts
 
@@ -50,13 +50,9 @@
 | testing-evidence-collector | NEEDS WORK | PASS | All blockers resolved; completeness gaps addressed; confidence levels documented |
 | testing-workflow-optimizer | NEEDS WORK | (not re-reviewed) | Blockers resolved by fix agents; grouped fields enumerated; normalized keys added |
 
-## Suggestions (noted, not required)
+## Suggestions (all addressed in cycle 2)
 
-1. Add a response pattern taxonomy covering all input patterns beyond rating scales (yes/no/na, mutually-exclusive checkboxes, matrix, repeating groups)
-2. Standardize table column schemas across all inventory sections for machine parseability
-3. Add dependency ordering to schema design recommendations
-4. Add consolidated field type distribution across all 7 forms
-5. Clarify 4-Point gap count reconciliation (~80 reference vs ~99 enumerated)
+All 5 suggestions fixed — response pattern taxonomy, table standardization, recommendation ordering, field type distribution, and gap reconciliation clarity.
 
 ## Low-Priority Observations from Cycle 2
 
