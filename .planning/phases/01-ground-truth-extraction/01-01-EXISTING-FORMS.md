@@ -2,7 +2,7 @@
 
 **Date:** 2026-03-07
 **Source files analyzed:**
-- `assets/pdf/maps/insp4pt_03_25.v1.json` (26 fields)
+- `assets/pdf/maps/insp4pt_03_25.v1.json` (27 fields)
 - `assets/pdf/maps/rcf1_03_25.v1.json` (8 fields)
 - `assets/pdf/maps/oir_b1_1802_rev_04_26.v1.json` (22 fields)
 - `lib/features/inspection/domain/form_requirements.dart`
@@ -379,10 +379,10 @@ Based on reference document analysis, these fields appear on all 3 official form
 | Metric | 4-Point | Roof Condition | Wind Mitigation | Total |
 |--------|---------|----------------|-----------------|-------|
 | Fields in JSON map | 27 | 8 | 22 | **57** |
-| Unique source keys | 14 | 5 | 11 | **30** (27 unique across forms) |
+| Unique source keys | 15 | 5 | 12 | **32** (28 unique across forms, 2 shared) |
 | Text fields | 2 | 1 | 1 | 4 |
-| Checkbox fields | 12 | 3 | 9 | 24 |
-| Image fields | 11 | 3 | 9 | 23 |
+| Checkbox fields | 12 | 3 | 10 | 25 |
+| Image fields | 12 | 3 | 10 | 25 |
 | Signature fields | 1 | 1 | 1 | 3 |
 | Evidence requirements | 12 | 3 | 10 | **25** |
 | Branch flags | 1 | 1 | 3 | **5** |
@@ -393,10 +393,10 @@ Based on reference document analysis, these fields appear on all 3 official form
 
 | Type | Count | % |
 |------|-------|---|
-| text | 4 | 7.1% |
-| checkbox | 24 | 42.9% |
-| image | 23 | 41.1% |
-| signature | 3 | 5.4% |
+| text | 4 | 7.0% |
+| checkbox | 25 | 43.9% |
+| image | 25 | 43.9% |
+| signature | 3 | 5.3% |
 | dropdown | 0 | 0% |
 | date | 0 | 0% |
 | radio | 0 | 0% |

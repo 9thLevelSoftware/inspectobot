@@ -187,7 +187,11 @@ The HUD report contains mold-related elements but is NOT a dedicated mold assess
 
 ## Section B: Florida Chapter 468, Part XVI -- Mold Assessment Requirements
 
-> **WARNING**: These requirements are derived from statutory knowledge, NOT from the source documents. The HUDreport.doc is NOT a MRSA-compliant mold assessment. A dedicated mold assessment form was not found in the provided documents. All items below require external verification against current Florida Statutes.
+> **STATUTORY KNOWLEDGE ONLY**: These requirements are derived from knowledge of Chapter 468, Part XVI, F.S.,
+> NOT from verified statute text or a physical form template. Phase 2 should treat these fields as **provisional**.
+> Verification against actual statute text is required before finalizing the schema.
+>
+> The HUDreport.doc is NOT a MRSA-compliant mold assessment. A dedicated mold assessment form was not found in the provided documents. All items below require external verification against current Florida Statutes.
 
 ### B.1 Required Narrative Sections (Chapter 468, Part XVI)
 
@@ -318,6 +322,16 @@ The fullinspection.doc is a comprehensive Residential Property Inspection Agreem
 | AC | Air Conditioning | Inspection table | Compressor/Filter/Blower/Duct/Electrical/Base |
 
 **Note**: The fullinspection.doc template appears to be incomplete -- it contains detailed sections for Roof, Electrical, Plumbing, Water Heater, and HVAC but the Structure/Exterior/Interior/Appliance inspection table sections were not fully extracted. The agreement portion is complete.
+
+> **INCOMPLETE**: The following 6 sections have checkpoint items derived from Rule 61-30.801 requirements, NOT from the fullinspection.doc template itself (due to document formatting extraction issues):
+> - Structure/Foundation (Rule 61-30.801(1))
+> - Exterior (Rule 61-30.801(2))
+> - Interior (Rule 61-30.801(3))
+> - Insulation/Ventilation (Rule 61-30.801(7))
+> - Built-in Appliances (Rule 61-30.801(8))
+> - Life Safety (Rule 61-30.801(9))
+>
+> Phase 2 should design the schema with extension points for additional checkpoints that may be present in the actual template but were not extracted. The 6 complete sections (Roof, Electrical, Plumbing, Water Heater, Heating, Air Conditioning) were fully extracted from fullinspection.doc and are authoritative.
 
 ### C.2 Report Header Data Fields
 

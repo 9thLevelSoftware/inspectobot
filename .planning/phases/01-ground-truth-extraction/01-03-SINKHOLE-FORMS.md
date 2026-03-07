@@ -339,6 +339,19 @@ Based on Florida Geological Survey reporting requirements and Florida Statute 62
 
 Obtain the FGS Subsidence Incident Report form (DEP Form 0520-065 or current equivalent) from the Florida Department of Environmental Protection / Florida Geological Survey. This form is typically filed by licensed professional geologists after a sinkhole is confirmed, not by the initial property inspector. The Citizens Sinkhole Inspection Form is the upstream trigger that may lead to an FGS report.
 
+### Resolution: Formally Descoped from Phase 1
+
+> **DECISION**: The FGS Subsidence Incident Report is formally descoped from Phase 1 ground truth extraction.
+
+**Justification**:
+
+1. **Wrong stakeholder**: The FGS form is filed by licensed Professional Geologists (P.G.), not home inspectors. InspectoBot's scope (per PROJECT.md) is inspector-facing.
+2. **Downstream document**: The FGS report is triggered by sinkhole findings from an inspection -- it is not an inspection form itself. It sits downstream of the Citizens Sinkhole Inspection Form in the escalation pathway (see diagram above).
+3. **Not available**: The form is not present in `docs/` and is not published on the Citizens or FGS websites as a standardized fillable form available for public download.
+4. **Out of app scope**: The app serves inspectors performing property inspections. The FGS report is a geological survey document prepared by a different licensed professional under a different regulatory framework.
+
+**Future consideration**: If InspectoBot adds multi-stakeholder support (e.g., geologist handoff workflows), the FGS Subsidence Incident Report can be inventoried at that time as a new form type.
+
 ---
 
 ## Expected Commentary Examples (from Form)

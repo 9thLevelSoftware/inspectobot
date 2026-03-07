@@ -10,34 +10,34 @@
 
 ### 1.1 Form Types Covered
 
-| # | Form Type | Regulatory Reference | Format | Source Inventory | Field Count |
-|---|-----------|---------------------|--------|-----------------|-------------|
-| 1 | 4-Point Inspection | Insp4pt 03-25 | Fillable PDF | 01-01 | 27 mapped + ~80 gap = ~107 |
-| 2 | Roof Condition (RCF-1) | RCF-1 03-25 | Fillable PDF | 01-01 | 8 mapped + ~18 gap = ~26 |
-| 3 | Wind Mitigation | OIR-B1-1802 Rev 04/26 | Fillable PDF | 01-01 | 22 mapped + ~20 gap = ~42 |
-| 4 | WDO (Wood-Destroying Organisms) | FDACS-13645, Rev. 05/21 | Fillable PDF | 01-02 | 46 |
-| 5 | Sinkhole (Citizens) | Citizens ver. 2, Ed. 6/2012 | Fillable PDF (checklist) | 01-03 | 67 (59 confirmed + 8 inferred) |
-| 6 | Mold Assessment | Chapter 468, Part XVI (MRSA) | Narrative report | 01-04 | 21 |
-| 7 | General Home Inspection | Rule 61-30.801, F.A.C. | Narrative report | 01-04 | ~150+ (12 sections x checkpoints + general info) |
+| # | Form Type | Regulatory Reference | Format | Source Inventory | Field Count | Confidence |
+|---|-----------|---------------------|--------|-----------------|-------------|------------|
+| 1 | 4-Point Inspection | Insp4pt 03-25 | Fillable PDF | 01-01 | 27 mapped + ~99 gap = ~126 | Mapped: Confirmed; Gap: Inferred from reference images |
+| 2 | Roof Condition (RCF-1) | RCF-1 03-25 | Fillable PDF | 01-01 | 8 mapped + ~18 gap = ~26 | Mapped: Confirmed; Gap: Inferred from reference images |
+| 3 | Wind Mitigation | OIR-B1-1802 Rev 04/26 | Fillable PDF | 01-01 | 22 mapped + ~23 gap = ~45 | Mapped: Confirmed; Gap: Inferred from reference images |
+| 4 | WDO (Wood-Destroying Organisms) | FDACS-13645, Rev. 05/21 | Fillable PDF | 01-02 | 51 (49 unique + 2 repeats) | Confirmed (from official FDACS form) |
+| 5 | Sinkhole (Citizens) | Citizens ver. 2, Ed. 6/2012 | Fillable PDF (checklist) | 01-03 | 67 (59 confirmed + 8 inferred) | 59 fields: Confirmed; 8 fields: Inferred |
+| 6 | Mold Assessment | Chapter 468, Part XVI (MRSA) | Narrative report | 01-04 | 21 | Statutory (unverified -- no template in docs/) |
+| 7 | General Home Inspection | Rule 61-30.801, F.A.C. | Narrative report | 01-04 | ~150+ (12 sections x checkpoints + general info) | 6 sections: Confirmed (from fullinspection.doc); 6 sections: Statutory (from Rule 61-30.801) |
 
-**Total unique data fields across all 7 forms: ~459** (approximate; exact count varies by how checkpoint tables are counted in narrative forms).
+**Total unique data fields across all 7 forms: ~486** (approximate; exact count varies by how checkpoint tables are counted in narrative forms and whether secondary roof fields are counted individually).
 
 ### 1.2 Overlap Statistics
 
 | Category | Count | Description |
 |----------|-------|-------------|
-| Universal fields | 7 | Present on all or nearly all 7 forms |
-| Shared fields (2-4 forms) | 14 | Present on 2-4 forms with name/format variations |
-| Form-specific fields | ~438 | Unique to one form type |
+| Universal fields | 8 | Present on all or nearly all 7 forms |
+| Shared fields (2-4 forms) | 13 | Present on 2-4 forms with name/format variations |
+| Form-specific fields | ~465 | Unique to one form type |
 
 ### 1.3 Current Implementation Status
 
 | Form | JSON Map Fields | Gap Fields (not mapped) | Implementation State |
 |------|----------------|------------------------|---------------------|
-| 4-Point | 27 | ~80 | Photo overlays only; all data fields missing |
+| 4-Point | 27 | ~99 | Photo overlays only; all data fields missing |
 | Roof Condition | 8 | ~18 | Photo overlays only; all data fields missing |
-| Wind Mitigation | 22 | ~20 | Photo overlays only; Q1-Q8 answers missing |
-| WDO | 0 | 46 | Not implemented |
+| Wind Mitigation | 22 | ~23 | Photo overlays only; Q1-Q8 answers missing |
+| WDO | 0 | 51 | Not implemented |
 | Sinkhole | 0 | 67 | Not implemented |
 | Mold Assessment | 0 | 21 | Not implemented |
 | General Inspection | 0 | 150+ | Not implemented |
@@ -59,6 +59,7 @@ These fields appear on 5+ of the 7 form types and are strong candidates for the 
 | `inspector_signature` | signature | All 7 | "Inspector Signature" (4-Pt, RCF-1, Wind Mit), "Signature of Licensee or Agent" (WDO 5.3), implied (Sinkhole, Mold, General) | Already mapped in 3 forms as `signature.inspector` |
 | `inspector_license_number` | text | 6 of 7 | "License Number" (4-Pt, RCF-1, Wind Mit), "Inspector's ID Card Number" (WDO 1.8), "Inspector License Number" (Sinkhole 0.6), "MRSA License Number" (Mold) | WDO uses FDACS ID card (different license type); Mold uses MRSA license; HUD uses case number instead |
 | `client_name` | text | 6 of 7 | "Insured/Applicant Name" (4-Pt), "Policyholder Name" (Wind Mit), "Insured Name" (RCF-1), "Inspection requested by" (WDO 1.11), "Insured/Applicant Name" (Sinkhole 0.1), "Client Name" (Mold), "Customer Name(s)" (General) | HUD uses case-based identification instead |
+| `comments` | text (multi-line) | All 7 | "Additional Comments/Observations" (4-Pt, RCF-1), "Comments" (WDO 5.1, Wind Mit), "Other relevant information" (Sinkhole 5.4), narrative sections (Mold, General) | Universal concept but form-specific prompt text varies |
 
 ### 2.2 Shared Fields (Present on 2-4 Forms)
 
@@ -68,7 +69,6 @@ These fields appear on 5+ of the 7 form types and are strong candidates for the 
 | `year_built` | text/integer | 4-Pt, RCF-1, Wind Mit, Mold, General | "Actual Year Built" (4-Pt), "Year Built" (RCF-1, Wind Mit), "Building Age" (Mold), "Structure Age" (HUD) | Mold/HUD may use age-in-years rather than year |
 | `inspector_phone` | text | WDO, Sinkhole, Wind Mit, General | "Phone Number" (WDO 1.4), "Inspector Phone" (Sinkhole 0.8, Wind Mit), varies (General) | WDO captures company phone; others may capture personal |
 | `signature_date` | date | 4-Pt, RCF-1, Wind Mit, WDO | "Date Signed" (4-Pt, RCF-1, Wind Mit), "Signature Date" (WDO 5.4) | May differ from inspection_date |
-| `comments` | text (multi-line) | 4-Pt, RCF-1, Wind Mit, WDO, Sinkhole, Mold, General | "Additional Comments/Observations" (4-Pt, RCF-1), "Comments" (WDO 5.1, Wind Mit), "Other relevant information" (Sinkhole 5.4) | Universal concept but form-specific prompt text |
 | `roof_type_material` | text/enum | 4-Pt, RCF-1, General, HUD | "Predominant Roof: Covering material" (4-Pt), "Roof Type / Covering Material" (RCF-1), enums in General and HUD | Same concept; enum values may differ across forms |
 | `roof_age` | text/integer | 4-Pt, RCF-1, General | "Predominant Roof: Age" (4-Pt), "Roof Age (years)" (RCF-1), "Estimated age" (General) | Same concept |
 | `roof_condition_rating` | enum | 4-Pt, RCF-1, General, HUD | "Overall condition" (4-Pt: Satisfactory/Unsatisfactory), "Roof Condition Rating" (RCF-1: Good/Fair/Poor/Failed), (General: Good/Fair/Poor), (HUD: S/U/MR) | Different rating scales -- requires normalization |
@@ -106,6 +106,22 @@ Forms: **4P** = 4-Point, **RC** = Roof Condition, **WM** = Wind Mitigation, **WD
 | water_heater_type | x | . | . | . | . | . | x | 2 |
 | hvac_type | x | . | . | . | . | . | x | 2 |
 | foundation_cracks | . | . | . | . | x | . | x | 2 |
+
+### 2.4 Building System Overlap
+
+The 4-Point Inspection and General Home Inspection both assess the same four building systems but at different granularity levels. The 4-Point form uses specific data-entry fields (text, checkbox, enum) designed for underwriting, while the General Inspection uses checkpoint rating tables (Good/Fair/Poor/N/A + comments) designed for buyer advisory.
+
+| Building System | 4-Point Fields | General Inspection Section | Overlap Notes |
+|----------------|---------------|---------------------------|---------------|
+| **Electrical** | Main/Second Panel Type, Amps, Sufficiency; Wiring indicators (cloth, knob-and-tube, aluminum); 13 hazard checkboxes; Panel age/brand; Wiring type; General condition (S/U) | Electrical section: Service Line, Conductors, Panel Location/Capacity/Type, Branch Conductor, Sub-Panel, GFCI, System Ground; 12 checkpoint ratings (Service Line, Main Panel, Breakers, Fuses, Conductors, Sub-Panel, Wiring, GFCI, Grounding, Lights, Outlets, Switches) | 4-Point captures specific hazard indicators as checkboxes; General rates overall component health. Panel type and capacity overlap directly. Hazard checkboxes (4-Pt) map loosely to Wiring/Grounding/Breaker checkpoint ratings (General). |
+| **Plumbing** | TPR valve, Active/Prior leaks, Water heater location; 10 fixture condition ratings (S/U/N/A); Piping age/re-pipe status; Pipe material types | Plumbing section: Main Line Material, Diameter, Valve Location, Hose Bibs, Waste Line, Fuel System, Pressure Test; 13 checkpoint ratings (Main Line, Water Line, Shut-Off, Pressure, Regulator, Relief Valve, Waste Disposal, Waste Line, Sump Pump, Softener, Anti-Siphon, Hose Bib, Fuel Lines) | Pipe material overlaps directly. 4-Point fixture matrix is more granular per appliance; General has broader plumbing infrastructure checkpoints. Water Heater is a separate General section but part of 4-Point Plumbing. |
+| **HVAC** | Central AC/Heat (Y/N), Primary heat source/fuel, Working order (Y/N), Last service date; 4 hazard checkboxes; System age/year updated | Heating section: Location, Type, Fuel Type; 8 checkpoint ratings (Burner, Venting, Combustion Air, Duct Work, Filters, Thermostat, Distribution, Gas Valves). AC section: Location, Type, Power, Disconnect, Defects; 6 checkpoint ratings (Compressor, Filter, Blower, Duct Work, Electrical, Base) | 4-Point captures system-level summary (type, fuel, age, hazards); General breaks into component-level checkpoint ratings. HVAC type/fuel overlaps directly. General splits heating and AC into separate sections. |
+| **Roof** | Covering material, Age, Remaining useful life, Permit date, Update status (full/partial/%); Condition (S/U); 8 damage checkboxes; Leak indicators (3 locations); Secondary roof (mirrors all) | Roof/Deck section: Roof Style, Covering, Flashing, Gutters/Downspouts, Observation Method; 9 checkpoint ratings (Condition, Flashing, Truss/rafter, Estimated age, Downspouts, Chimney, Flat/Low Slope, Vents, Skylights) | Covering material and age overlap directly. 4-Point provides specific damage type checkboxes; General uses overall condition ratings. 4-Point also overlaps with Roof Condition (RCF-1) form which has its own rating scale (Good/Fair/Poor/Failed). |
+
+**Key granularity differences:**
+- **4-Point**: Binary/specific data fields optimized for insurance underwriting decisions (yes/no hazards, specific materials, age in years).
+- **General Inspection**: Multi-tier rating scale (Good/Fair/Poor/N/A) with narrative comments, optimized for buyer advisory and deficiency documentation.
+- **Implication for Phase 2**: The shared schema should model building system data at the 4-Point granularity level (it is the more specific superset), with General Inspection checkpoint ratings as a separate assessment layer that references the same underlying system components.
 
 ---
 
@@ -203,86 +219,133 @@ Forms: **4P** = 4-Point, **RC** = Roof Condition, **WM** = Wind Mitigation, **WD
 
 **Header / Property Info**:
 
-| Field | Type | Required | Shared |
-|-------|------|----------|--------|
-| Application / Policy # | text | Yes | Y |
-| Actual Year Built | text | Yes | Y |
-| Date Inspected | date | Yes | Y |
+| Field | Type | Required | Shared | Proposed Key |
+|-------|------|----------|--------|--------------|
+| Application / Policy # | text | Yes | Y | `text.header_policy_number` |
+| Actual Year Built | text | Yes | Y | `text.header_year_built` |
+| Date Inspected | date | Yes | Y | `date.header_date_inspected` |
 
-**Electrical System** (~20 fields):
+**Electrical System** (33 individual fields, expanded from grouped entries):
 
-| Field | Type | Required | Shared |
-|-------|------|----------|--------|
-| Main Panel Type (Circuit breaker / Fuse) | checkbox/radio | Yes | Y (General) |
-| Main Panel Total Amps | text | Yes | Y (General) |
-| Is amperage sufficient (Yes/No) | checkbox | Yes | N |
-| Second Panel Type | checkbox/radio | Cond. | N |
-| Second Panel Total Amps | text | Cond. | N |
-| Second Panel amperage sufficient | checkbox | Cond. | N |
-| Cloth wiring | checkbox | Yes | N |
-| Active knob and tube | checkbox | Yes | N |
-| Branch circuit aluminum wiring | checkbox + text | Yes | N |
-| Single strand aluminum branch wiring details | text | Cond. | N |
-| COPALUM crimp connections | checkbox | Cond. | N |
-| AlumiConn connections | checkbox | Cond. | N |
-| Hazards Present (12+ items) | checkbox group | Yes | N |
-| General condition (Satisfactory/Unsatisfactory) | checkbox | Yes | N |
-| Main Panel age, year updated, brand | text (3 fields) | Yes | N |
-| Second Panel age, year updated, brand | text (3 fields) | Cond. | N |
-| Wiring Type (Copper / MN,BX,Conduit) | checkbox | Yes | N |
+| Field | Type | Required | Shared | Proposed Key |
+|-------|------|----------|--------|--------------|
+| Main Panel Type (Circuit breaker / Fuse) | checkbox/radio | Yes | Y (General) | `radio.electrical_main_panel_type` |
+| Main Panel Total Amps | text | Yes | Y (General) | `text.electrical_main_panel_amps` |
+| Is amperage sufficient (Yes/No) | checkbox | Yes | N | `checkbox.electrical_main_amps_sufficient` |
+| Second Panel Type | checkbox/radio | Cond. | N | `radio.electrical_second_panel_type` |
+| Second Panel Total Amps | text | Cond. | N | `text.electrical_second_panel_amps` |
+| Second Panel amperage sufficient | checkbox | Cond. | N | `checkbox.electrical_second_amps_sufficient` |
+| Cloth wiring | checkbox | Yes | N | `checkbox.electrical_cloth_wiring` |
+| Active knob and tube | checkbox | Yes | N | `checkbox.electrical_knob_and_tube` |
+| Branch circuit aluminum wiring | checkbox + text | Yes | N | `checkbox.electrical_aluminum_branch_wiring` |
+| Single strand aluminum branch wiring details | text | Cond. | N | `text.electrical_aluminum_branch_details` |
+| COPALUM crimp connections | checkbox | Cond. | N | `checkbox.electrical_copalum_crimp` |
+| AlumiConn connections | checkbox | Cond. | N | `checkbox.electrical_alumiconn` |
+| Hazard: Blowing fuses | checkbox | Yes | N | `checkbox.electrical_hazard_blowing_fuses` |
+| Hazard: Tripping breakers | checkbox | Yes | N | `checkbox.electrical_hazard_tripping_breakers` |
+| Hazard: Empty sockets | checkbox | Yes | N | `checkbox.electrical_hazard_empty_sockets` |
+| Hazard: Loose wiring | checkbox | Yes | N | `checkbox.electrical_hazard_loose_wiring` |
+| Hazard: Improper grounding | checkbox | Yes | N | `checkbox.electrical_hazard_improper_grounding` |
+| Hazard: Corrosion | checkbox | Yes | N | `checkbox.electrical_hazard_corrosion` |
+| Hazard: Over fusing | checkbox | Yes | N | `checkbox.electrical_hazard_over_fusing` |
+| Hazard: Double taps | checkbox | Yes | N | `checkbox.electrical_hazard_double_taps` |
+| Hazard: Exposed wiring | checkbox | Yes | N | `checkbox.electrical_hazard_exposed_wiring` |
+| Hazard: Unsafe wiring | checkbox | Yes | N | `checkbox.electrical_hazard_unsafe_wiring` |
+| Hazard: Improper breaker size | checkbox | Yes | N | `checkbox.electrical_hazard_improper_breaker_size` |
+| Hazard: Scorching | checkbox | Yes | N | `checkbox.electrical_hazard_scorching` |
+| Hazard: Other (explain) | checkbox + text | Yes | N | `checkbox.electrical_hazard_other` / `text.electrical_hazard_other_desc` |
+| General condition (Satisfactory/Unsatisfactory) | checkbox | Yes | N | `enum.electrical_general_condition` |
+| Main Panel age | text | Yes | N | `text.electrical_main_panel_age` |
+| Main Panel year last updated | text | Yes | N | `text.electrical_main_panel_year_updated` |
+| Main Panel brand/model | text | Yes | N | `text.electrical_main_panel_brand` |
+| Second Panel age | text | Cond. | N | `text.electrical_second_panel_age` |
+| Second Panel year last updated | text | Cond. | N | `text.electrical_second_panel_year_updated` |
+| Second Panel brand/model | text | Cond. | N | `text.electrical_second_panel_brand` |
+| Wiring Type (Copper / MN,BX,Conduit) | checkbox | Yes | N | `checkbox.electrical_wiring_type` |
 
-**HVAC System** (~8 fields):
+**HVAC System** (11 fields):
 
-| Field | Type | Required | Shared |
-|-------|------|----------|--------|
-| Central AC (Yes/No) | checkbox | Yes | N |
-| Central Heat (Yes/No) | checkbox | Yes | N |
-| Primary heat source and fuel type | text | Yes | Y (General) |
-| HVAC in good working order (Yes/No) | checkbox | Yes | N |
-| Date of last HVAC servicing | date/text | Yes | N |
-| Hazards (wood stove, gas fireplace, space heater, portable, air handler blockage) | checkbox group (~5 items) | Yes | N |
-| Age of system, Year last updated | text (2 fields) | Yes | N |
+| Field | Type | Required | Shared | Proposed Key |
+|-------|------|----------|--------|--------------|
+| Central AC (Yes/No) | checkbox | Yes | N | `checkbox.hvac_central_ac` |
+| Central Heat (Yes/No) | checkbox | Yes | N | `checkbox.hvac_central_heat` |
+| Primary heat source and fuel type | text | Yes | Y (General) | `text.hvac_primary_heat_source` |
+| HVAC in good working order (Yes/No) | checkbox | Yes | N | `checkbox.hvac_good_working_order` |
+| Date of last HVAC servicing | date/text | Yes | N | `date.hvac_last_service_date` |
+| Hazard: Wood-burning stove or gas fireplace not professionally installed (Yes/No) | checkbox | Yes | N | `checkbox.hvac_hazard_wood_stove_fireplace` |
+| Hazard: Space heater used as primary heat source (Yes/No) | checkbox | Yes | N | `checkbox.hvac_hazard_space_heater_primary` |
+| Hazard: Is the source portable (Yes/No) | checkbox | Cond. | N | `checkbox.hvac_hazard_source_portable` |
+| Hazard: Air handler/condensate line/drain pan blockage or leakage (Yes/No) | checkbox | Yes | N | `checkbox.hvac_hazard_air_handler_blockage` |
+| Age of system | text | Yes | N | `text.hvac_system_age` |
+| Year last updated | text | Yes | N | `text.hvac_year_updated` |
 
-**Plumbing System** (~15 fields):
+**Plumbing System** (24 fields):
 
-| Field | Type | Required | Shared |
-|-------|------|----------|--------|
-| TPR valve on water heater (Yes/No) | checkbox | Yes | N |
-| Active leak indication (Yes/No) | checkbox | Yes | N |
-| Prior leak indication (Yes/No) | checkbox | Yes | N |
-| Water heater location | text | Yes | N |
-| Fixture conditions (12-item matrix: Satisfactory/Unsatisfactory/N/A) | matrix | Yes | N |
-| If unsatisfactory, comments | text | Cond. | N |
-| Age of piping, re-pipe status | text + checkbox | Yes | N |
-| Type of pipes (Copper/PVC/Galvanized/PEX/Polybutylene/Other) | checkbox group | Yes | Y (General) |
+| Field | Type | Required | Shared | Proposed Key |
+|-------|------|----------|--------|--------------|
+| TPR valve on water heater (Yes/No) | checkbox | Yes | N | `checkbox.plumbing_tpr_valve` |
+| Active leak indication (Yes/No) | checkbox | Yes | N | `checkbox.plumbing_active_leak` |
+| Prior leak indication (Yes/No) | checkbox | Yes | N | `checkbox.plumbing_prior_leak` |
+| Water heater location | text | Yes | N | `text.plumbing_water_heater_location` |
+| Fixture condition: Dishwasher | enum(Satisfactory/Unsatisfactory/N/A) | Yes | N | `rating.plumbing_fixture_dishwasher` |
+| Fixture condition: Refrigerator | enum(Satisfactory/Unsatisfactory/N/A) | Yes | N | `rating.plumbing_fixture_refrigerator` |
+| Fixture condition: Washing machine | enum(Satisfactory/Unsatisfactory/N/A) | Yes | N | `rating.plumbing_fixture_washing_machine` |
+| Fixture condition: Water heater | enum(Satisfactory/Unsatisfactory/N/A) | Yes | N | `rating.plumbing_fixture_water_heater` |
+| Fixture condition: Showers/Tubs | enum(Satisfactory/Unsatisfactory/N/A) | Yes | N | `rating.plumbing_fixture_showers_tubs` |
+| Fixture condition: Toilets | enum(Satisfactory/Unsatisfactory/N/A) | Yes | N | `rating.plumbing_fixture_toilets` |
+| Fixture condition: Sinks | enum(Satisfactory/Unsatisfactory/N/A) | Yes | N | `rating.plumbing_fixture_sinks` |
+| Fixture condition: Sump pump | enum(Satisfactory/Unsatisfactory/N/A) | Yes | N | `rating.plumbing_fixture_sump_pump` |
+| Fixture condition: Main shut off valve | enum(Satisfactory/Unsatisfactory/N/A) | Yes | N | `rating.plumbing_fixture_main_shutoff` |
+| Fixture condition: All other visible | enum(Satisfactory/Unsatisfactory/N/A) | Yes | N | `rating.plumbing_fixture_all_other` |
+| If unsatisfactory, comments | text | Cond. | N | `text.plumbing_fixture_unsatisfactory_comments` |
+| Age of piping system | text | Yes | N | `text.plumbing_piping_age` |
+| Completely re-piped | checkbox | Cond. | N | `checkbox.plumbing_completely_repiped` |
+| Partially re-piped | checkbox | Cond. | N | `checkbox.plumbing_partially_repiped` |
+| Re-pipe renovation details | text | Cond. | N | `text.plumbing_repipe_details` |
+| Type of pipes: Copper | checkbox | Yes | Y (General) | `checkbox.plumbing_pipe_copper` |
+| Type of pipes: PVC/CPVC | checkbox | Yes | Y (General) | `checkbox.plumbing_pipe_pvc_cpvc` |
+| Type of pipes: Galvanized | checkbox | Yes | Y (General) | `checkbox.plumbing_pipe_galvanized` |
+| Type of pipes: PEX | checkbox | Yes | Y (General) | `checkbox.plumbing_pipe_pex` |
+| Type of pipes: Polybutylene | checkbox | Yes | Y (General) | `checkbox.plumbing_pipe_polybutylene` |
+| Type of pipes: Other (specify) | checkbox + text | Yes | Y (General) | `checkbox.plumbing_pipe_other` / `text.plumbing_pipe_other_desc` |
 
-**Roof** (~15 fields):
+**Roof** (22 fields for predominant roof; secondary roof mirrors all with `secondary_` prefix):
 
-| Field | Type | Required | Shared |
-|-------|------|----------|--------|
-| Predominant Roof: Covering material | text | Yes | Y (RCF-1, General) |
-| Predominant Roof: Age, Remaining useful life | text (2 fields) | Yes | Y (RCF-1) |
-| Date of last roofing permit | text | Yes | N |
-| Date of last update | text | Yes | N |
-| Updated? Full/Partial replacement, % | checkbox + text | Cond. | N |
-| Overall condition (Satisfactory/Unsatisfactory) | checkbox | Yes | Y (RCF-1) |
-| Visible damage (8 checkboxes per roof) | checkbox group | Yes | N |
-| Signs of leaks (Yes/No) | checkbox | Yes | Y (RCF-1) |
-| Attic/underside of decking (Yes/No) | checkbox | Yes | N |
-| Interior ceilings (Yes/No) | checkbox | Yes | N |
-| Secondary Roof (mirror of all above) | all above types | Cond. | N |
-| Additional Comments/Observations | text (multi-line) | Optional | Y |
+| Field | Type | Required | Shared | Proposed Key |
+|-------|------|----------|--------|--------------|
+| Predominant Roof: Covering material | text | Yes | Y (RCF-1, General) | `text.roof_primary_covering_material` |
+| Predominant Roof: Age (years) | text | Yes | Y (RCF-1) | `text.roof_primary_age` |
+| Predominant Roof: Remaining useful life (years) | text | Yes | Y (RCF-1) | `text.roof_primary_remaining_life` |
+| Date of last roofing permit | text | Yes | N | `text.roof_primary_last_permit_date` |
+| Date of last update | text | Yes | N | `text.roof_primary_last_update` |
+| Updated: Full replacement | checkbox | Cond. | N | `checkbox.roof_primary_full_replacement` |
+| Updated: Partial replacement | checkbox | Cond. | N | `checkbox.roof_primary_partial_replacement` |
+| Updated: % of replacement | text | Cond. | N | `text.roof_primary_replacement_pct` |
+| Overall condition (Satisfactory/Unsatisfactory) | checkbox | Yes | Y (RCF-1) | `enum.roof_primary_overall_condition` |
+| Visible damage: Cracking | checkbox | Yes | N | `checkbox.roof_primary_damage_cracking` |
+| Visible damage: Cupping/curling | checkbox | Yes | N | `checkbox.roof_primary_damage_cupping_curling` |
+| Visible damage: Excessive granule loss | checkbox | Yes | N | `checkbox.roof_primary_damage_granule_loss` |
+| Visible damage: Exposed asphalt | checkbox | Yes | N | `checkbox.roof_primary_damage_exposed_asphalt` |
+| Visible damage: Exposed felt | checkbox | Yes | N | `checkbox.roof_primary_damage_exposed_felt` |
+| Visible damage: Missing/loose/cracked tabs or tiles | checkbox | Yes | N | `checkbox.roof_primary_damage_missing_tabs_tiles` |
+| Visible damage: Soft spots in decking | checkbox | Yes | N | `checkbox.roof_primary_damage_soft_spots` |
+| Visible damage: Visible hail damage | checkbox | Yes | N | `checkbox.roof_primary_damage_hail` |
+| Signs of leaks (Yes/No) | checkbox | Yes | Y (RCF-1) | `checkbox.roof_primary_leaks` |
+| Attic/underside of decking (Yes/No) | checkbox | Yes | N | `checkbox.roof_primary_attic_underside_leaks` |
+| Interior ceilings (Yes/No) | checkbox | Yes | N | `checkbox.roof_primary_interior_ceiling_leaks` |
+| Secondary Roof (mirror of all above) | all above types | Cond. | N | All above keys with `secondary` replacing `primary` |
+| Additional Comments/Observations | text (multi-line) | Optional | Y | `text.roof_additional_comments` |
 
-**Inspector Certification** (~6 fields):
+**Inspector Certification** (6 fields):
 
-| Field | Type | Required | Shared |
-|-------|------|----------|--------|
-| Title | text | Yes | N |
-| License Number | text | Yes | Y |
-| Date | date | Yes | Y |
-| Company Name | text | Yes | Y |
-| License Type | text | Yes | N |
-| Work Phone | text | Yes | Y |
+| Field | Type | Required | Shared | Proposed Key |
+|-------|------|----------|--------|--------------|
+| Title | text | Yes | N | `text.inspector_title` |
+| License Number | text | Yes | Y | `text.inspector_license_number` |
+| Date | date | Yes | Y | `date.inspector_signature_date` |
+| Company Name | text | Yes | Y | `text.inspector_company_name` |
+| License Type | text | Yes | N | `text.inspector_license_type` |
+| Work Phone | text | Yes | Y | `text.inspector_work_phone` |
 
 **Branch Logic Summary**: `hazard_present` flag controls hazard photo pair. Second panel fields conditional on second panel existence. Secondary roof conditional on multiple roof coverings. Fixture condition comments conditional on unsatisfactory rating.
 
@@ -313,28 +376,28 @@ Forms: **4P** = 4-Point, **RC** = Roof Condition, **WM** = Wind Mitigation, **WD
 
 #### 4.2.2 Gap Fields (Not Mapped)
 
-| Field | Type | Required | Shared |
-|-------|------|----------|--------|
-| Property Address | text | Yes | Y |
-| Policy Number | text | Yes | Y |
-| Inspection Date | date | Yes | Y |
-| Year Built | text | Yes | Y |
-| Roof Type / Covering Material | text | Yes | Y (4-Pt) |
-| Roof Age (years) | text | Yes | Y (4-Pt) |
-| Remaining Useful Life (years) | text | Yes | Y (4-Pt) |
-| Roof Condition Rating (Good/Fair/Poor/Failed) | radio/checkbox | Yes | Y (4-Pt) |
-| Evidence of Prior Repairs | checkbox + text | Yes | N |
-| Evidence of Leaks | checkbox + text | Yes | Y (4-Pt) |
-| Evidence of Wind Damage | checkbox + text | Yes | N |
-| Evidence of Hail Damage | checkbox + text | Yes | N |
-| Number of Layers | text | Yes | N |
-| Flashing Condition | checkbox | Yes | N |
-| Soffit/Fascia Condition | checkbox | Yes | N |
-| Gutters/Downspouts | checkbox | Yes | N |
-| Inspector License # | text | Yes | Y |
-| Inspector Company | text | Yes | Y |
-| Date Signed | date | Yes | Y |
-| Comments/Observations | text (multi-line) | Optional | Y |
+| Field | Type | Required | Shared | Proposed Key |
+|-------|------|----------|--------|--------------|
+| Property Address | text | Yes | Y | `text.header_property_address` |
+| Policy Number | text | Yes | Y | `text.header_policy_number` |
+| Inspection Date | date | Yes | Y | `date.header_inspection_date` |
+| Year Built | text | Yes | Y | `text.header_year_built` |
+| Roof Type / Covering Material | text | Yes | Y (4-Pt) | `text.roof_covering_material` |
+| Roof Age (years) | text | Yes | Y (4-Pt) | `text.roof_age` |
+| Remaining Useful Life (years) | text | Yes | Y (4-Pt) | `text.roof_remaining_life` |
+| Roof Condition Rating (Good/Fair/Poor/Failed) | radio/checkbox | Yes | Y (4-Pt) | `enum.roof_condition_rating` |
+| Evidence of Prior Repairs | checkbox + text | Yes | N | `checkbox.roof_prior_repairs` / `text.roof_prior_repairs_desc` |
+| Evidence of Leaks | checkbox + text | Yes | Y (4-Pt) | `checkbox.roof_leaks` / `text.roof_leaks_desc` |
+| Evidence of Wind Damage | checkbox + text | Yes | N | `checkbox.roof_wind_damage` / `text.roof_wind_damage_desc` |
+| Evidence of Hail Damage | checkbox + text | Yes | N | `checkbox.roof_hail_damage` / `text.roof_hail_damage_desc` |
+| Number of Layers | text | Yes | N | `text.roof_number_of_layers` |
+| Flashing Condition | checkbox | Yes | N | `enum.roof_flashing_condition` |
+| Soffit/Fascia Condition | checkbox | Yes | N | `enum.roof_soffit_fascia_condition` |
+| Gutters/Downspouts | checkbox | Yes | N | `enum.roof_gutters_downspouts` |
+| Inspector License # | text | Yes | Y | `text.inspector_license_number` |
+| Inspector Company | text | Yes | Y | `text.inspector_company` |
+| Date Signed | date | Yes | Y | `date.inspector_signature_date` |
+| Comments/Observations | text (multi-line) | Optional | Y | `text.roof_comments` |
 
 **Branch Logic Summary**: `roof_defect_present` flag controls defect photo pair.
 
@@ -381,38 +444,41 @@ Forms: **4P** = 4-Point, **RC** = Roof Condition, **WM** = Wind Mitigation, **WD
 
 **Header / Property Info**:
 
-| Field | Type | Required | Shared |
-|-------|------|----------|--------|
-| Property Address | text | Yes | Y |
-| Policy Number | text | Yes | Y |
-| Date of Inspection | date | Yes | Y |
-| Year Built | text | Yes | Y |
+| Field | Type | Required | Shared | Proposed Key |
+|-------|------|----------|--------|--------------|
+| Property Address | text | Yes | Y | `text.header_property_address` |
+| Policy Number | text | Yes | Y | `text.header_policy_number` |
+| Date of Inspection | date | Yes | Y | `date.header_inspection_date` |
+| Year Built | text | Yes | Y | `text.header_year_built` |
 
 **Q1-Q8 Answer Selections (Core of form -- all MISSING)**:
 
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| Q1: Building Code (year built, FBC compliance) | radio + text | Yes | Year built + building code in effect |
-| Q2: Roof Covering (FBC-equivalent, permit date, product approval) | radio + text | Yes | FBC compliance status |
-| Q3: Roof Deck Attachment (A/B/C/D) | radio | Yes | Photo mapped but answer missing |
-| Q4: Roof-to-Wall Attachment (Toe nails/Clips/Single wraps/Double wraps/Structural) | radio | Yes | Photo mapped but answer missing |
-| Q5: Roof Geometry (Hip/Non-hip/Flat) | radio | Yes | Photo mapped but answer missing |
-| Q6: Secondary Water Resistance (Yes/No/Other) | radio | Yes | Photo mapped but answer missing |
-| Q7: Opening Protection (categories A/B/C/N) | radio | Yes | Photo mapped but answer missing |
-| Q7 Glazed openings inventory (window/door/skylight/garage counts) | numeric fields | Yes | Photo mapped but counts missing |
-| Q8: Opening Protection scope (All/None/Partial) | radio | Yes | Entirely missing |
+| Field | Type | Required | Notes | Proposed Key |
+|-------|------|----------|-------|--------------|
+| Q1: Building Code (year built, FBC compliance) | radio + text | Yes | Year built + building code in effect | `radio.wind_q1_building_code` / `text.wind_q1_year` |
+| Q2: Roof Covering (FBC-equivalent, permit date, product approval) | radio + text | Yes | FBC compliance status | `radio.wind_q2_roof_covering` / `text.wind_q2_permit_date` |
+| Q3: Roof Deck Attachment (A/B/C/D) | radio | Yes | Photo mapped but answer missing | `radio.wind_q3_roof_deck_attachment` |
+| Q4: Roof-to-Wall Attachment (Toe nails/Clips/Single wraps/Double wraps/Structural) | radio | Yes | Photo mapped but answer missing | `radio.wind_q4_roof_wall_attachment` |
+| Q5: Roof Geometry (Hip/Non-hip/Flat) | radio | Yes | Photo mapped but answer missing | `radio.wind_q5_roof_geometry` |
+| Q6: Secondary Water Resistance (Yes/No/Other) | radio | Yes | Photo mapped but answer missing | `radio.wind_q6_secondary_water_resistance` |
+| Q7: Opening Protection (categories A/B/C/N) | radio | Yes | Photo mapped but answer missing | `radio.wind_q7_opening_protection` |
+| Q7 Glazed openings: Window count | numeric | Yes | Photo mapped but counts missing | `numeric.wind_q7_window_count` |
+| Q7 Glazed openings: Door count | numeric | Yes | Photo mapped but counts missing | `numeric.wind_q7_door_count` |
+| Q7 Glazed openings: Skylight count | numeric | Yes | Photo mapped but counts missing | `numeric.wind_q7_skylight_count` |
+| Q7 Glazed openings: Garage door count | numeric | Yes | Photo mapped but counts missing | `numeric.wind_q7_garage_door_count` |
+| Q8: Opening Protection scope (All/None/Partial) | radio | Yes | Entirely missing | `radio.wind_q8_opening_protection_scope` |
 
 **Inspector Certification**:
 
-| Field | Type | Required | Shared |
-|-------|------|----------|--------|
-| Inspector Name | text | Yes | Y |
-| Inspector License Number | text | Yes | Y |
-| Date Signed | date | Yes | Y |
-| Inspector Company | text | Yes | Y |
-| Inspector Phone | text | Yes | Y |
-| Reinspection (Yes/No) | checkbox | Yes | N |
-| Comments | text (multi-line) | Optional | Y |
+| Field | Type | Required | Shared | Proposed Key |
+|-------|------|----------|--------|--------------|
+| Inspector Name | text | Yes | Y | `text.inspector_name` |
+| Inspector License Number | text | Yes | Y | `text.inspector_license_number` |
+| Date Signed | date | Yes | Y | `date.inspector_signature_date` |
+| Inspector Company | text | Yes | Y | `text.inspector_company` |
+| Inspector Phone | text | Yes | Y | `text.inspector_phone` |
+| Reinspection (Yes/No) | checkbox | Yes | N | `checkbox.wind_reinspection` |
+| Comments | text (multi-line) | Optional | Y | `text.wind_comments` |
 
 **Branch Logic Summary**: 3 document-required flags (`wind_roof_deck_document_required`, `wind_opening_document_required`, `wind_permit_document_required`). Q1-Q8 each have internal conditional logic not yet documented in the field map.
 
@@ -427,7 +493,7 @@ Forms: **4P** = 4-Point, **RC** = Roof Condition, **WM** = Wind Mitigation, **WD
 **Issuing Agency**: FDACS (Florida Dept. of Agriculture and Consumer Services)
 **Implementation Status**: Not implemented; form not in docs/ (available at https://forms.fdacs.gov/13645.pdf)
 
-#### 4.4.1 Complete Field Inventory (46 fields)
+#### 4.4.1 Complete Field Inventory (51 fields: 49 unique + 2 repeats)
 
 **Section 1 -- General Information (12 fields)**:
 
@@ -495,7 +561,7 @@ Forms: **4P** = 4-Point, **RC** = Roof Condition, **WM** = Wind Mitigation, **WD
 | 4.3e-desc | Spot treatment description | text | Yes | 4.3e checked | N |
 | 4.3f | Treatment Notice Location | text | Yes | 4.3 = Yes | N |
 
-**Section 5 -- Comments and Signature (4 unique fields + 2 repeats)**:
+**Section 5 -- Comments and Signature (3 unique fields + 2 repeats)**:
 
 | # | Field Name | Type | Required | Conditional On | Shared |
 |---|-----------|------|----------|---------------|--------|
@@ -732,7 +798,24 @@ Each section follows a consistent pattern: General Info Fields + Checkpoint Tabl
 **Section: Life Safety** (from Rule 61-30.801; incomplete in source doc)
 - Checkpoints: Smoke Detectors, Fire Extinguishers, Safety Glass
 
-**Note**: Sections marked "incomplete in source doc" are defined by Rule 61-30.801 but were not fully extracted from fullinspection.doc due to document formatting issues. The checkpoint items listed are derived from the rule requirements.
+**Section Completeness Summary**:
+
+| Section | Source | Status |
+|---------|--------|--------|
+| Roof/Deck | fullinspection.doc | **Complete** -- checkpoints and general info fully extracted |
+| Electrical | fullinspection.doc | **Complete** -- checkpoints and general info fully extracted |
+| Plumbing | fullinspection.doc | **Complete** -- checkpoints and general info fully extracted |
+| Water Heater | fullinspection.doc | **Complete** -- checkpoints and general info fully extracted |
+| Heating | fullinspection.doc | **Complete** -- checkpoints and general info fully extracted |
+| Air Conditioning | fullinspection.doc | **Complete** -- checkpoints and general info fully extracted |
+| Structure/Foundation | Rule 61-30.801(1) | **Rule-derived** -- checkpoint items from statute, not template |
+| Exterior | Rule 61-30.801(2) | **Rule-derived** -- checkpoint items from statute, not template |
+| Interior | Rule 61-30.801(3) | **Rule-derived** -- checkpoint items from statute, not template |
+| Insulation/Ventilation | Rule 61-30.801(7) | **Rule-derived** -- checkpoint items from statute, not template |
+| Built-in Appliances | Rule 61-30.801(8) | **Rule-derived** -- checkpoint items from statute, not template |
+| Life Safety | Rule 61-30.801(9) | **Rule-derived** -- checkpoint items from statute, not template |
+
+**Note**: The 6 rule-derived sections were not fully extracted from fullinspection.doc due to document formatting issues. The checkpoint items listed are derived from the rule requirements. Phase 2 should design schema with extension points for additional checkpoints that may exist in the actual template.
 
 **Branch Logic Summary**: Rating = POOR requires narrative explanation. Safety hazards require immediate recommendations. Components not accessible marked N/A with reason. Visible moisture/mold/pest evidence triggers specialist referral recommendation.
 
@@ -769,18 +852,20 @@ Three different rating scales are in use across forms. Phase 2 should define a n
 
 | ID | Missing Item | Severity | Recommended Action |
 |----|-------------|----------|--------------------|
-| GAP-01 | WDO form (FDACS-13645) not in `docs/` | High | Download from https://forms.fdacs.gov/13645.pdf to `docs/fdacs-13645-wdo.pdf` |
-| GAP-02 | FGS Subsidence Incident Report | Medium | Obtain from FL DEP/FGS. Downstream form (geologist-filed, not inspector-initiated). Lower priority. |
+| GAP-01 | WDO form (FDACS-13645) not in `docs/` | High | **PENDING ACTION**: Download from https://forms.fdacs.gov/13645.pdf to `docs/fdacs-13645-wdo.pdf`. Inventory complete from retrieved form; local copy needed for reference. |
+| GAP-02 | FGS Subsidence Incident Report | ~~Medium~~ Descoped | **Formally descoped** -- geologist-facing (P.G. licensed), not inspector-facing. Downstream document triggered by sinkhole findings, not an inspection form. Not available as standardized fillable form. See 01-03 Resolution section. |
 | GAP-03 | Sinkhole form page 1 missing from `docs/sinkhole.pdf` | High | Obtain complete Citizens Sinkhole Inspection Form ver. 2 from Citizens Property Insurance. 8 fields currently inferred. |
 | GAP-04 | Dedicated Mold Assessment template | High | No MRSA-compliant mold assessment form found in docs. Source a template from DBPR or industry. All 21 fields based on statutory knowledge. |
 | GAP-05 | Insurance company variant PDFs not analyzed | Medium | `citizens4point.pdf`, `statefarm4point.pdf` could not be rendered (PDF tools unavailable). May contain different field layouts. |
 | GAP-06 | Sinkhole form is from 2012 (14 years old) | Medium | Verify with Citizens whether a newer version exists. |
+| GAP-07 | `docs/4point50.doc` not analyzed | Low | Binary .doc file; likely a 4-Point form variant. Requires conversion to extract and compare fields against primary Insp4pt 03-25 template. |
+| GAP-08 | `docs/2012spreedsheet.xls` not analyzed | Low | Binary .xls file; likely inspection pricing/scope spreadsheet (not a form). Requires Excel to verify. |
 
 ### 6.2 Implementation Gaps in Existing Forms
 
 | ID | Gap | Severity | Impact |
 |----|-----|----------|--------|
-| IMP-01 | 4-Point: ~80 data fields missing from JSON map | P0 | Cannot produce valid 4-Point PDF without electrical, HVAC, plumbing, roof data fields |
+| IMP-01 | 4-Point: ~99 data fields missing from JSON map | P0 | Cannot produce valid 4-Point PDF without electrical, HVAC, plumbing, roof data fields |
 | IMP-02 | Wind Mit: Q1-Q8 answer selections missing | P0 | Cannot produce valid OIR-B1-1802 without these; they determine insurance premium credits |
 | IMP-03 | All 3 maps: shared header fields (address, date, year built) missing from RCF-1 and Wind Mit | P0 | Basic form completeness |
 | IMP-04 | All 3 maps: inspector identity fields not mapped | P1 | Inspector certification block required on all forms |
@@ -791,7 +876,7 @@ Three different rating scales are in use across forms. Phase 2 should define a n
 
 | Recommendation | Rationale |
 |---------------|-----------|
-| **Create a shared `PropertyProfile` model** containing the 7 universal fields (address, date, inspector name/company/license/signature, client name) | Eliminates redundancy; single source of truth across all forms |
+| **Create a shared `PropertyProfile` model** containing the 8 universal fields (address, date, inspector name/company/license/signature, client name, comments) | Eliminates redundancy; single source of truth across all forms |
 | **Create a shared `InspectorProfile` model** with support for multiple license types (home inspector, pest control, mold assessor) | WDO and Mold require different license types from the same inspector or different inspectors |
 | **Normalize rating scales into a single enum** with per-form mapping functions | Three incompatible scales in use; normalization enables cross-form analytics |
 | **Design form sections as composable modules** (e.g., "Electrical Section", "Roof Section") that can be reused across 4-Point and General Inspection | Significant field overlap between 4-Point system sections and General Inspection sections |
@@ -834,12 +919,12 @@ All 17 previously identified shared fields are accounted for. This inventory add
 | Source | Reported Count | Fields in This Document | Status |
 |--------|---------------|------------------------|--------|
 | 01-01: 4-Point mapped | 27 | 27 (Section 4.1.1) | Complete |
-| 01-01: 4-Point gaps | ~80 | ~64 enumerated (Section 4.1.2) | Complete (gap fields grouped; individual hazard checkboxes counted as groups) |
+| 01-01: 4-Point gaps | ~99 | ~99 enumerated (Section 4.1.2) | Complete (all grouped fields expanded to individual rows) |
 | 01-01: RCF-1 mapped | 8 | 8 (Section 4.2.1) | Complete |
 | 01-01: RCF-1 gaps | ~18 | 20 (Section 4.2.2) | Complete |
 | 01-01: Wind Mit mapped | 22 | 22 (Section 4.3.1) | Complete |
-| 01-01: Wind Mit gaps | ~20 | ~20 (Section 4.3.2) | Complete |
-| 01-02: WDO | 46 | 46 + 2 repeats (Section 4.4.1) | Complete |
+| 01-01: Wind Mit gaps | ~23 | ~23 (Section 4.3.2) | Complete (Q7 glazed openings expanded) |
+| 01-02: WDO | 51 | 49 unique + 2 repeats (Section 4.4.1) | Complete |
 | 01-03: Sinkhole | 67 (59+8) | 67 (59+8) (Section 4.5.1) | Complete |
 | 01-04: Mold Assessment | 21 | 21 (Section 4.6.1) | Complete |
 | 01-04: General Inspection | ~150+ | Header (10) + 12 sections with checkpoints (Section 4.7) | Complete (checkpoint items listed per section) |

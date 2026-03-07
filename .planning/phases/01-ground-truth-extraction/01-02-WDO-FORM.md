@@ -1,5 +1,7 @@
 # 01-02: WDO Form Inventory (FDACS-13645)
 
+> **ACTION REQUIRED**: Download FDACS-13645 from https://forms.fdacs.gov/13645.pdf to `docs/fdacs-13645-wdo.pdf`
+
 ## Form Metadata
 
 | Attribute | Value |
@@ -22,6 +24,9 @@
 | `e8c41965-f225-37fc-b451-4d360ee30b77.pdf` | 4-Point Inspection Form | Sample Form Insp4pt 03 25 | Already cataloged as the primary 4-Point form. 4 pages. |
 | `b684cd08-e1ee-8092-f475-772a210fa127.pdf` | Roof Condition Inspection Form | Sample Form RCF-1 03 25 | Already cataloged as the primary Roof Condition form. 2 pages. |
 | `contract.pdf` | Home Inspection Agreement/Contract | N/A | Generic NACHI-style inspector-client agreement. 2 pages. Covers liability limitation, hold harmless, scope of inspection. No WDO-specific content. |
+| `4Point4.jpg` | 4-Point Inspection Form Instructions Page | N/A (instructions, not fillable) | Scanned image of the 4-Point Inspection Form instructions page. Contains: Photo Requirements (dwelling sides, roof slopes, plumbing, electrical panel, hazards), Inspector Requirements (general/residential/building contractor, building code inspector, or home inspector; trade-specific sign-off allowed), "Documenting the Condition of Each System" guidance, "Additional Comments or Observations" guidance, and "Note to All Agents" (writing agent review requirements). No new fillable fields -- these are instructions that accompany the 4-Point form already cataloged. |
+| `4point50.doc` | 4-Point Inspection Form Variant | Likely alternate 4-Point template | Binary .doc file; could not be read directly. Filename suggests a 4-Point form variant (possibly an older or carrier-specific version). Requires conversion to extract fields. If it contains fields not in the primary Insp4pt 03-25 template, they should be inventoried as variant fields. |
+| `2012spreedsheet.xls` | Inspection Pricing/Scope Spreadsheet (probable) | N/A | Binary .xls file; could not be read directly. Filename suggests a 2012-era spreadsheet, likely inspection pricing, scope matrix, or fee schedule. Not an inspection form. Requires Excel or conversion tool to verify contents. |
 
 ### WDO Form Status: NOT PRESENT in docs/
 
