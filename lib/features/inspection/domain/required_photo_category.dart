@@ -18,7 +18,35 @@ enum RequiredPhotoCategory {
   windRoofShape('Wind Mit Roof Shape'),
   windSecondaryWaterResistance('Wind Mit Secondary Water Resistance'),
   windOpeningType('Wind Mit Opening Type'),
-  windPermitYear('Wind Mit Permit Year');
+  windPermitYear('Wind Mit Permit Year'),
+
+  // WDO
+  wdoPropertyExterior('WDO Property Exterior'),
+  wdoInfestationEvidence('WDO Infestation Evidence'),
+  wdoDamageArea('WDO Damage Area'),
+  wdoInaccessibleArea('WDO Inaccessible Area'),
+  wdoNoticePosting('WDO Notice Posting'),
+
+  // Sinkhole
+  sinkholeFrontElevation('Sinkhole Front Elevation'),
+  sinkholeRearElevation('Sinkhole Rear Elevation'),
+  sinkholeChecklistItem('Sinkhole Checklist Item'),
+  sinkholeGarageCrack('Sinkhole Garage Crack'),
+  sinkholeAdjacentStructure('Sinkhole Adjacent Structure'),
+
+  // Mold
+  moldAffectedArea('Mold Affected Area'),
+  moldMoistureSource('Mold Moisture Source'),
+  moldMoistureReading('Mold Moisture Reading'),
+  moldLabReport('Mold Lab Report'),
+
+  // General
+  generalFrontElevation('General Front Elevation'),
+  generalElectricalPanel('General Electrical Panel'),
+  generalDataPlate('General Data Plate'),
+  generalDeficiency('General Deficiency'),
+  generalPressureTest('General Pressure Test'),
+  generalRoomPhoto('General Room Photo');
 
   const RequiredPhotoCategory(this.label);
 
