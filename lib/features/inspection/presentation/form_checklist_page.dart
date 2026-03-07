@@ -29,12 +29,12 @@ class FormChecklistPage extends StatefulWidget {
     SignatureRepository? signatureRepository,
     ReportSignatureEvidenceRepository? signatureEvidenceRepository,
     DeliveryService? deliveryService,
-    MediaSyncRemoteStore? mediaSyncRemoteStore,
+    this.mediaSyncRemoteStore,
     PendingMediaSyncStore? pendingMediaSyncStore,
-    PdfOrchestrator? pdfOrchestrator,
-    CloudPdfService? cloudPdfService,
+    this.pdfOrchestrator,
+    this.cloudPdfService,
     AuditEventRepository? auditRepository,
-    MediaCaptureService? mediaCapture,
+    this.mediaCapture,
   })  : repository = repository ?? InspectionRepository.live(),
         signatureRepository =
             signatureRepository ?? SignatureRepository.live(),
@@ -42,12 +42,8 @@ class FormChecklistPage extends StatefulWidget {
             ReportSignatureEvidenceRepository.live(),
         deliveryService = deliveryService ?? DeliveryService.live(),
         auditRepository = auditRepository ?? AuditEventRepository.live(),
-        mediaSyncRemoteStore = mediaSyncRemoteStore,
         pendingMediaSyncStore =
-            pendingMediaSyncStore ?? PendingMediaSyncStore(),
-        pdfOrchestrator = pdfOrchestrator,
-        cloudPdfService = cloudPdfService,
-        mediaCapture = mediaCapture;
+            pendingMediaSyncStore ?? PendingMediaSyncStore();
 
   final InspectionDraft draft;
   final InspectionRepository repository;

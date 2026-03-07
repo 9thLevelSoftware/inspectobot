@@ -56,7 +56,7 @@ void main() {
             isSavingProgress: isSavingProgress,
             onCapture: onCapture ?? (_) {},
             onContinue: onContinue ?? () {},
-            onSetBranchFlag: onSetBranchFlag ?? (_, __) {},
+            onSetBranchFlag: onSetBranchFlag ?? (_, _) {},
           ),
         ),
       ),

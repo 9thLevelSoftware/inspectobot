@@ -250,11 +250,6 @@ void main() {
       );
       expect(find.byType(AppTextField), findsNWidgets(2));
 
-      // No standalone FilledButton or TextButton outside of AppButton wrappers.
-      final allFilledButtons =
-          find.byType(FilledButton).evaluate().length;
-      final allAppButtons =
-          find.byType(AppButton).evaluate().length;
       // Every FilledButton should be within an AppButton.
       for (final element in find.byType(FilledButton).evaluate()) {
         final appButtonAncestor = find.ancestor(

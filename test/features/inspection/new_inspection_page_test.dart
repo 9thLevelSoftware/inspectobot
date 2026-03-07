@@ -355,7 +355,6 @@ void main() {
 
       // Verify it starts selected by checking the Checkbox inside
       Checkbox findCheckboxInCard() {
-        final cardWidget = tester.widget<FormTypeCard>(firstCard);
         // Find Checkbox descendants within the first FormTypeCard
         final checkboxFinder = find.descendant(
           of: firstCard,
