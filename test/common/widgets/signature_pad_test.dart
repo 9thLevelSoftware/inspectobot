@@ -12,15 +12,21 @@ Widget _wrap(Widget child) {
 
 void main() {
   group('SignaturePad', () {
+    late SignaturePadController controller;
+
+    setUp(() {
+      controller = SignaturePadController();
+    });
+
+    tearDown(() {
+      controller.dispose();
+    });
+
     testWidgets('renders with default props', (tester) async {
       await tester.pumpWidget(_wrap(
-        SignaturePad(
-          points: const [],
-          onPointsChanged: (_) {},
-        ),
+        SignaturePad(controller: controller),
       ));
 
-      // CustomPaint exists as a descendant of SignaturePad.
       expect(
         find.descendant(
           of: find.byType(SignaturePad),
@@ -33,11 +39,7 @@ void main() {
 
     testWidgets('shows hint text when points list is empty', (tester) async {
       await tester.pumpWidget(_wrap(
-        SignaturePad(
-          points: const [],
-          onPointsChanged: (_) {},
-          hintText: 'Sign here',
-        ),
+        SignaturePad(controller: controller, hintText: 'Sign here'),
       ));
 
       expect(find.text('Sign here'), findsOneWidget);
@@ -45,24 +47,23 @@ void main() {
 
     testWidgets('hides hint text when points are present', (tester) async {
       await tester.pumpWidget(_wrap(
-        SignaturePad(
-          points: const [Offset(10, 10)],
-          onPointsChanged: (_) {},
-        ),
+        SignaturePad(controller: controller),
       ));
+
+      // Draw something
+      final center = tester.getCenter(find.byType(SignaturePad));
+      final gesture = await tester.startGesture(center);
+      await gesture.moveBy(const Offset(50, 50));
+      await gesture.up();
+      await tester.pump();
 
       expect(find.text('Draw your signature here'), findsNothing);
     });
 
-    testWidgets('captures pointer events and calls onPointsChanged',
+    testWidgets('captures pointer events and populates controller',
         (tester) async {
-      List<Offset>? capturedPoints;
-
       await tester.pumpWidget(_wrap(
-        SignaturePad(
-          points: const [],
-          onPointsChanged: (pts) => capturedPoints = pts,
-        ),
+        SignaturePad(controller: controller),
       ));
 
       final center = tester.getCenter(find.byType(SignaturePad));
@@ -71,17 +72,34 @@ void main() {
       await gesture.up();
       await tester.pump();
 
-      expect(capturedPoints, isNotNull);
-      expect(capturedPoints, isNotEmpty);
+      expect(controller.isNotEmpty, isTrue);
+      expect(controller.points.length, greaterThan(1));
+    });
+
+    testWidgets('controller.clear removes all points', (tester) async {
+      await tester.pumpWidget(_wrap(
+        SignaturePad(controller: controller),
+      ));
+
+      // Draw something
+      final center = tester.getCenter(find.byType(SignaturePad));
+      final gesture = await tester.startGesture(center);
+      await gesture.moveBy(const Offset(50, 50));
+      await gesture.up();
+      await tester.pump();
+      expect(controller.isNotEmpty, isTrue);
+
+      // Clear
+      controller.clear();
+      await tester.pump();
+
+      expect(controller.isEmpty, isTrue);
+      expect(find.text('Draw your signature here'), findsOneWidget);
     });
 
     testWidgets('respects custom height', (tester) async {
       await tester.pumpWidget(_wrap(
-        SignaturePad(
-          points: const [],
-          onPointsChanged: (_) {},
-          height: 300,
-        ),
+        SignaturePad(controller: controller, height: 300),
       ));
 
       final sizedBoxFinder = find.descendant(
@@ -94,14 +112,8 @@ void main() {
 
     testWidgets('does not respond to pointer events when disabled',
         (tester) async {
-      var called = false;
-
       await tester.pumpWidget(_wrap(
-        SignaturePad(
-          points: const [],
-          onPointsChanged: (_) => called = true,
-          enabled: false,
-        ),
+        SignaturePad(controller: controller, enabled: false),
       ));
 
       final center = tester.getCenter(find.byType(SignaturePad));
@@ -110,16 +122,12 @@ void main() {
       await gesture.up();
       await tester.pump();
 
-      expect(called, isFalse);
+      expect(controller.isEmpty, isTrue);
     });
 
     testWidgets('applies semantic label', (tester) async {
       await tester.pumpWidget(_wrap(
-        SignaturePad(
-          points: const [],
-          onPointsChanged: (_) {},
-          semanticLabel: 'My signature',
-        ),
+        SignaturePad(controller: controller, semanticLabel: 'My signature'),
       ));
 
       final semanticsFinder = find.descendant(
@@ -133,10 +141,7 @@ void main() {
 
     testWidgets('uses theme colors by default', (tester) async {
       await tester.pumpWidget(_wrap(
-        SignaturePad(
-          points: const [],
-          onPointsChanged: (_) {},
-        ),
+        SignaturePad(controller: controller),
       ));
 
       final decoratedBoxFinder = find.descendant(

@@ -3,21 +3,49 @@ import 'package:flutter/material.dart';
 
 import 'package:inspectobot/theme/theme.dart';
 
+/// Controller that exposes the signature pad's point data to the parent.
+///
+/// Use [points] to read the current strokes and [clear] to reset.  Attach a
+/// listener via [addListener] to be notified when the drawing state changes
+/// (e.g. to toggle a "Clear" button).
+class SignaturePadController extends ChangeNotifier {
+  final List<Offset> _points = [];
+
+  /// The current drawn points.
+  List<Offset> get points => List.unmodifiable(_points);
+
+  /// Whether any strokes have been drawn.
+  bool get isEmpty => _points.isEmpty;
+
+  /// Whether strokes exist.
+  bool get isNotEmpty => _points.isNotEmpty;
+
+  void _addPoint(Offset point) {
+    _points.add(point);
+    notifyListeners();
+  }
+
+  /// Remove all drawn strokes.
+  void clear() {
+    _points.clear();
+    notifyListeners();
+  }
+}
+
 /// A reusable signature capture widget that renders user-drawn strokes on a
 /// canvas.
 ///
-/// Drawing is handled via [Listener] (raw pointer events, no gesture arena
-/// dependency). A separate [RawGestureDetector] with an eager recognizer wins
-/// the gesture arena immediately on pointer-down so the parent [ListView]
-/// cannot steal the drag for scrolling.
+/// All drawing state lives inside the widget, driven by a
+/// [SignaturePadController].  The parent never needs to [setState] during
+/// drawing — only the pad's own [CustomPaint] repaints, keeping the rest of
+/// the widget tree stable.
 ///
 /// All visual defaults are derived from the current theme -- no hardcoded
 /// colors, spacing, or radii.
 class SignaturePad extends StatefulWidget {
   const SignaturePad({
     super.key,
-    required this.points,
-    required this.onPointsChanged,
+    required this.controller,
     this.height = 200,
     this.strokeWidth = 3.0,
     this.strokeColor,
@@ -28,11 +56,8 @@ class SignaturePad extends StatefulWidget {
     this.enabled = true,
   });
 
-  /// The list of [Offset] points representing the current signature strokes.
-  final List<Offset> points;
-
-  /// Called whenever the user draws, with the updated point list.
-  final ValueChanged<List<Offset>> onPointsChanged;
+  /// Controller that owns the drawn points.
+  final SignaturePadController controller;
 
   /// Height of the drawing area.
   final double height;
@@ -63,11 +88,32 @@ class SignaturePad extends StatefulWidget {
 }
 
 class _SignaturePadState extends State<SignaturePad> {
-  // Track the active pointer so we only respond to a single finger.
   int? _activePointer;
 
-  void _addPoint(Offset localPosition) {
-    widget.onPointsChanged([...widget.points, localPosition]);
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(SignaturePad oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    // Only rebuilds this widget — parent is unaffected.
+    setState(() {});
   }
 
   @override
@@ -88,22 +134,19 @@ class _SignaturePadState extends State<SignaturePad> {
             border: Border.all(color: effectiveBorderColor),
             borderRadius: AppRadii.md,
           ),
-          // Listener captures raw pointer events for drawing — bypasses the
-          // gesture arena entirely so it never loses events to the parent
-          // scrollable.
           child: Listener(
             onPointerDown: widget.enabled
                 ? (event) {
                     _activePointer ??= event.pointer;
                     if (event.pointer == _activePointer) {
-                      _addPoint(event.localPosition);
+                      widget.controller._addPoint(event.localPosition);
                     }
                   }
                 : null,
             onPointerMove: widget.enabled
                 ? (event) {
                     if (event.pointer == _activePointer) {
-                      _addPoint(event.localPosition);
+                      widget.controller._addPoint(event.localPosition);
                     }
                   }
                 : null,
@@ -121,9 +164,6 @@ class _SignaturePadState extends State<SignaturePad> {
                     }
                   }
                 : null,
-            // RawGestureDetector's ONLY job: eagerly win the gesture arena so
-            // the parent ListView's scroll recognizer is rejected.  Drawing
-            // itself is handled entirely by the Listener above.
             child: RawGestureDetector(
               gestures: <Type, GestureRecognizerFactory>{
                 if (widget.enabled)
@@ -131,7 +171,6 @@ class _SignaturePadState extends State<SignaturePad> {
                       _ArenaClaimer>(
                     _ArenaClaimer.new,
                     (_ArenaClaimer instance) {
-                      // No-op callbacks — we only need the arena claim.
                       instance.onStart = (_) {};
                     },
                   ),
@@ -142,11 +181,11 @@ class _SignaturePadState extends State<SignaturePad> {
                 width: double.infinity,
                 child: CustomPaint(
                   painter: _SignaturePainter(
-                    points: widget.points,
+                    points: widget.controller._points,
                     color: effectiveStrokeColor,
                     strokeWidth: widget.strokeWidth,
                   ),
-                  child: widget.points.isEmpty
+                  child: widget.controller.isEmpty
                       ? Center(
                           child: Text(
                             widget.hintText ?? 'Draw your signature here',
@@ -201,8 +240,7 @@ class _SignaturePainter extends CustomPainter {
 }
 
 /// Immediately wins the gesture arena on pointer-down, preventing any parent
-/// scrollable from claiming the drag.  Does no actual work — drawing is
-/// handled separately by a [Listener].
+/// scrollable from claiming the drag.
 class _ArenaClaimer extends PanGestureRecognizer {
   @override
   void addAllowedPointer(PointerDownEvent event) {

@@ -31,7 +31,7 @@ class InspectorIdentityPage extends StatefulWidget {
 class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
   final _licenseTypeController = TextEditingController();
   final _licenseNumberController = TextEditingController();
-  final _signaturePoints = <Offset>[];
+  final _signatureController = SignaturePadController();
   bool _saving = false;
   bool _loading = true;
   String? _errorMessage;
@@ -77,6 +77,7 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
   void dispose() {
     _licenseTypeController.dispose();
     _licenseNumberController.dispose();
+    _signatureController.dispose();
     super.dispose();
   }
 
@@ -96,11 +97,11 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
       await _profileRepository.upsertProfile(profile);
 
       SignatureRecord? newRecord;
-      if (_signaturePoints.isNotEmpty) {
+      if (_signatureController.isNotEmpty) {
         final encoded = Uint8List.fromList(
           utf8.encode(
             jsonEncode(
-              _signaturePoints
+              _signatureController.points
                   .map((point) => {'x': point.dx, 'y': point.dy})
                   .toList(),
             ),
@@ -175,12 +176,7 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
                 child: Column(
                   children: [
                     SignaturePad(
-                      points: _signaturePoints,
-                      onPointsChanged: (pts) => setState(() {
-                        _signaturePoints
-                          ..clear()
-                          ..addAll(pts);
-                      }),
+                      controller: _signatureController,
                       height: 200,
                     ),
                     SizedBox(height: AppSpacing.spacingSm),
@@ -190,8 +186,7 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
                           variant: AppButtonVariant.text,
                           label: 'Clear',
                           icon: Icons.clear,
-                          onPressed: () =>
-                              setState(() => _signaturePoints.clear()),
+                          onPressed: () => _signatureController.clear(),
                         ),
                         const Spacer(),
                         if (_signatureRecord != null)
