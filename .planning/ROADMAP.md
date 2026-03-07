@@ -176,7 +176,7 @@
 |-------|-------|-----------|--------|
 | 1. Ground Truth Extraction | 5 | 5 | Complete (reviewed) |
 | 2. Unified Schema Design | 5 | 5 | Complete (reviewed) |
-| 3. Data Model Evolution | 3 | 3 | Complete |
+| 3. Data Model Evolution | 3 | 3 | Complete (reviewed) |
 | 4. WDO Form | 5 | 0 | Pending |
 | 5. Sinkhole Form | 5 | 0 | Pending |
 | 6. Narrative Report Engine | 5 | 0 | Pending |
