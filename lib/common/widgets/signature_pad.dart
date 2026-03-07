@@ -6,9 +6,10 @@ import 'package:inspectobot/theme/theme.dart';
 /// A reusable signature capture widget that renders user-drawn strokes on a
 /// canvas.
 ///
-/// Uses a [StatefulWidget] to own a single [PanGestureRecognizer] instance that
-/// survives parent rebuilds, preventing the parent [ListView] from stealing
-/// the drag mid-stroke.
+/// Drawing is handled via [Listener] (raw pointer events, no gesture arena
+/// dependency). A separate [RawGestureDetector] with an eager recognizer wins
+/// the gesture arena immediately on pointer-down so the parent [ListView]
+/// cannot steal the drag for scrolling.
 ///
 /// All visual defaults are derived from the current theme -- no hardcoded
 /// colors, spacing, or radii.
@@ -62,30 +63,11 @@ class SignaturePad extends StatefulWidget {
 }
 
 class _SignaturePadState extends State<SignaturePad> {
-  late final _EagerPanGestureRecognizer _recognizer;
+  // Track the active pointer so we only respond to a single finger.
+  int? _activePointer;
 
-  @override
-  void initState() {
-    super.initState();
-    _recognizer = _EagerPanGestureRecognizer()
-      ..onStart = _onPanStart
-      ..onUpdate = _onPanUpdate;
-  }
-
-  @override
-  void dispose() {
-    _recognizer.dispose();
-    super.dispose();
-  }
-
-  void _onPanStart(DragStartDetails details) {
-    if (!widget.enabled) return;
-    widget.onPointsChanged([...widget.points, details.localPosition]);
-  }
-
-  void _onPanUpdate(DragUpdateDetails details) {
-    if (!widget.enabled) return;
-    widget.onPointsChanged([...widget.points, details.localPosition]);
+  void _addPoint(Offset localPosition) {
+    widget.onPointsChanged([...widget.points, localPosition]);
   }
 
   @override
@@ -106,40 +88,77 @@ class _SignaturePadState extends State<SignaturePad> {
             border: Border.all(color: effectiveBorderColor),
             borderRadius: AppRadii.md,
           ),
-          child: RawGestureDetector(
-            gestures: <Type, GestureRecognizerFactory>{
-              _EagerPanGestureRecognizer:
-                  GestureRecognizerFactoryWithHandlers<
-                      _EagerPanGestureRecognizer>(
-                () => _recognizer,
-                (_EagerPanGestureRecognizer instance) {
-                  instance
-                    ..onStart = _onPanStart
-                    ..onUpdate = _onPanUpdate;
-                },
-              ),
-            },
-            behavior: HitTestBehavior.opaque,
-            child: SizedBox(
-              height: widget.height,
-              width: double.infinity,
-              child: CustomPaint(
-                painter: _SignaturePainter(
-                  points: widget.points,
-                  color: effectiveStrokeColor,
-                  strokeWidth: widget.strokeWidth,
+          // Listener captures raw pointer events for drawing — bypasses the
+          // gesture arena entirely so it never loses events to the parent
+          // scrollable.
+          child: Listener(
+            onPointerDown: widget.enabled
+                ? (event) {
+                    _activePointer ??= event.pointer;
+                    if (event.pointer == _activePointer) {
+                      _addPoint(event.localPosition);
+                    }
+                  }
+                : null,
+            onPointerMove: widget.enabled
+                ? (event) {
+                    if (event.pointer == _activePointer) {
+                      _addPoint(event.localPosition);
+                    }
+                  }
+                : null,
+            onPointerUp: widget.enabled
+                ? (event) {
+                    if (event.pointer == _activePointer) {
+                      _activePointer = null;
+                    }
+                  }
+                : null,
+            onPointerCancel: widget.enabled
+                ? (event) {
+                    if (event.pointer == _activePointer) {
+                      _activePointer = null;
+                    }
+                  }
+                : null,
+            // RawGestureDetector's ONLY job: eagerly win the gesture arena so
+            // the parent ListView's scroll recognizer is rejected.  Drawing
+            // itself is handled entirely by the Listener above.
+            child: RawGestureDetector(
+              gestures: <Type, GestureRecognizerFactory>{
+                if (widget.enabled)
+                  _ArenaClaimer: GestureRecognizerFactoryWithHandlers<
+                      _ArenaClaimer>(
+                    _ArenaClaimer.new,
+                    (_ArenaClaimer instance) {
+                      // No-op callbacks — we only need the arena claim.
+                      instance.onStart = (_) {};
+                    },
+                  ),
+              },
+              behavior: HitTestBehavior.opaque,
+              child: SizedBox(
+                height: widget.height,
+                width: double.infinity,
+                child: CustomPaint(
+                  painter: _SignaturePainter(
+                    points: widget.points,
+                    color: effectiveStrokeColor,
+                    strokeWidth: widget.strokeWidth,
+                  ),
+                  child: widget.points.isEmpty
+                      ? Center(
+                          child: Text(
+                            widget.hintText ?? 'Draw your signature here',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                    color: colorScheme.onSurfaceVariant),
+                          ),
+                        )
+                      : null,
                 ),
-                child: widget.points.isEmpty
-                    ? Center(
-                        child: Text(
-                          widget.hintText ?? 'Draw your signature here',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(color: colorScheme.onSurfaceVariant),
-                        ),
-                      )
-                    : null,
               ),
             ),
           ),
@@ -181,9 +200,10 @@ class _SignaturePainter extends CustomPainter {
   }
 }
 
-/// A [PanGestureRecognizer] that immediately claims victory in the gesture
-/// arena, preventing parent scrollables from stealing the drag.
-class _EagerPanGestureRecognizer extends PanGestureRecognizer {
+/// Immediately wins the gesture arena on pointer-down, preventing any parent
+/// scrollable from claiming the drag.  Does no actual work — drawing is
+/// handled separately by a [Listener].
+class _ArenaClaimer extends PanGestureRecognizer {
   @override
   void addAllowedPointer(PointerDownEvent event) {
     super.addAllowedPointer(event);
