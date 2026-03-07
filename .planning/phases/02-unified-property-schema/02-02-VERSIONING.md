@@ -25,7 +25,7 @@ A schema version bump is required when any of the following occur:
 |------------|---------------|---------|
 | Adding a new optional field to UniversalPropertyFields | No | Adding `inspectorEmail` as `String?` |
 | Adding a new optional field to SharedBuildingSystemFields | No | Adding `garageType` as `String?` |
-| Adding new FormDataKeys constants | No | Adding `wdo.section2.visibleEvidence` |
+| Adding new FormDataKeys constants | No | Adding `wdo.findings.visibleEvidence` |
 | Adding new FormType enum values | No | Adding `FormType.wdo` |
 | Renaming a field in UniversalPropertyFields | YES | `clientName` -> `insuredName` |
 | Changing a field type | YES | `yearBuilt: int?` -> `yearBuilt: String?` |
@@ -50,7 +50,7 @@ Unknown keys in the `form_data` map are preserved without validation. This allow
 - No data loss during round-trip serialization.
 
 ```dart
-// Example: Newer app writes 'wdo.section2.visibleEvidence': true
+// Example: Newer app writes 'wdo.findings.visibleEvidence': true
 // Older app that doesn't know FormType.wdo:
 //   - The 'wdo' key in form_data fails FormType.fromCode() lookup
 //   - Data is dropped from the typed Map<FormType, Map<String, dynamic>>
