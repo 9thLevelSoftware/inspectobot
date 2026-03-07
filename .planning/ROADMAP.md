@@ -1,143 +1,187 @@
-# InspectoBot UI/UX Overhaul — Roadmap
+# InspectoBot Form Expansion & Unified Schema — Roadmap
 
 ## Phases
 
-- [x] Phase 1: Design Token System & Theme Foundation (THEME-01)
-- [x] Phase 2: Reusable Component Library (THEME-02)
-- [x] Phase 3: Navigation System & App Shell (UX-04)
-- [x] Phase 4: Checklist Page Decomposition (UX-01)
-- [x] Phase 5: Field Usability & Visual Hierarchy (UX-02, UX-03)
-- [x] Phase 6: Auth Screens Redesign (SCREEN-01)
-- [x] Phase 7: Dashboard & New Inspection Redesign (SCREEN-02, SCREEN-03)
-- [x] Phase 8: Inspector Identity & Final Polish (SCREEN-04)
+- [ ] Phase 1: Ground Truth Extraction (SCHEMA-01)
+- [ ] Phase 2: Unified Property Schema Design (SCHEMA-02)
+- [ ] Phase 3: Data Model Evolution (DATA-01)
+- [ ] Phase 4: WDO Form Implementation (FORM-01)
+- [ ] Phase 5: Sinkhole Form Implementation (FORM-02)
+- [ ] Phase 6: Narrative Report Engine (PDF-02)
+- [ ] Phase 7: Mold Assessment Implementation (FORM-03)
+- [ ] Phase 8: General Inspection Implementation (FORM-04)
+- [ ] Phase 9: Cross-Form Integration (WIZARD-02, INTEG-01)
+- [ ] Phase 10: Testing, Migration & Polish
 
 ## Phase Details
 
-### Phase 1: Design Token System & Theme Foundation
-**Goal**: Establish the complete design token system and dark theme that all subsequent phases build on.
-**Requirements**: THEME-01
-**Recommended Agents**: UI Designer, UX Architect, Brand Guardian, Senior Developer
+### Phase 1: Ground Truth Extraction
+**Goal**: Analyze all docs/ folder documents to create a comprehensive field inventory — every checkbox, text field, dropdown, and narrative section across all 7 form types mapped and cataloged.
+**Requirements**: SCHEMA-01
+**Recommended Agents**: Senior Developer, Technical Writer, Legal Compliance Checker, Evidence Collector, UX Researcher
 **Success Criteria**:
-- Color tokens defined: surface, background, accent (orange/yellow), error, success, warning, text primary/secondary/disabled
-- Spacing scale defined (4dp base grid)
-- Typography scale defined with selected font family
-- Elevation/shadow tokens defined
-- Border radius tokens defined
-- `ThemeData` wired with all tokens, `ColorScheme`, `TextTheme`, component themes
-- App renders with new dark theme (visually different from current indigo seed)
-- All existing tests pass with new theme
-**Plans**: 4
-
-### Phase 2: Reusable Component Library
-**Goal**: Build the shared widget library that all screens will use, eliminating inline widget construction.
-**Requirements**: THEME-02
-**Recommended Agents**: UI Designer, UX Architect, Frontend Developer, Mobile App Builder
-**Success Criteria**:
-- Button variants: primary, secondary, text, icon (all with loading states)
-- Card components: inspection card, section card, status card
-- Form components: themed text field, dropdown, checkbox, date picker, section header
-- Status components: badges, progress indicators, completion chips
-- Feedback components: loading overlay, error banner, empty state, snackbar
-- All components use design tokens exclusively (zero hardcoded values)
-- Component catalog or test file demonstrating each variant
-- Widget tests for all components
-**Plans**: 4
-
-### Phase 3: Navigation System & App Shell
-**Goal**: Replace raw MaterialPageRoute navigation with a structured router and establish the app shell layout.
-**Requirements**: UX-04
-**Recommended Agents**: UX Architect, Mobile App Builder, Senior Developer, Security Engineer
-**Success Criteria**:
-- Router package integrated (go_router or equivalent)
-- Route definitions migrated from AppRoutes constants
-- Auth-gated routing preserved (unauthenticated vs authenticated shells)
-- Screen transitions defined (shared axis, fade through, or equivalent)
-- Deep link support maintained (password reset URI scheme)
-- App shell structure established (if applicable: bottom nav, drawer, or tab scaffold)
-- All navigation-dependent tests updated
-**Plans**: 3
-
-### Phase 4: Checklist Page Decomposition
-**Goal**: Break the 822-line monolithic `form_checklist_page.dart` into focused, navigable sub-views.
-**Requirements**: UX-01
-**Recommended Agents**: UX Architect, Senior Developer, Mobile App Builder, Evidence Collector
-**Success Criteria**:
-- Monolith decomposed into minimum 4 distinct views/sections: wizard steps, evidence capture, PDF/delivery actions, audit timeline
-- Each sub-view is independently testable
-- Navigation between sub-views is clear (tabs, stepper, sub-routes, or segmented control)
-- State shared between sub-views without prop-drilling hell (introduce state solution if needed)
-- No functionality lost from original monolith
-- Original form_checklist_page tests refactored to cover new structure
-- No sub-view exceeds 250 lines
+- Every field on existing 3 PDF templates (4-Point, Roof Condition, Wind Mit) inventoried with field name, type, position, and validation rules
+- Every field on WDO form (FDACS-13645) inventoried from docs/
+- Every field on Sinkhole forms (Citizens + FGS) inventoried from docs/
+- Mold assessment statutory requirements (Chapter 468) mapped to narrative sections
+- General inspection statutory requirements (Rule 61-30.801) mapped to narrative sections
+- Cross-form field overlap identified (shared fields like address, year built, client info)
+- Field inventory document written to .planning/phases/01/FIELD_INVENTORY.md
 **Plans**: 5
 
-### Phase 5: Field Usability & Visual Hierarchy
-**Goal**: Apply field-optimized UX patterns and visual hierarchy across all decomposed checklist views and shared components.
-**Requirements**: UX-02, UX-03
-**Recommended Agents**: UX Researcher, UX Architect, UI Designer, Mobile App Builder
+### Phase 2: Unified Property Schema Design
+**Goal**: Design the master JSON schema that normalizes all 7 form types into a single property model with shared and form-specific namespaces.
+**Requirements**: SCHEMA-02
+**Recommended Agents**: Backend Architect, Senior Developer, Data Analytics Reporter, UX Architect, Legal Compliance Checker
 **Success Criteria**:
-- All interactive elements meet 48dp minimum tap target
-- Touch targets spaced for glove-friendly use (min 8dp gap)
-- High contrast ratios verified (WCAG AAA for critical elements)
-- Section grouping with visual separators and card elevation
-- Status badges on checklist items (complete/incomplete/required)
-- Progress indicator showing wizard completion percentage
-- Typography hierarchy: 3+ distinct levels clearly differentiated
-- One-handed reach zones considered in layout (critical actions in thumb zone)
-**Plans**: 4
+- Master JSON schema defined with shared property namespace (address, client, inspector, dates)
+- Per-form namespaces for form-specific fields (wdo/, sinkhole/, mold/, general/, fourPoint/, roofCondition/, windMit/)
+- Field-to-schema mapping document: every field from Phase 1 inventory maps to a schema path
+- Validation rules defined per field (required, optional, conditional, type constraints)
+- Schema supports branching logic (conditional fields based on inspector answers)
+- Backward compatibility spec: how existing InspectionDraft data maps to new schema
+- Schema versioning strategy defined
+- Schema document written as Dart model specification
+**Plans**: 5
 
-### Phase 6: Auth Screens Redesign
-**Goal**: Apply design system to all auth screens and extract shared form components.
-**Requirements**: SCREEN-01
-**Recommended Agents**: UI Designer, Frontend Developer, Senior Developer, Security Engineer
+### Phase 3: Data Model Evolution
+**Goal**: Extend the existing data model to support the unified schema and 4 new form types while maintaining backward compatibility with existing inspections.
+**Requirements**: DATA-01
+**Recommended Agents**: Senior Developer, Backend Architect, Mobile App Builder, Evidence Collector, API Tester
 **Success Criteria**:
-- All 4 auth screens (sign in, sign up, forgot password, reset password) use design tokens and component library
-- Shared auth form widget extracted (email field, password field, submit button pattern)
-- Validation UX improved (inline errors, field-level feedback)
-- Auth gate visual transition polished
-- Zero hardcoded colors, spacing, or text styles in auth presentation files
-- All auth widget tests updated and passing
-**Plans**: 3
+- FormType enum extended with 4 new values: wdo, moldAssessment, sinkholeInspection, generalInspection
+- InspectionDraft refactored to carry unified schema data structure
+- FormRequirements extended with evidence rules for all 4 new form types
+- WizardProgressSnapshot compatible with both fillable-PDF and narrative form workflows
+- Existing inspections (4-Point, Roof, Wind) continue working without data migration
+- All existing tests pass without modification (or with minimal, backward-compatible updates)
+- New model unit tests for each new FormType's requirements and validation
+**Plans**: 5
 
-### Phase 7: Dashboard & New Inspection Redesign
-**Goal**: Redesign the dashboard and new inspection pages with design system, status indicators, and improved form UX.
-**Requirements**: SCREEN-02, SCREEN-03
-**Recommended Agents**: UI Designer, UX Architect, Mobile App Builder, Frontend Developer
+### Phase 4: WDO Form Implementation
+**Goal**: Implement the FDACS-13645 wood-destroying organism inspection form — the first new fillable PDF form type, proving the expansion pattern.
+**Requirements**: FORM-01
+**Recommended Agents**: Senior Developer, Mobile App Builder, UI Designer, Legal Compliance Checker, Evidence Collector
 **Success Criteria**:
-- Dashboard: inspection cards with visual status (draft/in-progress/complete/delivered)
-- Dashboard: at-a-glance metrics or summary (inspection count, pending actions)
-- Dashboard: empty state for new users
-- New Inspection: progressive disclosure (sections expand as needed)
-- New Inspection: section grouping (client info, property info, form selection)
-- New Inspection: form selection with visual descriptions, not just checkboxes
-- Both pages use design tokens and component library exclusively
-- Widget tests updated
-**Plans**: 4
+- PDF template asset created for FDACS-13645 form
+- JSON field map defining all field coordinates, types, and mappings to unified schema
+- WDO-specific evidence requirements defined (infestation photos, treatment records, damage documentation)
+- Wizard steps defined for WDO inspection flow
+- Branch logic implemented (active infestation → additional requirements, previous treatment → documentation requirements)
+- PDF generation produces compliant FDACS-13645 output
+- PdfFieldMap coverage test verifies all template fields are mapped
+- Widget tests for WDO wizard steps
+- End-to-end test: create WDO inspection → fill wizard → generate PDF
+**Plans**: 5
 
-### Phase 8: Inspector Identity & Final Polish
-**Goal**: Redesign identity page, apply final consistency pass, and verify complete design system coverage.
-**Requirements**: SCREEN-04
-**Recommended Agents**: UI Designer, UX Architect, Evidence Collector, Reality Checker
+### Phase 5: Sinkhole Form Implementation
+**Goal**: Implement the Citizens Sinkhole Form and FGS Subsidence Incident Report — proving multi-template form types (one inspection, multiple output documents).
+**Requirements**: FORM-02
+**Recommended Agents**: Senior Developer, Mobile App Builder, Legal Compliance Checker, Evidence Collector, Backend Architect
 **Success Criteria**:
-- Inspector identity page redesigned with design system
-- Signature capture UI polished with clear affordances
-- License information display improved
-- Full app audit: zero hardcoded colors, spacing, or text styles remaining
-- Visual consistency verified across all screens (spacing, elevation, typography)
-- All tests passing (existing + new)
-- Design token usage report: 100% coverage across presentation layer
-**Plans**: 3
+- PDF template assets created for both Citizens Sinkhole Form and FGS Subsidence Incident Report
+- JSON field maps for both templates, both mapping to unified schema sinkhole namespace
+- Sinkhole-specific evidence requirements (geological photos, foundation cracks, ground depression documentation)
+- Wizard steps for sinkhole inspection flow
+- Branch logic (geological indicators → FGS report required, insurance claim → Citizens form required)
+- Single wizard completion generates both PDFs when applicable
+- PdfFieldMap coverage tests for both templates
+- Widget tests for sinkhole wizard steps
+**Plans**: 5
+
+### Phase 6: Narrative Report Engine
+**Goal**: Build the template-based narrative PDF generation subsystem for non-fillable form types (Mold, General), distinct from the existing coordinate-based field placement pipeline.
+**Requirements**: PDF-02
+**Recommended Agents**: Senior Developer, Backend Architect, Technical Writer, UI Designer, Evidence Collector
+**Success Criteria**:
+- NarrativeReportEngine abstraction defined alongside existing PdfRenderer
+- Template model: boilerplate sections + injectable findings + photo embedding
+- Section types: header, narrative paragraph, photo grid, checklist summary, signature block
+- Template loading from structured Dart definitions (not PDF assets — generated from scratch)
+- Styling consistent with app design system (dark theme tokens translate to print-appropriate palette)
+- Photo embedding with captions and category labels
+- Engine produces valid, multi-page PDF output from template + inspection data
+- Unit tests for template rendering, section composition, photo embedding
+- Integration test: sample narrative data → complete PDF output
+**Plans**: 5
+
+### Phase 7: Mold Assessment Implementation
+**Goal**: Implement the mold assessment report per Florida Chapter 468, Part XVI, F.S. — the first narrative-based form type, using the Phase 6 engine.
+**Requirements**: FORM-03
+**Recommended Agents**: Senior Developer, Mobile App Builder, Legal Compliance Checker, Technical Writer, Evidence Collector
+**Success Criteria**:
+- Mold assessment narrative template defined with all required statutory sections
+- Required sections: MRSA license display, scope of assessment, moisture source identification, mold type/location documentation, remediation protocol recommendations, limitations and disclaimers
+- Evidence requirements: moisture readings, mold growth photos, affected area documentation, air sample results (optional)
+- Wizard steps for mold assessment flow (structured data collection for narrative generation)
+- Branch logic (remediation recommended → protocol section required, air samples taken → results section)
+- Narrative PDF generation produces Chapter 468-compliant output
+- Widget tests for mold wizard steps
+- Compliance validation: required statutory elements checklist
+**Plans**: 5
+
+### Phase 8: General Inspection Implementation
+**Goal**: Implement the full home inspection report per Florida Rule 61-30.801 — the most comprehensive narrative form type, covering structural, electrical, plumbing, HVAC, and more.
+**Requirements**: FORM-04
+**Recommended Agents**: Senior Developer, Mobile App Builder, Legal Compliance Checker, Technical Writer, UX Architect
+**Success Criteria**:
+- General inspection narrative template with all Rule 61-30.801 required sections
+- Required sections: structural components, exterior, roofing, plumbing, electrical, HVAC, insulation/ventilation, built-in appliances, life safety
+- Per-section inspection model: condition rating (satisfactory/marginal/deficient), narrative findings, photo references
+- Evidence requirements per section (exterior photos, electrical panel, plumbing fixtures, HVAC data plates, etc.)
+- Wizard organized by inspection section (not linear — section-based navigation)
+- Branch logic per section (deficient rating → detailed findings required, safety hazard → immediate action recommendation)
+- Narrative PDF generation produces Rule 61-30.801-compliant output
+- Widget tests for general inspection wizard
+- Largest form type — verify PDF generation performance within acceptable limits
+**Plans**: 6
+
+### Phase 9: Cross-Form Integration
+**Goal**: Enable multi-form inspection sessions with cross-form evidence sharing and unified progress tracking across all 7 form types.
+**Requirements**: WIZARD-02, INTEG-01
+**Recommended Agents**: Senior Developer, UX Architect, Mobile App Builder, Backend Architect, Evidence Collector
+**Success Criteria**:
+- Inspector can select any combination of 7 form types per property visit
+- Shared property data (address, year built, client info) entered once, flows to all selected forms
+- Cross-form evidence sharing: one photo satisfies requirements on multiple forms (e.g., exterior photo counts for 4-Point AND General)
+- Evidence sharing UI: when capturing a photo, system shows which forms it satisfies
+- Unified progress indicator showing completion across all selected forms
+- Per-form wizard independence: each form's wizard completes independently
+- Dashboard updates: inspection cards show all selected form types with per-form status
+- FormTypeCard selection updated for 7 form types (scrollable, grouped by category)
+- Performance: selecting all 7 forms doesn't degrade wizard/PDF generation performance
+- Widget tests for multi-form selection, evidence sharing, progress tracking
+**Plans**: 5
+
+### Phase 10: Testing, Migration & Polish
+**Goal**: Comprehensive testing across all 7 form types, migration path for existing inspections, performance optimization, and documentation.
+**Requirements**: All
+**Recommended Agents**: Evidence Collector, Reality Checker, Performance Benchmarker, Technical Writer, Senior Developer
+**Success Criteria**:
+- All existing tests pass without regression
+- New form type tests achieve 80%+ coverage
+- Integration test suite: create inspection with each form type → complete wizard → generate PDF → verify output
+- Cross-form integration tests: multi-form sessions with evidence sharing
+- Performance benchmarks: PDF generation time for single form, multi-form (3, 5, 7 forms)
+- Migration validation: existing inspections (4-Point, Roof, Wind) load correctly with new data model
+- Offline scenario testing: capture + queue + sync for all new form types
+- Documentation: updated CLAUDE.md, form type reference guide, schema documentation
+- App size impact assessment (new PDF templates + assets)
+- Final compliance review: each form type's output verified against regulatory requirements
+**Plans**: 5
 
 ## Progress
 
 | Phase | Plans | Completed | Status |
 |-------|-------|-----------|--------|
-| 1. Design Token System | 4 | 4 | Complete |
-| 2. Component Library | 4 | 4 | Complete |
-| 3. Navigation System | 3 | 3 | Complete |
-| 4. Checklist Decomposition | 5 | 5 | Complete |
-| 5. Field Usability & Hierarchy | 4 | 4 | Complete |
-| 6. Auth Screens | 3 | 3 | Complete |
-| 7. Dashboard & New Inspection | 4 | 4 | Complete |
-| 8. Identity & Final Polish | 3 | 3 | Complete |
-| **Total** | **30** | **30** | **100%** |
+| 1. Ground Truth Extraction | 5 | 0 | Pending |
+| 2. Unified Schema Design | 5 | 0 | Pending |
+| 3. Data Model Evolution | 5 | 0 | Pending |
+| 4. WDO Form | 5 | 0 | Pending |
+| 5. Sinkhole Form | 5 | 0 | Pending |
+| 6. Narrative Report Engine | 5 | 0 | Pending |
+| 7. Mold Assessment | 5 | 0 | Pending |
+| 8. General Inspection | 6 | 0 | Pending |
+| 9. Cross-Form Integration | 5 | 0 | Pending |
+| 10. Testing & Polish | 5 | 0 | Pending |
+| **Total** | **51** | **0** | **0%** |

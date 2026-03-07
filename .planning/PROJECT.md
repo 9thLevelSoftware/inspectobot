@@ -1,16 +1,16 @@
-# InspectoBot — UI/UX Overhaul
+# InspectoBot — Form Expansion & Unified Schema
 
 ## What This Is
 
-A comprehensive redesign of InspectoBot's presentation layer, replacing the current unstyled, bland UI with a dark-only, utilitarian/industrial design system inspired by construction management apps (PlanGrid, Fieldwire, Procore). The overhaul establishes a custom design token system wired into Material 3, decomposes the monolithic checklist page, and applies field-optimized UX across all 8 screens.
+A major expansion of InspectoBot from 3 to 7 Florida inspection form types (adding WDO, Sinkhole, Mold Assessment, and General Inspection), built on a unified property schema designed from ground-truth document analysis. This project establishes the data foundation and form coverage that a future AI-assist layer (v2) will build upon.
 
 ## Core Value
 
-Inspectors can navigate and complete field workflows faster and with less cognitive load through a purpose-built, high-contrast interface designed for real-world conditions — bright sun, gloves, one-handed use, intermittent attention.
+Inspectors can complete all major Florida property inspection types in a single app instead of switching between tools or paper forms. A unified property schema means data entered once flows to every applicable form, eliminating redundant data entry across inspection types.
 
 ## Who It's For
 
-Florida home insurance inspectors using the app on-site during property inspections. They work on roofs, in attics, under houses, and in bright outdoor conditions. The UI must prioritize readability, large touch targets, and quick scanning over aesthetic refinement.
+Florida home insurance inspectors conducting on-site property inspections. They need to produce compliant reports for 4-Point, Roof Condition, Wind Mitigation, WDO (wood-destroying organisms), Sinkhole, Mold Assessment, and General Home Inspection — often multiple reports for a single property visit.
 
 ## Requirements
 
@@ -19,53 +19,61 @@ Florida home insurance inspectors using the app on-site during property inspecti
 
 ### Active
 
-- **THEME-01**: Design Token System — Custom tokens (colors, spacing, radii, elevation, typography) in `lib/theme/` wired into Material 3 `ThemeData`. Dark-only palette with orange/yellow accents on dark surfaces.
-- **THEME-02**: Reusable Component Library — Shared widgets (buttons, cards, form fields, status badges, section headers, loading/error states) built on design tokens.
-- **UX-01**: Checklist Page Decomposition — Break 822-line `form_checklist_page.dart` monolith into distinct views: wizard navigation, evidence capture, PDF/delivery, audit timeline.
-- **UX-02**: Field Usability Optimization — Large tap targets (min 48dp), one-handed reach zones, glove-friendly inputs, high contrast for outdoor/bright-sun readability.
-- **UX-03**: Visual Hierarchy & Density — Section grouping, card elevation, status badges, progress indicators, typographic contrast for quick scanning.
-- **UX-04**: Navigation System — Replace raw `MaterialPageRoute` with structured navigation (`go_router` or similar). Visual continuity and transitions between screens.
-- **SCREEN-01**: Auth Screens Redesign — Apply design system to all 4 auth screens (sign in, sign up, forgot password, reset password). Extract shared form components.
-- **SCREEN-02**: Dashboard Redesign — Status indicators, at-a-glance progress, inspection cards with visual state.
-- **SCREEN-03**: New Inspection Page Redesign — Progressive disclosure, section grouping, improved form UX.
-- **SCREEN-04**: Inspector Identity Page Redesign — Profile and signature UI refresh with design system.
+- **SCHEMA-01**: Ground Truth Extraction — Analyze all docs/ folder PDFs and templates to extract every field, checkbox, and narrative section into a comprehensive field inventory across all 7 form types.
+- **SCHEMA-02**: Unified Property Schema — Design a master JSON schema where every form field maps to a normalized property model. Shared properties (address, year built, client info) defined once; form-specific properties namespaced per form type.
+- **DATA-01**: Data Model Evolution — Extend FormType enum (4 new values), refactor InspectionDraft to support unified schema, update FormRequirements and WizardProgressSnapshot for new form types. Backward-compatible with existing inspections.
+- **FORM-01**: WDO Form Type — FDACS-13645 wood-destroying organism inspection. Fillable PDF with field map. Evidence requirements, wizard steps, and branch logic (active infestation, previous treatment, damage extent).
+- **FORM-02**: Sinkhole Form Type — Citizens Sinkhole Form + FGS Subsidence Incident Report. Fillable PDFs with field maps. Evidence requirements for geological indicators and insurance triggers.
+- **FORM-03**: Mold Assessment Form Type — Narrative-based report per Florida Chapter 468, Part XVI, F.S. MRSA license validation, scope, source identification, remediation protocol. Template derived from HUDreport.doc patterns.
+- **FORM-04**: General Inspection Form Type — Narrative-based full home inspection report per Florida Rule 61-30.801. Structural, electrical, plumbing narrative minimums. Template derived from fullinspection.doc and residentialmanual.pdf.
+- **PDF-02**: Narrative Report Engine — Template-based narrative PDF generation for non-fillable form types (Mold, General). Boilerplate sections + inspector findings injection. Distinct from existing coordinate-based field placement.
+- **WIZARD-02**: Cross-Form Evidence Sharing — One photo or document can satisfy requirements on multiple form types simultaneously. Inspector captures once, system routes to all applicable forms.
+- **INTEG-01**: Multi-Form Sessions — Inspector selects multiple form types per property visit. Unified progress tracking, shared property data, independent per-form wizard completion.
 
 ### Out of Scope
 
-- Backend or Supabase schema changes
-- Business logic refactoring (repositories, domain layer)
-- New features or workflows beyond what exists in v1.0
+- Zero-UI camera HUD (future v2 — AI-assist layer)
+- AI-assisted auto-fill from photos/dictation (future v2)
+- On-device speech-to-text (future v2)
+- Cloud LLM routing (future v2)
 - Light mode (dark-only by design)
-- State management migration (unless decomposition requires it)
-- General-purpose narrative inspection reporting
+- Multi-tenant/organization switching
+- Video capture
+- Client-facing portal
+- Real-time collaboration
+- Backend/Supabase schema changes beyond what form expansion requires
 
 ## Constraints
 
-- **Visual Direction**: Utilitarian/industrial. Dark surfaces, orange/yellow accents, card-based layouts, bold headers. Construction management app aesthetic (PlanGrid/Fieldwire/Procore reference).
-- **Dark Mode Only**: No light mode. Token system designed for dark palette exclusively.
-- **Field Conditions**: UI must remain usable in bright sunlight, with gloves, one-handed, on unstable surfaces. Minimum 48dp tap targets.
-- **Dependencies**: Open to new packages that meaningfully accelerate results (icon sets, navigation, animations). No package for package's sake.
-- **Test Preservation**: Existing 14,554 LOC test suite must continue passing. Widget tests will need updates as screens are refactored.
-- **No Backend Changes**: All changes are presentation-layer only. Repository interfaces and domain models remain unchanged.
-- **Incremental Delivery**: Each phase must leave the app in a working state. No "big bang" rewrites.
+- **Backward Compatibility**: Existing 3 form types (4-Point, Roof Condition, Wind Mitigation) must continue working identically. No breaking changes to existing inspections.
+- **Unified Schema First**: The schema must be designed before individual form implementations begin. Forms are implemented against the schema, not independently.
+- **Florida Compliance**: Each form type must produce output that matches the exact regulatory form (FDACS-13645, Citizens Sinkhole Form, etc.) or satisfies statutory requirements (Chapter 468, Rule 61-30.801).
+- **Two PDF Paradigms**: Fillable PDFs (WDO, Sinkhole) use coordinate-based field placement like existing forms. Narrative PDFs (Mold, General) require a new template-injection approach.
+- **No Code Generation**: Project continues the manual serialization pattern. Consider migration to code generation only if serialization complexity becomes unmanageable with 7+ form types.
+- **Test Coverage**: All new form types need widget tests. Existing test suite must continue passing. Target: maintain 78%+ test-to-code ratio.
+- **Incremental Delivery**: Each phase leaves the app in a working state. New forms can ship independently once the schema foundation is in place.
+- **Doc Ground Truth**: The docs/ folder contents are the authoritative source for form field mapping. AI pipeline design (v2) must be compatible with the schema produced here.
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Dark-only, utilitarian/industrial direction | Inspectors work outdoors in bright conditions; high contrast dark UI improves readability and reduces glare | Pending |
-| Custom token system + Material 3 | Gives full control over design language while leveraging Flutter's built-in theming. More structured than raw M3 customization alone | Pending |
-| Construction management app reference (PlanGrid/Fieldwire/Procore) | Closest app category to field inspection tools; visual language will feel familiar to target users | Pending |
-| Parallel tracks execution: tokens + checklist decomposition first | Checklist page is where real complexity lives; forces design system to earn its keep immediately rather than being built in a vacuum | Pending |
-| All 8 screens in scope | Partial redesign creates inconsistency; complete overhaul ensures unified experience | Pending |
-| Open to accelerator packages | Speed matters; packages like go_router, custom icon sets save significant implementation time | Pending |
+| Schema + Forms first, AI-assist deferred to v2 | De-risks the project: validates form coverage and schema design before introducing AI complexity. AI layer becomes a bolt-on, not a dependency. | Active |
+| Unified Property Schema designed upfront | Prevents per-form data silos. Enables cross-form evidence sharing and future AI routing. More work upfront but eliminates refactoring later. | Active |
+| Doc analysis sprint as Phase 1 | Ground truth must exist before schema design. Every field on every form must be inventoried to prevent schema gaps. | Active |
+| Narrative report engine as distinct subsystem | Mold and General inspections use narrative templates, not fillable PDFs. Different generation approach requires its own abstraction. | Active |
+| Autonomous execution, deep analysis, premium agents | Complex domain with regulatory compliance requirements. Deep analysis catches compliance gaps early. Premium agents provide specialist coverage. | Active |
+| All 4 new form types in scope | Partial expansion creates inconsistency. Full coverage makes the app a true "one-stop" inspection tool. | Active |
 
 ## Architecture Influences
 
-- **Existing pattern**: `lib/features/<name>/presentation/` convention for screens. Overhaul will add `lib/theme/` for tokens and `lib/common/widgets/` for shared components.
-- **State management**: Currently vanilla `setState()`. Checklist decomposition may require introducing a lightweight state solution if prop-drilling becomes unmanageable.
-- **Navigation**: `AppRoutes` class with named constants exists. Will be replaced or extended with a proper router package.
-- **Testing**: High test-to-code ratio (78%). Widget tests will need systematic updates as screens change. New components need test coverage.
+- **Existing pattern**: `lib/features/<name>/` convention continues. New form types may share the `inspection/` feature or get dedicated feature modules if complexity warrants.
+- **PDF pipeline**: Existing `PdfOrchestrator` + `OnDevicePdfService` extend to new templates. Narrative engine is a new subsystem alongside coordinate-based placement.
+- **Data model**: `InspectionDraft` evolves to carry unified schema data. `FormType` enum extends. `FormRequirements` grows significantly (50+ rules per new form type).
+- **Wizard**: Current linear wizard model may need refactoring for narrative-based forms where the "steps" are different from fillable PDF forms.
+- **Sync**: Existing `SyncScheduler` + outbox handles new form types without changes. Media sync extends naturally.
+- **Testing**: New form types need comprehensive requirement/readiness tests. PDF field map coverage tests (existing pattern) extend to new templates.
+- **Future AI hook**: The unified schema is explicitly designed to be the target for v2's AI multimodal router. Schema paths become the AI's structured output spec.
 
 ---
-*Last updated: 2026-03-05 after initialization*
+*Last updated: 2026-03-07 after initialization (concept crystallized via /legion:explore)*
