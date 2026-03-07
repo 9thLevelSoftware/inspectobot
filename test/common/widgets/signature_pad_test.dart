@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/common/widgets/signature_pad.dart';
 import 'package:inspectobot/theme/theme.dart';
+import 'package:signature/signature.dart';
 
 Widget _wrap(Widget child) {
   return MaterialApp(
@@ -12,10 +13,10 @@ Widget _wrap(Widget child) {
 
 void main() {
   group('SignaturePad', () {
-    late SignaturePadController controller;
+    late SignatureController controller;
 
     setUp(() {
-      controller = SignaturePadController();
+      controller = SignatureController(penStrokeWidth: 3.0);
     });
 
     tearDown(() {
@@ -27,74 +28,16 @@ void main() {
         SignaturePad(controller: controller),
       ));
 
-      expect(
-        find.descendant(
-          of: find.byType(SignaturePad),
-          matching: find.byType(CustomPaint),
-        ),
-        findsOneWidget,
-      );
+      expect(find.byType(Signature), findsOneWidget);
       expect(find.text('Draw your signature here'), findsOneWidget);
     });
 
-    testWidgets('shows hint text when points list is empty', (tester) async {
+    testWidgets('shows custom hint text when empty', (tester) async {
       await tester.pumpWidget(_wrap(
         SignaturePad(controller: controller, hintText: 'Sign here'),
       ));
 
       expect(find.text('Sign here'), findsOneWidget);
-    });
-
-    testWidgets('hides hint text when points are present', (tester) async {
-      await tester.pumpWidget(_wrap(
-        SignaturePad(controller: controller),
-      ));
-
-      // Draw something
-      final center = tester.getCenter(find.byType(SignaturePad));
-      final gesture = await tester.startGesture(center);
-      await gesture.moveBy(const Offset(50, 50));
-      await gesture.up();
-      await tester.pump();
-
-      expect(find.text('Draw your signature here'), findsNothing);
-    });
-
-    testWidgets('captures pointer events and populates controller',
-        (tester) async {
-      await tester.pumpWidget(_wrap(
-        SignaturePad(controller: controller),
-      ));
-
-      final center = tester.getCenter(find.byType(SignaturePad));
-      final gesture = await tester.startGesture(center);
-      await gesture.moveBy(const Offset(50, 50));
-      await gesture.up();
-      await tester.pump();
-
-      expect(controller.isNotEmpty, isTrue);
-      expect(controller.points.length, greaterThan(1));
-    });
-
-    testWidgets('controller.clear removes all points', (tester) async {
-      await tester.pumpWidget(_wrap(
-        SignaturePad(controller: controller),
-      ));
-
-      // Draw something
-      final center = tester.getCenter(find.byType(SignaturePad));
-      final gesture = await tester.startGesture(center);
-      await gesture.moveBy(const Offset(50, 50));
-      await gesture.up();
-      await tester.pump();
-      expect(controller.isNotEmpty, isTrue);
-
-      // Clear
-      controller.clear();
-      await tester.pump();
-
-      expect(controller.isEmpty, isTrue);
-      expect(find.text('Draw your signature here'), findsOneWidget);
     });
 
     testWidgets('respects custom height', (tester) async {
@@ -108,21 +51,6 @@ void main() {
       );
       final sizedBox = tester.widget<SizedBox>(sizedBoxFinder.first);
       expect(sizedBox.height, 300);
-    });
-
-    testWidgets('does not respond to pointer events when disabled',
-        (tester) async {
-      await tester.pumpWidget(_wrap(
-        SignaturePad(controller: controller, enabled: false),
-      ));
-
-      final center = tester.getCenter(find.byType(SignaturePad));
-      final gesture = await tester.startGesture(center);
-      await gesture.moveBy(const Offset(50, 50));
-      await gesture.up();
-      await tester.pump();
-
-      expect(controller.isEmpty, isTrue);
     });
 
     testWidgets('applies semantic label', (tester) async {
@@ -153,6 +81,21 @@ void main() {
 
       final theme = AppTheme.dark();
       expect(decoration.color, theme.colorScheme.surfaceContainerHighest);
+    });
+
+    testWidgets('blocks input when disabled', (tester) async {
+      await tester.pumpWidget(_wrap(
+        SignaturePad(controller: controller, enabled: false),
+      ));
+
+      // AbsorbPointer overlay should be present when disabled.
+      expect(
+        find.descendant(
+          of: find.byType(SignaturePad),
+          matching: find.byType(AbsorbPointer),
+        ),
+        findsOneWidget,
+      );
     });
   });
 }

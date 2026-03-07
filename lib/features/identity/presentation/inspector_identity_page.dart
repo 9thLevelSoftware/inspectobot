@@ -31,7 +31,7 @@ class InspectorIdentityPage extends StatefulWidget {
 class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
   final _licenseTypeController = TextEditingController();
   final _licenseNumberController = TextEditingController();
-  final _signatureController = SignaturePadController();
+  late final SignatureController _signatureController;
   bool _saving = false;
   bool _loading = true;
   String? _errorMessage;
@@ -45,6 +45,10 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
   @override
   void initState() {
     super.initState();
+    _signatureController = SignatureController(
+      penStrokeWidth: 3.0,
+      exportBackgroundColor: Colors.transparent,
+    );
     _loadExisting();
   }
 
@@ -98,11 +102,12 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
 
       SignatureRecord? newRecord;
       if (_signatureController.isNotEmpty) {
+        final points = _signatureController.points;
         final encoded = Uint8List.fromList(
           utf8.encode(
             jsonEncode(
-              _signatureController.points
-                  .map((point) => {'x': point.dx, 'y': point.dy})
+              points
+                  .map((point) => {'x': point.offset.dx, 'y': point.offset.dy})
                   .toList(),
             ),
           ),
