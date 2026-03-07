@@ -54,7 +54,7 @@ void main() {
       expect(find.text('Draw your signature here'), findsNothing);
     });
 
-    testWidgets('captures pan gestures and calls onPointsChanged',
+    testWidgets('captures pointer events and calls onPointsChanged',
         (tester) async {
       List<Offset>? capturedPoints;
 
@@ -65,10 +65,10 @@ void main() {
         ),
       ));
 
-      await tester.drag(find.descendant(
-        of: find.byType(SignaturePad),
-        matching: find.byType(RawGestureDetector),
-      ), const Offset(50, 50));
+      final center = tester.getCenter(find.byType(SignaturePad));
+      final gesture = await tester.startGesture(center);
+      await gesture.moveBy(const Offset(50, 50));
+      await gesture.up();
       await tester.pump();
 
       expect(capturedPoints, isNotNull);
@@ -92,7 +92,8 @@ void main() {
       expect(sizedBox.height, 300);
     });
 
-    testWidgets('does not respond to gestures when disabled', (tester) async {
+    testWidgets('does not respond to pointer events when disabled',
+        (tester) async {
       var called = false;
 
       await tester.pumpWidget(_wrap(
@@ -103,10 +104,10 @@ void main() {
         ),
       ));
 
-      await tester.drag(find.descendant(
-        of: find.byType(SignaturePad),
-        matching: find.byType(RawGestureDetector),
-      ), const Offset(50, 50));
+      final center = tester.getCenter(find.byType(SignaturePad));
+      final gesture = await tester.startGesture(center);
+      await gesture.moveBy(const Offset(50, 50));
+      await gesture.up();
       await tester.pump();
 
       expect(called, isFalse);

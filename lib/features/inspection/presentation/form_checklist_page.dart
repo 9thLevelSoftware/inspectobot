@@ -192,11 +192,12 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
 
   Widget _buildTabSelector() {
     return SegmentedButton<int>(
+      showSelectedIcon: false,
       segments: const [
-        ButtonSegment<int>(value: 0, label: Text('Steps'), icon: Icon(Icons.list_alt)),
-        ButtonSegment<int>(value: 1, label: Text('Summary'), icon: Icon(Icons.assignment)),
-        ButtonSegment<int>(value: 2, label: Text('Report'), icon: Icon(Icons.picture_as_pdf)),
-        ButtonSegment<int>(value: 3, label: Text('Timeline'), icon: Icon(Icons.history)),
+        ButtonSegment<int>(value: 0, label: Text('Steps')),
+        ButtonSegment<int>(value: 1, label: Text('Summary')),
+        ButtonSegment<int>(value: 2, label: Text('Report')),
+        ButtonSegment<int>(value: 3, label: Text('Timeline')),
       ],
       selected: {_activeTabIndex},
       onSelectionChanged: (selection) {

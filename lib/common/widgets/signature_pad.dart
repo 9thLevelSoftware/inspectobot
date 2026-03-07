@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:inspectobot/theme/theme.dart';
@@ -71,26 +70,17 @@ class SignaturePad extends StatelessWidget {
             border: Border.all(color: effectiveBorderColor),
             borderRadius: AppRadii.md,
           ),
-          child: RawGestureDetector(
-            gestures: <Type, GestureRecognizerFactory>{
-              if (enabled)
-                _EagerPanGestureRecognizer:
-                    GestureRecognizerFactoryWithHandlers<
-                        _EagerPanGestureRecognizer>(
-                  _EagerPanGestureRecognizer.new,
-                  (_EagerPanGestureRecognizer instance) {
-                    instance
-                      ..onStart = (details) {
-                        onPointsChanged(
-                            [...points, details.localPosition]);
-                      }
-                      ..onUpdate = (details) {
-                        onPointsChanged(
-                            [...points, details.localPosition]);
-                      };
-                  },
-                ),
-            },
+          child: Listener(
+            onPointerDown: enabled
+                ? (event) {
+                    onPointsChanged([...points, event.localPosition]);
+                  }
+                : null,
+            onPointerMove: enabled
+                ? (event) {
+                    onPointsChanged([...points, event.localPosition]);
+                  }
+                : null,
             behavior: HitTestBehavior.opaque,
             child: SizedBox(
               height: height,
@@ -150,15 +140,5 @@ class _SignaturePainter extends CustomPainter {
     return oldDelegate.points != points ||
         oldDelegate.color != color ||
         oldDelegate.strokeWidth != strokeWidth;
-  }
-}
-
-/// A [PanGestureRecognizer] that immediately claims victory in the gesture
-/// arena, preventing parent scrollables from stealing the drag.
-class _EagerPanGestureRecognizer extends PanGestureRecognizer {
-  @override
-  void addAllowedPointer(PointerDownEvent event) {
-    super.addAllowedPointer(event);
-    resolve(GestureDisposition.accepted);
   }
 }
