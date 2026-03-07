@@ -28,10 +28,12 @@ Future<void> main() async {
         home: Scaffold(
           body: Center(
             child: Padding(
+              // Documented exception: pre-theme error fallback — AppTheme unavailable
               padding: const EdgeInsets.all(16.0),
               child: Text(
                 'Initialization Error:\n$e\n\nEnsure that you are passing the required environment variables (e.g., via --dart-define-from-file=.env).',
                 textAlign: TextAlign.center,
+                // Documented exception: pre-theme error fallback — AppTheme unavailable
                 style: const TextStyle(color: Colors.red),
               ),
             ),
