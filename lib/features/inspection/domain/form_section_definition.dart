@@ -57,6 +57,8 @@ class FormSectionDefinition {
         count++;
       } else if (value is String && value.isEmpty) {
         count++;
+      } else if (value is List && value.isEmpty) {
+        count++;
       }
     }
     return count;

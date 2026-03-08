@@ -13,6 +13,7 @@ void main() {
     FormType.fourPoint: 'assets/pdf/maps/insp4pt_03_25.v1.json',
     FormType.roofCondition: 'assets/pdf/maps/rcf1_03_25.v1.json',
     FormType.windMitigation: 'assets/pdf/maps/oir_b1_1802_rev_04_26.v1.json',
+    FormType.wdo: 'assets/pdf/maps/fdacs_13645_rev_10_22.v1.json',
   };
 
   for (final entry in mapAssets.entries) {

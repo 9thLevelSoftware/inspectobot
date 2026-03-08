@@ -111,5 +111,51 @@ void main() {
       expect(multiDraft.formData[FormType.wdo]!['gen_company_name'], 'WDO Co');
       expect(multiDraft.formData[FormType.fourPoint]!['some_field'], 'FP value');
     });
+
+    test('formData String values become PDF fieldValues (matching source_keys)', () {
+      final controller = InspectionSessionController(draft: draft);
+
+      // Use keys that match WdoSectionDefinitions / PDF map source_keys
+      controller.setFormFieldValue(FormType.wdo, 'gen_company_name', 'Acme Pest');
+      controller.setFormFieldValue(FormType.wdo, 'gen_phone', '555-9999');
+      controller.setFormFieldValue(FormType.wdo, 'find_live_description', 'Subterranean termites');
+      // Non-string values should be excluded from fieldValues
+      controller.setFormFieldValue(FormType.wdo, 'numeric_field', 42);
+      // Empty strings should be excluded
+      controller.setFormFieldValue(FormType.wdo, 'empty_field', '');
+
+      final rawData = draft.formData[FormType.wdo]!;
+      final fieldValues = <String, String>{};
+      for (final entry in rawData.entries) {
+        if (entry.value is String && (entry.value as String).isNotEmpty) {
+          fieldValues[entry.key] = entry.value as String;
+        }
+      }
+
+      expect(fieldValues['gen_company_name'], 'Acme Pest');
+      expect(fieldValues['gen_phone'], '555-9999');
+      expect(fieldValues['find_live_description'], 'Subterranean termites');
+      expect(fieldValues.containsKey('numeric_field'), isFalse);
+      expect(fieldValues.containsKey('empty_field'), isFalse);
+    });
+
+    test('branchContext booleans are available for checkboxValues', () {
+      final controller = InspectionSessionController(draft: draft);
+      controller.initialize();
+
+      controller.setBranchFlag('wdo_live_wdo', true);
+      controller.setBranchFlag('wdo_visible_evidence', false);
+
+      final branchContext = controller.snapshot.branchContext;
+      final checkboxValues = <String, bool>{};
+      for (final entry in branchContext.entries) {
+        if (entry.value is bool) {
+          checkboxValues[entry.key] = entry.value as bool;
+        }
+      }
+
+      expect(checkboxValues['wdo_live_wdo'], isTrue);
+      expect(checkboxValues['wdo_visible_evidence'], isFalse);
+    });
   });
 }

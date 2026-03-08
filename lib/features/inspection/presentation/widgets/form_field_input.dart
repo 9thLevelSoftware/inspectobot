@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:inspectobot/common/widgets/app_checkbox_tile.dart';
 import 'package:inspectobot/common/widgets/app_date_picker.dart';
+import 'package:inspectobot/common/widgets/app_multi_select_chips.dart';
 import 'package:inspectobot/common/widgets/app_text_field.dart';
 import 'package:inspectobot/features/inspection/domain/field_definition.dart';
 import 'package:inspectobot/features/inspection/domain/field_type.dart';
@@ -130,35 +131,11 @@ class _FormFieldInputState extends State<FormFieldInput> {
         );
 
       case FieldType.multiSelect:
-        final selected =
-            (widget.value as List<String>?) ?? <String>[];
-        final options = field.multiSelectOptions ?? <String>[];
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(field.label, style: Theme.of(context).textTheme.labelMedium),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: options.map((opt) {
-                final isSelected = selected.contains(opt);
-                return FilterChip(
-                  label: Text(opt),
-                  selected: isSelected,
-                  onSelected: (on) {
-                    final updated = List<String>.from(selected);
-                    if (on) {
-                      updated.add(opt);
-                    } else {
-                      updated.remove(opt);
-                    }
-                    widget.onChanged(field.key, updated);
-                  },
-                );
-              }).toList(),
-            ),
-          ],
+        return AppMultiSelectChips(
+          label: field.label,
+          options: field.multiSelectOptions ?? const [],
+          selected: (widget.value as List<String>?) ?? const [],
+          onChanged: (updated) => widget.onChanged(field.key, updated),
         );
     }
   }

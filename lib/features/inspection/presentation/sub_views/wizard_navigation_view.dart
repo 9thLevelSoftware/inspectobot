@@ -71,6 +71,13 @@ class WizardNavigationView extends StatelessWidget {
     if (formWidget != null) {
       // Form step manages its own scrolling (TabBarView).
       // Do NOT wrap in SingleChildScrollView — it needs bounded height.
+      //
+      // Evidence capture is handled via separate wizard steps, not inline in
+      // form sections. FormSectionUI.evidenceRequirementKeys are metadata for
+      // cross-referencing, not UI triggers here.
+      //
+      // Branch flag toggles are rendered per-section inside FormSectionUI,
+      // so we skip _buildBranchInputControls when a form step widget is active.
       return ReachZoneScaffold(
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -25,7 +25,6 @@ import '../../domain/inspection_draft.dart';
 import '../../domain/inspection_wizard_state.dart';
 import '../../domain/report_readiness.dart';
 import '../../domain/required_photo_category.dart';
-import '../../domain/wdo_form_data.dart';
 
 // ---------------------------------------------------------------------------
 // Result types
@@ -330,14 +329,24 @@ class InspectionSessionController {
       final checkboxValues = <String, bool>{};
 
       if (draft.enabledForms.contains(FormType.wdo)) {
+        // For WDO form, pass form data directly as field values.
+        // Keys in draft.formData match PDF map source_keys (e.g. gen_company_name),
+        // bypassing WdoFormData which uses different key names.
         final wdoRawData = draft.formData[FormType.wdo];
         if (wdoRawData != null) {
-          final wdoData = WdoFormData.fromJson(wdoRawData);
-          final pdfMaps = wdoData.toPdfMaps(
-            branchContext: _snapshot.branchContext,
-          );
-          fieldValues.addAll(pdfMaps.fieldValues);
-          checkboxValues.addAll(pdfMaps.checkboxValues);
+          for (final entry in wdoRawData.entries) {
+            if (entry.value is String &&
+                (entry.value as String).isNotEmpty) {
+              fieldValues[entry.key] = entry.value as String;
+            }
+          }
+        }
+      }
+
+      // Merge branchContext booleans into checkboxValues.
+      for (final entry in _snapshot.branchContext.entries) {
+        if (entry.value is bool) {
+          checkboxValues[entry.key] = entry.value as bool;
         }
       }
 

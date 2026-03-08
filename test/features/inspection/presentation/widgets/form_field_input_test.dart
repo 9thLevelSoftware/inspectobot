@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:inspectobot/common/widgets/app_checkbox_tile.dart';
 import 'package:inspectobot/common/widgets/app_date_picker.dart';
+import 'package:inspectobot/common/widgets/app_multi_select_chips.dart';
 import 'package:inspectobot/features/inspection/domain/field_definition.dart';
 import 'package:inspectobot/features/inspection/domain/field_type.dart';
 import 'package:inspectobot/features/inspection/presentation/widgets/form_field_input.dart';
@@ -155,6 +156,44 @@ void main() {
 
       expect(changedKey, 'confirmed');
       expect(changedValue, true);
+    });
+
+    testWidgets('renders AppMultiSelectChips for FieldType.multiSelect',
+        (tester) async {
+      String? changedKey;
+      dynamic changedValue;
+
+      await tester.pumpWidget(_wrap(
+        FormFieldInput(
+          field: const FieldDefinition(
+            key: 'defects',
+            label: 'Defects Found',
+            type: FieldType.multiSelect,
+            multiSelectOptions: ['Cracks', 'Rust', 'Leaks'],
+          ),
+          value: <String>['Rust'],
+          onChanged: (k, v) {
+            changedKey = k;
+            changedValue = v;
+          },
+        ),
+      ));
+
+      expect(find.byType(AppMultiSelectChips), findsOneWidget);
+      expect(find.text('Defects Found'), findsOneWidget);
+
+      // Verify pre-selected chip
+      final rustChip = tester.widget<FilterChip>(
+        find.widgetWithText(FilterChip, 'Rust'),
+      );
+      expect(rustChip.selected, isTrue);
+
+      // Tap an unselected chip to add it
+      await tester.tap(find.widgetWithText(FilterChip, 'Cracks'));
+      await tester.pump();
+
+      expect(changedKey, 'defects');
+      expect(changedValue, containsAll(['Rust', 'Cracks']));
     });
 
     testWidgets('handles null initial value for text', (tester) async {

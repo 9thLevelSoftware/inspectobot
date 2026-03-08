@@ -147,6 +147,27 @@ void main() {
         expect(count, 0);
       });
 
+      test('counts empty List as incomplete', () {
+        final listSection = const FormSectionDefinition(
+          id: 'multi',
+          title: 'Multi',
+          fieldDefinitions: [
+            FieldDefinition(
+              key: 'tags',
+              label: 'Tags',
+              type: FieldType.multiSelect,
+              isRequired: true,
+            ),
+          ],
+        );
+
+        expect(listSection.countIncomplete({'tags': <String>[]}, const {}), 1);
+        expect(
+          listSection.countIncomplete({'tags': ['a']}, const {}),
+          0,
+        );
+      });
+
       test('excludes non-visible required fields from count', () {
         final count = section.countIncomplete(
           {'description': 'Filled'},
