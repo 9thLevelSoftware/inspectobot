@@ -9,9 +9,9 @@ import 'package:inspectobot/features/pdf/pdf_orchestrator.dart';
 import 'package:inspectobot/features/pdf/pdf_strategy.dart';
 
 void main() {
-  group('PdfOrchestrator cloudFallback strategy', () {
-    test('returns cloud artifact when cloud generation succeeds', () async {
-      final cloudFile = await _writePdfStub('cloud-success');
+  group('PdfOrchestrator narrative routing', () {
+    test('overlay-only input with null narrative engine works fine', () async {
+      final cloudFile = await _writePdfStub('overlay-only');
       final cloud = _FakeCloudPdfService(
         outcome: CloudPdfGenerationOutcome.generated(cloudFile),
       );
@@ -22,38 +22,17 @@ void main() {
         primaryStrategy: PdfStrategy.cloudFallback,
       );
 
-      final generated = await orchestrator.generate(_input());
+      final result = await orchestrator.generate(_overlayInput());
 
-      expect(generated, hasLength(1));
-      expect(generated.first.path, cloudFile.path);
-      expect(onDevice.callCount, 0);
+      expect(result, hasLength(1));
+      expect(result.first.path, cloudFile.path);
     });
 
-    test('falls back to on-device when cloud is unavailable', () async {
+    test('narrative input with null narrative engine throws StateError',
+        () async {
       final cloud = _FakeCloudPdfService(
         outcome: const CloudPdfGenerationOutcome.unavailable(
-          reason: 'cloud provider disabled',
-        ),
-      );
-      final onDevice = _RecordingOnDevicePdfService();
-      final orchestrator = PdfOrchestrator(
-        onDevice: onDevice,
-        cloud: cloud,
-        primaryStrategy: PdfStrategy.cloudFallback,
-      );
-
-      final generated = await orchestrator.generate(_input());
-
-      expect(generated, hasLength(1));
-      expect(await generated.first.exists(), isTrue);
-      expect(onDevice.callCount, 1);
-    });
-
-    test('fails closed on terminal cloud failure without fallback', () async {
-      final cloud = _FakeCloudPdfService(
-        outcome: CloudPdfGenerationOutcome.terminalFailure(
-          error: StateError('cloud api rejected request'),
-          reason: 'terminal cloud failure',
+          reason: 'not needed',
         ),
       );
       final onDevice = _RecordingOnDevicePdfService();
@@ -64,28 +43,68 @@ void main() {
       );
 
       expect(
-        () => orchestrator.generate(_input()),
+        () => orchestrator.generate(_narrativeInput()),
         throwsA(
-          isA<PdfCloudGenerationTerminalFailure>().having(
-            (error) => error.message,
+          isA<StateError>().having(
+            (e) => e.message,
             'message',
-            contains('terminal cloud failure'),
+            contains('NarrativeReportEngine'),
           ),
         ),
       );
-      expect(onDevice.callCount, 0);
+    });
+
+    test('mixed input with null narrative engine throws StateError', () async {
+      final cloud = _FakeCloudPdfService(
+        outcome: const CloudPdfGenerationOutcome.unavailable(
+          reason: 'not needed',
+        ),
+      );
+      final onDevice = _RecordingOnDevicePdfService();
+      final orchestrator = PdfOrchestrator(
+        onDevice: onDevice,
+        cloud: cloud,
+        primaryStrategy: PdfStrategy.cloudFallback,
+      );
+
+      final input = PdfGenerationInput(
+        inspectionId: 'insp-mixed-1',
+        organizationId: 'org-1',
+        userId: 'user-1',
+        clientName: 'Mixed User',
+        propertyAddress: '400 Mix Blvd',
+        enabledForms: {FormType.fourPoint, FormType.moldAssessment},
+        capturedCategories: const {},
+      );
+
+      expect(
+        () => orchestrator.generate(input),
+        throwsA(isA<StateError>()),
+      );
     });
   });
 }
 
-PdfGenerationInput _input() {
+PdfGenerationInput _overlayInput() {
   return PdfGenerationInput(
-    inspectionId: 'insp-orchestrator-1',
+    inspectionId: 'insp-overlay-1',
     organizationId: 'org-1',
     userId: 'user-1',
-    clientName: 'Cloud Path User',
-    propertyAddress: '200 Strategy Ln',
+    clientName: 'Overlay User',
+    propertyAddress: '100 Overlay Ln',
     enabledForms: {FormType.fourPoint},
+    capturedCategories: const {},
+  );
+}
+
+PdfGenerationInput _narrativeInput() {
+  return PdfGenerationInput(
+    inspectionId: 'insp-narrative-1',
+    organizationId: 'org-1',
+    userId: 'user-1',
+    clientName: 'Narrative User',
+    propertyAddress: '200 Narrative Dr',
+    enabledForms: {FormType.moldAssessment},
     capturedCategories: const {},
   );
 }

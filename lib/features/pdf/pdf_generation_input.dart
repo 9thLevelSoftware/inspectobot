@@ -18,6 +18,7 @@ class PdfGenerationInput {
     this.checkboxValues = const <String, bool>{},
     this.evidenceMediaPaths = const <String, List<String>>{},
     this.signatureBytes,
+    this.narrativeFormData = const <FormType, Map<String, dynamic>>{},
   });
 
   final String inspectionId;
@@ -33,6 +34,13 @@ class PdfGenerationInput {
   final Map<String, bool> checkboxValues;
   final Map<String, List<String>> evidenceMediaPaths;
   final Uint8List? signatureBytes;
+
+  /// Form data keyed by [FormType] for narrative report templates.
+  ///
+  /// Only populated for narrative form types (e.g. moldAssessment,
+  /// generalInspection). Overlay form types use [fieldValues] and
+  /// [checkboxValues] instead.
+  final Map<FormType, Map<String, dynamic>> narrativeFormData;
 
   Map<String, dynamic> toCanonicalPayload() {
     final forms = enabledForms.map((form) => form.code).toList(growable: false)

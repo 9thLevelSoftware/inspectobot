@@ -10,6 +10,12 @@ import '../../../audit/data/audit_event_repository.dart';
 import '../../../audit/domain/audit_event.dart';
 import '../../../pdf/cloud_pdf_service.dart';
 import '../../../pdf/data/pdf_media_resolver.dart';
+import '../../../pdf/narrative/narrative_media_resolver.dart';
+import '../../../pdf/narrative/narrative_print_theme.dart';
+import '../../../pdf/narrative/narrative_report_engine.dart';
+import '../../../pdf/narrative/narrative_template_registry.dart';
+import '../../../pdf/narrative/templates/general_inspection_template.dart';
+import '../../../pdf/narrative/templates/mold_assessment_template.dart';
 import '../../../pdf/on_device_pdf_service.dart';
 import '../../../pdf/pdf_generation_input.dart';
 import '../../../pdf/pdf_orchestrator.dart';
@@ -186,15 +192,26 @@ class InspectionSessionController {
   /// wizard snapshot, clamps the step index, and loads readiness + audit.
   void initialize() {
     final remoteStore = _mediaSyncRemoteStore;
+    final PdfRemoteMediaReader? remoteReader = remoteStore == null
+        ? null
+        : (storagePath) => remoteStore.readBytesByStoragePath(
+              storagePath: storagePath,
+            );
+
+    final narrativeEngine = NarrativeReportEngine(
+      registry: const NarrativeTemplateRegistry(templates: {
+        FormType.moldAssessment: MoldAssessmentTemplate(),
+        FormType.generalInspection: GeneralInspectionTemplate(),
+      }),
+      mediaResolver: NarrativeMediaResolver(remoteReadBytes: remoteReader),
+      theme: NarrativePrintTheme.standard(),
+    );
+
     _pdfOrchestrator = _providedPdfOrchestrator ??
         PdfOrchestrator(
           onDevice: OnDevicePdfService(
             mediaResolver: PdfMediaResolver(
-              remoteReadBytes: remoteStore == null
-                  ? null
-                  : (storagePath) => remoteStore.readBytesByStoragePath(
-                        storagePath: storagePath,
-                      ),
+              remoteReadBytes: remoteReader,
             ),
           ),
           cloud: _cloudPdfService ?? const CloudPdfService(),
@@ -204,6 +221,7 @@ class InspectionSessionController {
             organizationId: input.organizationId,
             userId: input.userId,
           ),
+          narrative: narrativeEngine,
         );
 
     _snapshot = draft.wizardSnapshot;
@@ -365,6 +383,15 @@ class InspectionSessionController {
         }
       }
 
+      // Extract narrative form data for narrative-style templates.
+      final narrativeFormData = <FormType, Map<String, dynamic>>{};
+      for (final form in draft.enabledForms.where((f) => f.isNarrative)) {
+        final rawData = draft.formData[form];
+        if (rawData != null) {
+          narrativeFormData[form] = Map<String, dynamic>.from(rawData);
+        }
+      }
+
       final input = PdfGenerationInput(
         inspectionId: draft.inspectionId,
         organizationId: draft.organizationId,
@@ -379,8 +406,10 @@ class InspectionSessionController {
         checkboxValues: checkboxValues,
         evidenceMediaPaths: evidenceMediaPaths,
         signatureBytes: Uint8List.fromList(loadedSignature.bytes),
+        narrativeFormData: narrativeFormData,
       );
-      final file = await _pdfOrchestrator.generate(input);
+      final files = await _pdfOrchestrator.generate(input);
+      final file = files.first;
       final payloadHash =
           ReportSignatureEvidenceRepository.computePayloadHash(input);
       await _signatureEvidenceRepository.persist(
