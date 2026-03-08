@@ -7,8 +7,10 @@ import '../../domain/evidence_requirement.dart';
 import '../../domain/form_requirements.dart';
 import '../../domain/form_type.dart';
 import '../../domain/inspection_wizard_state.dart';
+import '../../domain/mold_form_data.dart';
 import '../shared_widgets/branch_flag_toggle_tile.dart';
 import '../shared_widgets/evidence_requirement_card.dart';
+import 'mold_form_step.dart';
 import 'sinkhole_form_step.dart';
 import 'wdo_form_step.dart';
 
@@ -28,6 +30,8 @@ class WizardNavigationView extends StatelessWidget {
     required this.onSetBranchFlag,
     this.formData,
     this.onFieldChanged,
+    this.moldFormData,
+    this.onMoldChanged,
   });
 
   final InspectionWizardState wizardState;
@@ -39,6 +43,8 @@ class WizardNavigationView extends StatelessWidget {
   final void Function(String key, bool value) onSetBranchFlag;
   final Map<FormType, Map<String, dynamic>>? formData;
   final void Function(FormType form, String key, dynamic value)? onFieldChanged;
+  final MoldFormData? moldFormData;
+  final ValueChanged<MoldFormData>? onMoldChanged;
 
   Widget? _buildFormStepWidget(WizardStepDefinition step) {
     if (step.form == FormType.wdo) {
@@ -59,6 +65,12 @@ class WizardNavigationView extends StatelessWidget {
           onFieldChanged?.call(FormType.sinkholeInspection, key, value);
         },
         onBranchFlagChanged: onSetBranchFlag,
+      );
+    }
+    if (step.form == FormType.moldAssessment) {
+      return MoldFormStep(
+        formData: moldFormData ?? MoldFormData.empty(),
+        onChanged: (data) => onMoldChanged?.call(data),
       );
     }
     return null;
