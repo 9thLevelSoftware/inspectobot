@@ -14,6 +14,7 @@ import '../../signing/data/report_signature_evidence_repository.dart';
 import '../../identity/data/signature_repository.dart';
 import '../data/inspection_repository.dart';
 import '../domain/evidence_requirement.dart';
+import '../domain/form_type.dart';
 import '../domain/inspection_draft.dart';
 import 'controllers/inspection_session_controller.dart';
 import 'sub_views/wizard_navigation_view.dart';
@@ -215,6 +216,11 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
           onCapture: _handleCapture,
           onContinue: _handleContinue,
           onSetBranchFlag: _controller.setBranchFlag,
+          formData: _controller.draft.formData,
+          onFieldChanged: (FormType form, String key, dynamic value) {
+            _controller.setFormFieldValue(form, key, value);
+            setState(() {});
+          },
         );
       case 1:
         return EvidenceCaptureView(

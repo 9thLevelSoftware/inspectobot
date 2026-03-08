@@ -5,9 +5,11 @@ import 'package:inspectobot/theme/theme.dart';
 
 import '../../domain/evidence_requirement.dart';
 import '../../domain/form_requirements.dart';
+import '../../domain/form_type.dart';
 import '../../domain/inspection_wizard_state.dart';
 import '../shared_widgets/branch_flag_toggle_tile.dart';
 import '../shared_widgets/evidence_requirement_card.dart';
+import 'wdo_form_step.dart';
 
 /// Renders the current wizard step: step header, branch flag toggles,
 /// evidence requirement cards, and the Continue/Finish button.
@@ -23,6 +25,8 @@ class WizardNavigationView extends StatelessWidget {
     required this.onCapture,
     required this.onContinue,
     required this.onSetBranchFlag,
+    this.formData,
+    this.onFieldChanged,
   });
 
   final InspectionWizardState wizardState;
@@ -32,12 +36,56 @@ class WizardNavigationView extends StatelessWidget {
   final void Function(EvidenceRequirement) onCapture;
   final VoidCallback onContinue;
   final void Function(String key, bool value) onSetBranchFlag;
+  final Map<FormType, Map<String, dynamic>>? formData;
+  final void Function(FormType form, String key, dynamic value)? onFieldChanged;
+
+  Widget? _buildFormStepWidget(WizardStepDefinition step) {
+    if (step.form == FormType.wdo) {
+      return WdoFormStep(
+        formData: formData?[FormType.wdo] ?? const {},
+        branchContext: snapshot.branchContext,
+        onFieldChanged: (key, value) {
+          onFieldChanged?.call(FormType.wdo, key, value);
+        },
+        onBranchFlagChanged: onSetBranchFlag,
+      );
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     final step = wizardState.steps[currentStepIndex];
     final canContinue = wizardState.canAdvanceFrom(currentStepIndex);
     final isFinalStep = currentStepIndex >= wizardState.steps.length - 1;
+
+    final stickyBottom = AppButton(
+      label: isFinalStep ? 'Finish Wizard' : 'Continue to Next Step',
+      onPressed: canContinue && !isSavingProgress ? onContinue : null,
+      isLoading: isSavingProgress,
+      loadingLabel: 'Saving...',
+      isThumbZone: true,
+    );
+
+    final formWidget = _buildFormStepWidget(step);
+    if (formWidget != null) {
+      // Form step manages its own scrolling (TabBarView).
+      // Do NOT wrap in SingleChildScrollView — it needs bounded height.
+      return ReachZoneScaffold(
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: AppEdgeInsets.pagePadding,
+              child: _buildStepHeader(context, step),
+            ),
+            const SizedBox(height: AppSpacing.spacingSm),
+            Expanded(child: formWidget),
+          ],
+        ),
+        stickyBottom: stickyBottom,
+      );
+    }
 
     return ReachZoneScaffold(
       body: SingleChildScrollView(
@@ -51,13 +99,7 @@ class WizardNavigationView extends StatelessWidget {
           ],
         ),
       ),
-      stickyBottom: AppButton(
-        label: isFinalStep ? 'Finish Wizard' : 'Continue to Next Step',
-        onPressed: canContinue && !isSavingProgress ? onContinue : null,
-        isLoading: isSavingProgress,
-        loadingLabel: 'Saving...',
-        isThumbZone: true,
-      ),
+      stickyBottom: stickyBottom,
     );
   }
 
