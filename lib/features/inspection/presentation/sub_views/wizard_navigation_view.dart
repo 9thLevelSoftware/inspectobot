@@ -19,6 +19,10 @@ import 'wdo_form_step.dart';
 ///
 /// Pure [StatelessWidget] -- receives all data and callbacks from the parent.
 class WizardNavigationView extends StatelessWidget {
+  // Narrative forms (mold, general) use typed data objects instead of generic
+  // Map<String,dynamic> because they require explicit toFormDataMap() translation
+  // for the narrative PDF engine. See MoldFormData.toFormDataMap() for the key
+  // contract. Checklist forms (WDO, Sinkhole) pass raw maps directly.
   const WizardNavigationView({
     super.key,
     required this.wizardState,

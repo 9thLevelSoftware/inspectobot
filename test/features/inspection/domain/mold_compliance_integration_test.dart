@@ -19,9 +19,9 @@ void main() {
     }
 
     Map<String, int> fullPhotoCounts() => {
-          'mold_moisture_readings': 2,
-          'mold_growth_evidence': 3,
-          'mold_affected_areas': 2,
+          MoldComplianceValidator.photoKeyMoistureReadings: 2,
+          MoldComplianceValidator.photoKeyGrowthEvidence: 3,
+          MoldComplianceValidator.photoKeyAffectedAreas: 2,
         };
 
     // -----------------------------------------------------------------------
@@ -175,9 +175,9 @@ void main() {
           fullyCompliant(),
           hasInspectorLicense: true,
           photoCounts: {
-            'mold_moisture_readings': 0,
-            'mold_growth_evidence': 0,
-            'mold_affected_areas': 0,
+            MoldComplianceValidator.photoKeyMoistureReadings: 0,
+            MoldComplianceValidator.photoKeyGrowthEvidence: 0,
+            MoldComplianceValidator.photoKeyAffectedAreas: 0,
           },
         );
 
@@ -201,9 +201,9 @@ void main() {
           fullyCompliant(),
           hasInspectorLicense: true,
           photoCounts: {
-            'mold_moisture_readings': 1,
-            'mold_growth_evidence': 0,
-            'mold_affected_areas': 2,
+            MoldComplianceValidator.photoKeyMoistureReadings: 1,
+            MoldComplianceValidator.photoKeyGrowthEvidence: 0,
+            MoldComplianceValidator.photoKeyAffectedAreas: 2,
           },
         );
 
@@ -220,9 +220,9 @@ void main() {
           fullyCompliant(),
           hasInspectorLicense: true,
           photoCounts: {
-            'mold_moisture_readings': 1,
-            'mold_growth_evidence': 1,
-            'mold_affected_areas': 1,
+            MoldComplianceValidator.photoKeyMoistureReadings: 1,
+            MoldComplianceValidator.photoKeyGrowthEvidence: 1,
+            MoldComplianceValidator.photoKeyAffectedAreas: 1,
           },
         );
 
@@ -341,7 +341,7 @@ void main() {
       test(
         'no mold growth evidence + no remediation → no remediation warning',
         () {
-          final counts = fullPhotoCounts()..['mold_growth_evidence'] = 0;
+          final counts = fullPhotoCounts()..[MoldComplianceValidator.photoKeyGrowthEvidence] = 0;
           final result = MoldComplianceValidator.validate(
             fullyCompliant().copyWith(remediationRecommended: false),
             hasInspectorLicense: true,

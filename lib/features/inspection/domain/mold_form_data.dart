@@ -1,4 +1,4 @@
-/// Typed data class for the Mold Assessment form.
+/// Typed data class for the Mold Assessment form (Florida Ch. 468, Part XVI, F.S.).
 ///
 /// Contains 6 text fields matching the [MoldAssessmentTemplate] formData keys
 /// and 2 branch flag booleans for conditional logic.

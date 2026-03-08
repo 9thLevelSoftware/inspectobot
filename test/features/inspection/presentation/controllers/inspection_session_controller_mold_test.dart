@@ -101,8 +101,9 @@ void main() {
 
       final stored = controller.draft.formData[FormType.moldAssessment];
       expect(stored, isNotNull);
-      expect(stored!['scope_of_assessment'], 'Scope text');
-      expect(stored['moisture_sources'], 'Leaking pipe');
+      // Storage uses camelCase (toJson) for hydration fidelity.
+      expect(stored!['scopeOfAssessment'], 'Scope text');
+      expect(stored['moistureSources'], 'Leaking pipe');
     });
 
     test('MoldFormData round-trips through draft persistence', () {
@@ -117,22 +118,26 @@ void main() {
         airSamplesTaken: true,
       );
 
-      // Store via updateMoldFormData
+      // 1. Store via the REAL updateMoldFormData write path.
       final controller = makeController();
       controller.initialize();
       controller.updateMoldFormData(original);
 
-      // Create a new controller with the same draft to simulate reload.
-      // The formData map on the draft is already populated; hydrate from it.
+      // 2. Capture what was ACTUALLY stored in draft.formData.
+      final actuallyStored =
+          controller.draft.formData[FormType.moldAssessment]!;
+
+      // 3. Create a new controller seeded with those exact stored bytes.
       final draft2 = makeDraft(
         formData: {
           FormType.moldAssessment:
-              Map<String, dynamic>.from(original.toJson()),
+              Map<String, dynamic>.from(actuallyStored),
         },
       );
       final controller2 = makeController(draft: draft2);
       controller2.initialize();
 
+      // 4. Verify the data survives the full write → hydrate round-trip.
       expect(controller2.moldFormData.scopeOfAssessment, 'Full scope');
       expect(controller2.moldFormData.visualObservations, 'Observations here');
       expect(controller2.moldFormData.moistureSources, 'Roof leak');
@@ -199,7 +204,7 @@ void main() {
 
   group('narrative data bridge', () {
     test(
-        'draft.formData contains narrative form data from MoldFormData.toFormDataMap()',
+        'draft.formData stores camelCase keys via toJson() for hydration fidelity',
         () {
       final controller = makeController();
       controller.initialize();
@@ -214,15 +219,45 @@ void main() {
       );
       controller.updateMoldFormData(data);
 
-      // The data stored in draft.formData should match toFormDataMap() keys
+      // Storage uses camelCase (toJson) so hydration via fromJson works.
       final stored = controller.draft.formData[FormType.moldAssessment]!;
-      expect(stored['scope_of_assessment'], 'Full assessment');
-      expect(stored['visual_observations'], 'Black spots on drywall');
-      expect(stored['moisture_sources'], 'Plumbing leak');
-      expect(stored['mold_type_location'], 'Stachybotrys in master bath');
-      expect(stored['remediation_recommendations'],
+      expect(stored['scopeOfAssessment'], 'Full assessment');
+      expect(stored['visualObservations'], 'Black spots on drywall');
+      expect(stored['moistureSources'], 'Plumbing leak');
+      expect(stored['moldTypeLocation'], 'Stachybotrys in master bath');
+      expect(stored['remediationRecommendations'],
           'Professional remediation needed');
-      expect(stored['additional_findings'], 'HVAC ducts also affected');
+      expect(stored['additionalFindings'], 'HVAC ducts also affected');
+    });
+
+    test(
+        'camelCase stored data can be translated to snake_case for narrative engine',
+        () {
+      final controller = makeController();
+      controller.initialize();
+
+      final data = MoldFormData(
+        scopeOfAssessment: 'Full assessment',
+        visualObservations: 'Black spots on drywall',
+        moistureSources: 'Plumbing leak',
+        moldTypeLocation: 'Stachybotrys in master bath',
+        remediationRecommendations: 'Professional remediation needed',
+        additionalFindings: 'HVAC ducts also affected',
+      );
+      controller.updateMoldFormData(data);
+
+      // Simulate what generatePdf does: fromJson → toFormDataMap.
+      final stored = controller.draft.formData[FormType.moldAssessment]!;
+      final hydrated = MoldFormData.fromJson(Map<String, dynamic>.from(stored));
+      final templateMap = hydrated.toFormDataMap();
+
+      expect(templateMap['scope_of_assessment'], 'Full assessment');
+      expect(templateMap['visual_observations'], 'Black spots on drywall');
+      expect(templateMap['moisture_sources'], 'Plumbing leak');
+      expect(templateMap['mold_type_location'], 'Stachybotrys in master bath');
+      expect(templateMap['remediation_recommendations'],
+          'Professional remediation needed');
+      expect(templateMap['additional_findings'], 'HVAC ducts also affected');
     });
   });
 }

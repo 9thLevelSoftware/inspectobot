@@ -395,11 +395,21 @@ class InspectionSessionController {
       }
 
       // Extract narrative form data for narrative-style templates.
+      // Storage uses camelCase (toJson) for hydration fidelity; the narrative
+      // engine expects snake_case keys, so mold data is translated here.
       final narrativeFormData = <FormType, Map<String, dynamic>>{};
       for (final form in draft.enabledForms.where((f) => f.isNarrative)) {
         final rawData = draft.formData[form];
         if (rawData != null) {
-          narrativeFormData[form] = Map<String, dynamic>.from(rawData);
+          if (form == FormType.moldAssessment) {
+            // Translate camelCase storage format to snake_case template keys.
+            final moldData =
+                MoldFormData.fromJson(Map<String, dynamic>.from(rawData));
+            narrativeFormData[form] =
+                Map<String, dynamic>.from(moldData.toFormDataMap());
+          } else {
+            narrativeFormData[form] = Map<String, dynamic>.from(rawData);
+          }
         }
       }
 
@@ -535,10 +545,15 @@ class InspectionSessionController {
   }
 
   /// Updates the mold form data and persists it to [draft.formData].
+  ///
+  /// Stores using [MoldFormData.toJson] (camelCase) so that
+  /// [_hydrateMoldFormData] can round-trip via [MoldFormData.fromJson].
+  /// The snake_case translation for the narrative PDF engine happens at
+  /// generation time in [generatePdf].
   void updateMoldFormData(MoldFormData data) {
     _moldFormData = data;
     draft.formData[FormType.moldAssessment] =
-        Map<String, dynamic>.from(data.toFormDataMap());
+        Map<String, dynamic>.from(data.toJson());
     _notify();
   }
 

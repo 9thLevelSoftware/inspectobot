@@ -19,6 +19,14 @@ class ComplianceCheckResult {
 class MoldComplianceValidator {
   const MoldComplianceValidator._();
 
+  /// Photo count map keys expected by [validate].
+  ///
+  /// Callers must use these keys when building the [photoCounts] map so
+  /// that the validator can look up captured counts correctly.
+  static const String photoKeyMoistureReadings = 'mold_moisture_readings';
+  static const String photoKeyGrowthEvidence = 'mold_growth_evidence';
+  static const String photoKeyAffectedAreas = 'mold_affected_areas';
+
   /// Validates [formData] for compliance with Florida mold assessment
   /// statutory requirements.
   ///
@@ -27,9 +35,9 @@ class MoldComplianceValidator {
   ///
   /// [photoCounts] maps photo category keys to the number of photos captured
   /// for that category. Expected keys:
-  /// - `mold_moisture_readings`
-  /// - `mold_growth_evidence`
-  /// - `mold_affected_areas`
+  /// - [photoKeyMoistureReadings]
+  /// - [photoKeyGrowthEvidence]
+  /// - [photoKeyAffectedAreas]
   static ComplianceCheckResult validate(
     MoldFormData formData, {
     required bool hasInspectorLicense,
@@ -72,17 +80,17 @@ class MoldComplianceValidator {
     }
 
     // 7. Moisture readings photos
-    if ((photoCounts['mold_moisture_readings'] ?? 0) < 1) {
+    if ((photoCounts[photoKeyMoistureReadings] ?? 0) < 1) {
       missingElements.add('At least 1 moisture readings photo is required');
     }
 
     // 8. Mold growth photos
-    if ((photoCounts['mold_growth_evidence'] ?? 0) < 1) {
+    if ((photoCounts[photoKeyGrowthEvidence] ?? 0) < 1) {
       missingElements.add('At least 1 mold growth evidence photo is required');
     }
 
     // 9. Affected area photos
-    if ((photoCounts['mold_affected_areas'] ?? 0) < 1) {
+    if ((photoCounts[photoKeyAffectedAreas] ?? 0) < 1) {
       missingElements.add('At least 1 affected areas photo is required');
     }
 
@@ -92,7 +100,7 @@ class MoldComplianceValidator {
     }
 
     if (!formData.remediationRecommended &&
-        (photoCounts['mold_growth_evidence'] ?? 0) > 0) {
+        (photoCounts[photoKeyGrowthEvidence] ?? 0) > 0) {
       warnings.add(
         'Consider recommending remediation when mold growth is documented',
       );

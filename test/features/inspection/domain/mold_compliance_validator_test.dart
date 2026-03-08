@@ -18,9 +18,9 @@ void main() {
     }
 
     Map<String, int> fullPhotoCounts() => {
-          'mold_moisture_readings': 2,
-          'mold_growth_evidence': 3,
-          'mold_affected_areas': 2,
+          MoldComplianceValidator.photoKeyMoistureReadings: 2,
+          MoldComplianceValidator.photoKeyGrowthEvidence: 3,
+          MoldComplianceValidator.photoKeyAffectedAreas: 2,
         };
 
     test('fully compliant form returns isCompliant: true', () {
@@ -158,7 +158,7 @@ void main() {
 
     group('missing photos', () {
       test('missing moisture readings photo', () {
-        final counts = fullPhotoCounts()..['mold_moisture_readings'] = 0;
+        final counts = fullPhotoCounts()..[MoldComplianceValidator.photoKeyMoistureReadings] = 0;
         final result = MoldComplianceValidator.validate(
           fullyCompliant(),
           hasInspectorLicense: true,
@@ -173,7 +173,7 @@ void main() {
       });
 
       test('missing mold growth evidence photo', () {
-        final counts = fullPhotoCounts()..['mold_growth_evidence'] = 0;
+        final counts = fullPhotoCounts()..[MoldComplianceValidator.photoKeyGrowthEvidence] = 0;
         final result = MoldComplianceValidator.validate(
           fullyCompliant(),
           hasInspectorLicense: true,
@@ -188,7 +188,7 @@ void main() {
       });
 
       test('missing affected areas photo', () {
-        final counts = fullPhotoCounts()..['mold_affected_areas'] = 0;
+        final counts = fullPhotoCounts()..[MoldComplianceValidator.photoKeyAffectedAreas] = 0;
         final result = MoldComplianceValidator.validate(
           fullyCompliant(),
           hasInspectorLicense: true,
