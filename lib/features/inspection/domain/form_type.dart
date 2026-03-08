@@ -24,3 +24,12 @@ enum FormType {
   }
 }
 
+/// Rendering-related extensions on [FormType].
+extension FormTypeRendering on FormType {
+  /// Whether this form type uses narrative-style PDF rendering
+  /// (free-form report) rather than a structured form overlay.
+  bool get isNarrative =>
+      this == FormType.moldAssessment ||
+      this == FormType.generalInspection;
+}
+
