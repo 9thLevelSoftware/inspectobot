@@ -9,7 +9,7 @@
 - [ ] Phase 5: Sinkhole Form Implementation (FORM-02)
 - [x] Phase 6: Narrative Report Engine (PDF-02)
 - [x] Phase 7: Mold Assessment Implementation (FORM-03)
-- [ ] Phase 8: General Inspection Implementation (FORM-04)
+- [x] Phase 8: General Inspection Implementation (FORM-04)
 - [ ] Phase 9: Cross-Form Integration (WIZARD-02, INTEG-01)
 - [ ] Phase 10: Testing, Migration & Polish
 
@@ -181,7 +181,7 @@
 | 5. Sinkhole Form | 4 | 4 | Complete (reviewed) |
 | 6. Narrative Report Engine | 5 | 5 | Complete (reviewed) |
 | 7. Mold Assessment | 5 | 5 | Complete (reviewed) |
-| 8. General Inspection | 6 | 6 | Complete |
+| 8. General Inspection | 6 | 6 | Complete (reviewed) |
 | 9. Cross-Form Integration | 5 | 0 | Pending |
 | 10. Testing & Polish | 5 | 0 | Pending |
 | **Total** | **48** | **38** | **79%** |

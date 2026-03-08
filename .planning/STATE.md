@@ -1,9 +1,9 @@
 # Project State
 
 ## Current Position
-- **Phase**: 8 of 10 (executed, pending review)
-- **Status**: Phase 8 complete — all 6 plans executed successfully
-- **Last Activity**: Phase 8 execution (2026-03-08)
+- **Phase**: 8 of 10 (complete)
+- **Status**: Phase 8 complete — review passed (1 cycle)
+- **Last Activity**: Phase 8 review passed (2026-03-08)
 
 ## Progress
 ```
@@ -120,5 +120,10 @@
 - Plan 08-05 (Mobile App Builder): Integration Tests + Compliance Validation — PASS (16 key alignment + round-trip tests, 34 compliance integration tests, 50 tests)
 - Plan 08-06 (Senior Developer): E2E PDF Test + Regression — PASS (6 PDF generation tests, full regression check 1188 pass/15 pre-existing failures, 6 tests)
 
+## Phase 8 Review Results
+- Reviewers: engineering-senior-developer (testing-reality-checker killed — flutter test hangs for subagents)
+- Cycle 1: 1 blocker + 2 warnings found, all fixed
+- Key fix: ConditionRating.color() extracted from domain to PDF-layer extension (BLOCKER — domain imported package:pdf)
+
 ## Next Action
-Run `/legion:review` to verify Phase 8: General Inspection Implementation
+Run `/legion:plan 9` to plan the next phase (Cross-Form Integration)
