@@ -7,6 +7,7 @@ import 'package:inspectobot/features/inspection/domain/condition_rating.dart';
 
 export 'package:inspectobot/features/inspection/domain/condition_rating.dart';
 
+import 'condition_rating_pdf_ext.dart';
 import 'narrative_print_theme.dart';
 import 'narrative_render_context.dart';
 

@@ -131,6 +131,9 @@ class GeneralInspectionFormData {
       case 'life_safety':
         return copyWith(lifeSafety: system);
       default:
+        // Graceful degradation: unknown systemIds return unchanged instance.
+        // This is tested and intentional — protects against data loss if a
+        // systemId string is mismatched during refactoring.
         return this;
     }
   }
@@ -144,6 +147,10 @@ class GeneralInspectionFormData {
   ///
   /// Produces exactly 72 keys: 2 narrative + 18 system-level (9 x rating/findings)
   /// + 52 subsystem-level entries (26 subsystems x 2 keys each).
+  ///
+  /// Branch flags (safetyHazard, moistureMoldEvidence, pestEvidence,
+  /// structuralConcern) are intentionally excluded — they flow through
+  /// `branchContext` in the narrative engine, not through `formData`.
   Map<String, String> toFormDataMap() {
     final map = <String, String>{
       'scope_and_purpose': scopeAndPurpose,
