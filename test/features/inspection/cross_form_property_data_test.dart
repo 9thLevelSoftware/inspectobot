@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
 import 'package:inspectobot/features/inspection/domain/property_data.dart';
-import 'package:inspectobot/features/inspection/domain/universal_property_fields.dart';
+
 
 /// Verifies that shared property data (INTEG-01b) flows correctly across
 /// all enabled forms when using a single InspectionDraft.

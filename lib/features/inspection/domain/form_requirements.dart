@@ -442,6 +442,10 @@ class FormRequirements {
           .toList(growable: false),
   };
 
+  // Last-wins: for categories shared across forms (e.g. roofSlopeMain used by
+  // both fourPoint and roofCondition), the entry for the last FormType in
+  // FormType.values takes precedence. This is acceptable because the method is
+  // only used for hydration lookups where any valid key for the category works.
   static final Map<RequiredPhotoCategory, String> _canonicalPhotoKeyByCategory =
       {
         for (final form in FormType.values)

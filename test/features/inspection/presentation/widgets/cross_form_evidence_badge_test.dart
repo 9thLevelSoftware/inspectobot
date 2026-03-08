@@ -78,7 +78,7 @@ void main() {
     });
   });
 
-  group('FormTypeAbbreviation', () {
+  group('FormType.abbreviation', () {
     test('all form types have abbreviations', () {
       for (final form in FormType.values) {
         expect(form.abbreviation, isNotEmpty);

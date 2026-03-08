@@ -109,24 +109,8 @@ class FormProgressSummary {
   }
 
   /// Short abbreviation label for the form type.
-  String get abbreviation {
-    switch (form) {
-      case FormType.fourPoint:
-        return '4PT';
-      case FormType.roofCondition:
-        return 'ROOF';
-      case FormType.windMitigation:
-        return 'WIND';
-      case FormType.wdo:
-        return 'WDO';
-      case FormType.sinkholeInspection:
-        return 'SINK';
-      case FormType.moldAssessment:
-        return 'MOLD';
-      case FormType.generalInspection:
-        return 'GEN';
-    }
-  }
+  /// Delegates to [FormType.abbreviation] to keep abbreviations in one place.
+  String get abbreviation => form.abbreviation;
 
   List<RequiredPhotoCategory> get missingCategories {
     return missingRequirements

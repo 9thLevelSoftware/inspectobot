@@ -4,30 +4,6 @@ import 'package:inspectobot/theme/theme.dart';
 
 import '../../domain/form_type.dart';
 
-/// Short abbreviation labels for each [FormType], used in cross-form
-/// evidence sharing badges.
-extension FormTypeAbbreviation on FormType {
-  /// Two-to-four character abbreviation for compact display.
-  String get abbreviation {
-    switch (this) {
-      case FormType.fourPoint:
-        return '4PT';
-      case FormType.roofCondition:
-        return 'ROOF';
-      case FormType.windMitigation:
-        return 'WIND';
-      case FormType.wdo:
-        return 'WDO';
-      case FormType.sinkholeInspection:
-        return 'SINK';
-      case FormType.moldAssessment:
-        return 'MOLD';
-      case FormType.generalInspection:
-        return 'GEN';
-    }
-  }
-}
-
 /// Displays a subtle informational badge indicating which other forms
 /// benefit from capturing a particular evidence photo.
 ///

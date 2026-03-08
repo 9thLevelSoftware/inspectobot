@@ -86,13 +86,11 @@ class EvidenceCaptureView extends StatelessWidget {
     FormProgressSummary summary,
     Set<FormType> enabledForms,
   ) {
-    // Collect unique shared form sets across all requirements (not just missing)
-    // to show sharing info even for captured items.
+    // Collect unique shared form sets across missing requirements only —
+    // badges disappear once a requirement is captured since it's no longer
+    // actionable. This keeps the UI focused on what the inspector still needs.
     final sharedSets = <Set<FormType>>[];
 
-    // Use the form's total requirements (via buildFormSummaries' backing data).
-    // We only have missingRequirements on the summary, so we check those plus
-    // any requirement whose category is shared.
     for (final requirement in summary.missingRequirements) {
       final category = requirement.category;
       if (category == null) continue;
