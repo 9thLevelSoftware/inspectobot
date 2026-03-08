@@ -353,16 +353,22 @@ class FormRequirements {
     ],
     FormType.moldAssessment: <EvidenceRequirement>[
       _photo(
-        key: 'photo:mold_affected_area',
-        label: 'Mold Affected Area Photo',
-        form: FormType.moldAssessment,
-        category: RequiredPhotoCategory.moldAffectedArea,
-      ),
-      _photo(
         key: 'photo:mold_moisture_reading',
         label: 'Mold Moisture Meter Reading',
         form: FormType.moldAssessment,
         category: RequiredPhotoCategory.moldMoistureReading,
+      ),
+      _photo(
+        key: 'photo:mold_growth_evidence',
+        label: 'Mold Growth Evidence Photo',
+        form: FormType.moldAssessment,
+        category: RequiredPhotoCategory.moldGrowthEvidence,
+      ),
+      _photo(
+        key: 'photo:mold_affected_area',
+        label: 'Mold Affected Area Photo',
+        form: FormType.moldAssessment,
+        category: RequiredPhotoCategory.moldAffectedArea,
       ),
       _photo(
         key: 'photo:mold_moisture_source',

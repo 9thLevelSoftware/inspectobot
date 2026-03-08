@@ -38,6 +38,7 @@ enum RequiredPhotoCategory {
   moldAffectedArea('Mold Affected Area'),
   moldMoistureSource('Mold Moisture Source'),
   moldMoistureReading('Mold Moisture Reading'),
+  moldGrowthEvidence('Mold Growth Evidence'),
   moldLabReport('Mold Lab Report'),
 
   // General
