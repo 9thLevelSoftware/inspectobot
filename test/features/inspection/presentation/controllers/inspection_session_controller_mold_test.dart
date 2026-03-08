@@ -259,6 +259,60 @@ void main() {
           'Professional remediation needed');
       expect(templateMap['additional_findings'], 'HVAC ducts also affected');
     });
+
+    test(
+        'generatePdf narrative path: updateMoldFormData → stored rawData → fromJson → toFormDataMap',
+        () {
+      // This test mirrors the EXACT conversion performed in
+      // InspectionSessionController.generatePdf() at lines ~404-409:
+      //
+      //   final moldData =
+      //       MoldFormData.fromJson(Map<String, dynamic>.from(rawData));
+      //   narrativeFormData[form] =
+      //       Map<String, dynamic>.from(moldData.toFormDataMap());
+      //
+      // It validates the full data model contract: updateMoldFormData stores
+      // via toJson(), and generatePdf reads back via fromJson().toFormDataMap().
+
+      final controller = makeController();
+      controller.initialize();
+
+      // Step 1: Store data via the real controller write path (uses toJson()).
+      final inputData = MoldFormData(
+        scopeOfAssessment: 'Interior and exterior assessment',
+        visualObservations: 'Green growth on window frames',
+        moistureSources: 'Condensation from poor ventilation',
+        moldTypeLocation: 'Cladosporium on bedroom walls',
+        remediationRecommendations: 'Improve ventilation, treat surfaces',
+        additionalFindings: 'Elevated humidity throughout',
+        remediationRecommended: true,
+        airSamplesTaken: true,
+      );
+      controller.updateMoldFormData(inputData);
+
+      // Step 2: Read back the raw stored map (same as generatePdf does).
+      final rawData = controller.draft.formData[FormType.moldAssessment];
+      expect(rawData, isNotNull, reason: 'formData should contain mold entry');
+
+      // Step 3: Perform the EXACT same conversion as generatePdf lines ~404-409.
+      final moldData =
+          MoldFormData.fromJson(Map<String, dynamic>.from(rawData!));
+      final narrativeFormData =
+          Map<String, dynamic>.from(moldData.toFormDataMap());
+
+      // Step 4: Verify output has correct snake_case keys with correct values.
+      expect(narrativeFormData, <String, dynamic>{
+        'scope_of_assessment': 'Interior and exterior assessment',
+        'visual_observations': 'Green growth on window frames',
+        'moisture_sources': 'Condensation from poor ventilation',
+        'mold_type_location': 'Cladosporium on bedroom walls',
+        'remediation_recommendations': 'Improve ventilation, treat surfaces',
+        'additional_findings': 'Elevated humidity throughout',
+      });
+
+      // Verify the map has exactly 6 keys (no branch flags leak through).
+      expect(narrativeFormData.length, 6);
+    });
   });
 }
 

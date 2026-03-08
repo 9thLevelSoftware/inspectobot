@@ -96,16 +96,15 @@ class MoldFormData {
 
   factory MoldFormData.fromJson(Map<String, dynamic> json) {
     return MoldFormData(
-      scopeOfAssessment: json['scopeOfAssessment'] as String? ?? '',
-      visualObservations: json['visualObservations'] as String? ?? '',
-      moistureSources: json['moistureSources'] as String? ?? '',
-      moldTypeLocation: json['moldTypeLocation'] as String? ?? '',
+      scopeOfAssessment: json['scopeOfAssessment']?.toString() ?? '',
+      visualObservations: json['visualObservations']?.toString() ?? '',
+      moistureSources: json['moistureSources']?.toString() ?? '',
+      moldTypeLocation: json['moldTypeLocation']?.toString() ?? '',
       remediationRecommendations:
-          json['remediationRecommendations'] as String? ?? '',
-      additionalFindings: json['additionalFindings'] as String? ?? '',
-      remediationRecommended:
-          json['remediationRecommended'] as bool? ?? false,
-      airSamplesTaken: json['airSamplesTaken'] as bool? ?? false,
+          json['remediationRecommendations']?.toString() ?? '',
+      additionalFindings: json['additionalFindings']?.toString() ?? '',
+      remediationRecommended: json['remediationRecommended'] == true,
+      airSamplesTaken: json['airSamplesTaken'] == true,
     );
   }
 

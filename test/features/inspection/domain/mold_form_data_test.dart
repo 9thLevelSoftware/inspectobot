@@ -140,6 +140,32 @@ void main() {
         expect(data.remediationRecommended, true);
         expect(data.airSamplesTaken, false);
       });
+
+      test('fromJson handles non-String values without throwing TypeError', () {
+        // Simulates corrupted or migrated data where fields contain
+        // unexpected types (int, double, bool stored in a String slot).
+        final data = MoldFormData.fromJson(<String, dynamic>{
+          'scopeOfAssessment': 42,
+          'visualObservations': 3.14,
+          'moistureSources': true,
+          'moldTypeLocation': <String>['list'],
+          'remediationRecommendations': null,
+          'additionalFindings': '',
+          'remediationRecommended': 'yes', // not a bool
+          'airSamplesTaken': 1, // not a bool
+        });
+
+        expect(data.scopeOfAssessment, '42');
+        expect(data.visualObservations, '3.14');
+        expect(data.moistureSources, 'true');
+        expect(data.moldTypeLocation, '[list]');
+        expect(data.remediationRecommendations, '');
+        expect(data.additionalFindings, '');
+        // Non-bool values for boolean fields should not be treated as true
+        // unless they are literally the bool value `true`.
+        expect(data.remediationRecommended, false);
+        expect(data.airSamplesTaken, false);
+      });
     });
 
     group('isEmpty', () {
