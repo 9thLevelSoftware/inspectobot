@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/common/widgets/app_checkbox_tile.dart';
 import 'package:inspectobot/common/widgets/app_date_picker.dart';
 import 'package:inspectobot/common/widgets/app_multi_select_chips.dart';
+import 'package:inspectobot/common/widgets/tri_state_chip_group.dart';
 import 'package:inspectobot/features/inspection/domain/field_definition.dart';
 import 'package:inspectobot/features/inspection/domain/field_type.dart';
 import 'package:inspectobot/features/inspection/presentation/widgets/form_field_input.dart';
@@ -212,6 +213,58 @@ void main() {
       final textField =
           tester.widget<TextFormField>(find.byType(TextFormField));
       expect(textField.controller?.text, '');
+    });
+
+    testWidgets('renders TriStateChipGroup for FieldType.triState',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        FormFieldInput(
+          field: const FieldDefinition(
+            key: 'cracks_found',
+            label: 'Cracks Found',
+            type: FieldType.triState,
+            isRequired: true,
+          ),
+          value: 'Yes',
+          onChanged: (key, val) {},
+        ),
+      ));
+
+      expect(find.byType(TriStateChipGroup), findsOneWidget);
+      expect(find.text('Cracks Found *'), findsOneWidget);
+
+      // Verify the selected chip
+      final yesChip = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'Yes'),
+      );
+      expect(yesChip.selected, isTrue);
+    });
+
+    testWidgets('triState field calls onFieldChanged with correct value',
+        (tester) async {
+      String? changedKey;
+      dynamic changedValue;
+
+      await tester.pumpWidget(_wrap(
+        FormFieldInput(
+          field: const FieldDefinition(
+            key: 'settlement',
+            label: 'Settlement',
+            type: FieldType.triState,
+          ),
+          value: null,
+          onChanged: (k, v) {
+            changedKey = k;
+            changedValue = v;
+          },
+        ),
+      ));
+
+      await tester.tap(find.widgetWithText(ChoiceChip, 'No'));
+      await tester.pump();
+
+      expect(changedKey, 'settlement');
+      expect(changedValue, 'No');
     });
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:inspectobot/common/widgets/repeating_group_card.dart';
 import 'package:inspectobot/common/widgets/section_card.dart';
 import 'package:inspectobot/common/widgets/section_header.dart';
 import 'package:inspectobot/features/inspection/domain/form_section_definition.dart';
@@ -42,7 +43,11 @@ class FormSectionUI extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.appTokens;
-    final visibleFields = section.visibleFields(branchContext);
+    // Only standalone fields — FieldGroup and RepeatingFieldGroup fields
+    // are rendered separately below.
+    final standaloneFields = section.fieldDefinitions
+        .where((f) => f.isVisible(branchContext))
+        .toList();
 
     return SingleChildScrollView(
       child: Padding(
@@ -74,7 +79,8 @@ class FormSectionUI extends StatelessWidget {
                   }).toList(),
                 ),
               ),
-            ...visibleFields.map((field) {
+            // Standalone field definitions
+            ...standaloneFields.map((field) {
               return Padding(
                 padding: EdgeInsets.only(top: tokens.spacingMd),
                 child: FormFieldInput(
@@ -83,6 +89,50 @@ class FormSectionUI extends StatelessWidget {
                   onChanged: onFieldChanged,
                 ),
               );
+            }),
+            // Field groups (trigger + conditional dependents)
+            ...section.fieldGroups.expand((group) {
+              final groupFields = group.visibleFields(formValues);
+              return groupFields.map((field) {
+                return Padding(
+                  padding: EdgeInsets.only(top: tokens.spacingMd),
+                  child: FormFieldInput(
+                    key: ValueKey('fg_${group.groupKey}_${field.key}'),
+                    field: field,
+                    value: formValues[field.key],
+                    onChanged: onFieldChanged,
+                  ),
+                );
+              });
+            }),
+            // Repeating field groups (N iterations of template fields)
+            ...section.repeatingFieldGroups.expand((rg) {
+              return List.generate(rg.repetitions, (i) {
+                final label = rg.repetitionLabel?.call(i + 1) ?? rg.label;
+                return Padding(
+                  padding: EdgeInsets.only(top: tokens.spacingMd),
+                  child: RepeatingGroupCard(
+                    label: label,
+                    index: i + 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: rg.fieldTemplate.map((templateField) {
+                        final concreteKey = rg.fieldKey(i, templateField.key);
+                        return Padding(
+                          padding: EdgeInsets.only(top: tokens.spacingSm),
+                          child: FormFieldInput(
+                            key: ValueKey('rg_${rg.groupKey}_$concreteKey'),
+                            field: templateField,
+                            value: formValues[concreteKey],
+                            onChanged: (_, value) =>
+                                onFieldChanged(concreteKey, value),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                );
+              });
             }),
           ],
         ),

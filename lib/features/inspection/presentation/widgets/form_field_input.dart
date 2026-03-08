@@ -4,6 +4,7 @@ import 'package:inspectobot/common/widgets/app_checkbox_tile.dart';
 import 'package:inspectobot/common/widgets/app_date_picker.dart';
 import 'package:inspectobot/common/widgets/app_multi_select_chips.dart';
 import 'package:inspectobot/common/widgets/app_text_field.dart';
+import 'package:inspectobot/common/widgets/tri_state_chip_group.dart';
 import 'package:inspectobot/features/inspection/domain/field_definition.dart';
 import 'package:inspectobot/features/inspection/domain/field_type.dart';
 
@@ -139,7 +140,12 @@ class _FormFieldInputState extends State<FormFieldInput> {
         );
 
       case FieldType.triState:
-        throw UnimplementedError('triState rendering added in Plan 05-02');
+        return TriStateChipGroup(
+          label: field.label,
+          value: widget.value as String?,
+          isRequired: field.isRequired,
+          onChanged: (v) => widget.onChanged(field.key, v),
+        );
     }
   }
 
