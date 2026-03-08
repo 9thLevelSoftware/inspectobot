@@ -3,6 +3,10 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import 'package:inspectobot/features/inspection/domain/condition_rating.dart';
+
+export 'package:inspectobot/features/inspection/domain/condition_rating.dart';
+
 import 'narrative_print_theme.dart';
 import 'narrative_render_context.dart';
 
@@ -39,73 +43,6 @@ class ChecklistSummaryItem {
   final String label;
   final String status;
   final String notes;
-}
-
-/// Condition rating levels for system evaluations.
-enum ConditionRating {
-  satisfactory,
-  marginal,
-  deficient,
-  notInspected;
-
-  /// Parses a string value into a [ConditionRating].
-  ///
-  /// Accepts lowercase, uppercase, and common variations. Falls back to
-  /// [notInspected] for unrecognized values.
-  static ConditionRating parse(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return ConditionRating.notInspected;
-    }
-    switch (value.trim().toLowerCase()) {
-      case 'satisfactory':
-      case 'good':
-      case 'pass':
-        return ConditionRating.satisfactory;
-      case 'marginal':
-      case 'fair':
-      case 'caution':
-        return ConditionRating.marginal;
-      case 'deficient':
-      case 'poor':
-      case 'fail':
-        return ConditionRating.deficient;
-      case 'not_inspected':
-      case 'notinspected':
-      case 'n/a':
-      case 'na':
-        return ConditionRating.notInspected;
-      default:
-        return ConditionRating.notInspected;
-    }
-  }
-
-  /// Human-readable display label.
-  String get displayLabel {
-    switch (this) {
-      case ConditionRating.satisfactory:
-        return 'Satisfactory';
-      case ConditionRating.marginal:
-        return 'Marginal';
-      case ConditionRating.deficient:
-        return 'Deficient';
-      case ConditionRating.notInspected:
-        return 'Not Inspected';
-    }
-  }
-
-  /// Returns the theme color for this rating.
-  PdfColor color(NarrativePrintTheme theme) {
-    switch (this) {
-      case ConditionRating.satisfactory:
-        return theme.ratingGood;
-      case ConditionRating.marginal:
-        return theme.ratingCaution;
-      case ConditionRating.deficient:
-        return theme.ratingDeficient;
-      case ConditionRating.notInspected:
-        return theme.ratingNA;
-    }
-  }
 }
 
 /// A sub-system within a condition rating section.

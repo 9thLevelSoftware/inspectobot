@@ -1,18 +1,5 @@
+import 'compliance_check_result.dart';
 import 'mold_form_data.dart';
-
-/// Result of a mold assessment compliance check against Florida Statutes
-/// Chapter 468, Part XVI.
-class ComplianceCheckResult {
-  const ComplianceCheckResult({
-    required this.isCompliant,
-    required this.missingElements,
-    required this.warnings,
-  });
-
-  final bool isCompliant;
-  final List<String> missingElements;
-  final List<String> warnings;
-}
 
 /// Validates a [MoldFormData] against statutory requirements for Florida mold
 /// assessments (Chapter 468, Part XVI, F.S.).
