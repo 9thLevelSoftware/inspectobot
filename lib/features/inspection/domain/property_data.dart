@@ -155,7 +155,9 @@ class PropertyData {
         clientName: draft.clientName,
       ),
       shared: SharedBuildingSystemFields(yearBuilt: draft.yearBuilt),
-      formData: const <FormType, Map<String, dynamic>>{},
+      formData: draft.formData.map(
+        (form, data) => MapEntry(form, Map<String, dynamic>.of(data)),
+      ),
       capturedCategories:
           Set<RequiredPhotoCategory>.of(draft.capturedCategories),
       capturedPhotoPaths:
@@ -408,6 +410,9 @@ class PropertyData {
       enabledForms: Set<FormType>.of(enabledForms),
       wizardSnapshot: wizardSnapshot,
       initialStepIndex: initialStepIndex,
+      formData: formData.map(
+        (form, data) => MapEntry(form, Map<String, dynamic>.of(data)),
+      ),
     );
 
     // Copy mutable media state.

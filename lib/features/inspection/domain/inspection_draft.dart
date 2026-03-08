@@ -18,8 +18,10 @@ class InspectionDraft {
     WizardProgressSnapshot? wizardSnapshot,
     int? initialStepIndex,
     this.propertyData,
+    Map<FormType, Map<String, dynamic>>? formData,
   })  : wizardSnapshot = wizardSnapshot ?? WizardProgressSnapshot.empty,
-        initialStepIndex = initialStepIndex ?? 0;
+        initialStepIndex = initialStepIndex ?? 0,
+        formData = formData ?? <FormType, Map<String, dynamic>>{};
 
   final String inspectionId;
   final String organizationId;
@@ -34,6 +36,9 @@ class InspectionDraft {
   final WizardProgressSnapshot wizardSnapshot;
   final int initialStepIndex;
   final PropertyData? propertyData;
+
+  /// Form-specific field data keyed by FormType, then by field key.
+  final Map<FormType, Map<String, dynamic>> formData;
 
   final Set<RequiredPhotoCategory> capturedCategories =
       <RequiredPhotoCategory>{};

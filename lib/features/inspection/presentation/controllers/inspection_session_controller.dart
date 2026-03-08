@@ -25,6 +25,7 @@ import '../../domain/inspection_draft.dart';
 import '../../domain/inspection_wizard_state.dart';
 import '../../domain/report_readiness.dart';
 import '../../domain/required_photo_category.dart';
+import '../../domain/wdo_form_data.dart';
 
 // ---------------------------------------------------------------------------
 // Result types
@@ -324,6 +325,22 @@ class InspectionSessionController {
         throw StateError('Stored inspector signature metadata is required.');
       }
 
+      // Build fieldValues and checkboxValues from form data.
+      final fieldValues = <String, String>{};
+      final checkboxValues = <String, bool>{};
+
+      if (draft.enabledForms.contains(FormType.wdo)) {
+        final wdoRawData = draft.formData[FormType.wdo];
+        if (wdoRawData != null) {
+          final wdoData = WdoFormData.fromJson(wdoRawData);
+          final pdfMaps = wdoData.toPdfMaps(
+            branchContext: _snapshot.branchContext,
+          );
+          fieldValues.addAll(pdfMaps.fieldValues);
+          checkboxValues.addAll(pdfMaps.checkboxValues);
+        }
+      }
+
       final input = PdfGenerationInput(
         inspectionId: draft.inspectionId,
         organizationId: draft.organizationId,
@@ -334,6 +351,8 @@ class InspectionSessionController {
         capturedCategories: draft.capturedCategories,
         wizardCompletion: _snapshot.completion,
         branchContext: _snapshot.branchContext,
+        fieldValues: fieldValues,
+        checkboxValues: checkboxValues,
         evidenceMediaPaths: evidenceMediaPaths,
         signatureBytes: Uint8List.fromList(loadedSignature.bytes),
       );
@@ -431,6 +450,25 @@ class InspectionSessionController {
 
   /// Loads audit events for the current inspection.
   Future<void> loadAuditEvents() => _loadAuditEvents();
+
+  /// Sets a form-specific field value. Mutates draft.formData directly.
+  void setFormFieldValue(FormType form, String key, dynamic value) {
+    draft.formData.putIfAbsent(form, () => <String, dynamic>{});
+    draft.formData[form]![key] = value;
+    _notify();
+  }
+
+  /// Gets a form-specific field value.
+  T? getFormFieldValue<T>(FormType form, String key) {
+    return draft.formData[form]?[key] as T?;
+  }
+
+  /// Gets all form data for a specific form type (unmodifiable copy).
+  Map<String, dynamic> getFormData(FormType form) {
+    return Map<String, dynamic>.unmodifiable(
+      draft.formData[form] ?? const {},
+    );
+  }
 
   /// Updates a branch flag in the wizard snapshot.
   void setBranchFlag(String key, bool value) {
