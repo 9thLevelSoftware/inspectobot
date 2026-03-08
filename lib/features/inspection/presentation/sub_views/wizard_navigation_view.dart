@@ -9,6 +9,7 @@ import '../../domain/form_type.dart';
 import '../../domain/inspection_wizard_state.dart';
 import '../shared_widgets/branch_flag_toggle_tile.dart';
 import '../shared_widgets/evidence_requirement_card.dart';
+import 'sinkhole_form_step.dart';
 import 'wdo_form_step.dart';
 
 /// Renders the current wizard step: step header, branch flag toggles,
@@ -46,6 +47,16 @@ class WizardNavigationView extends StatelessWidget {
         branchContext: snapshot.branchContext,
         onFieldChanged: (key, value) {
           onFieldChanged?.call(FormType.wdo, key, value);
+        },
+        onBranchFlagChanged: onSetBranchFlag,
+      );
+    }
+    if (step.form == FormType.sinkholeInspection) {
+      return SinkholeFormStep(
+        formData: formData?[FormType.sinkholeInspection] ?? const {},
+        branchContext: snapshot.branchContext,
+        onFieldChanged: (key, value) {
+          onFieldChanged?.call(FormType.sinkholeInspection, key, value);
         },
         onBranchFlagChanged: onSetBranchFlag,
       );
