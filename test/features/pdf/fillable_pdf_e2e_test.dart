@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:image/image.dart' as img;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
 import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
@@ -19,10 +21,19 @@ import 'package:inspectobot/features/pdf/services/pdf_renderer.dart';
 /// These tests exercise OnDevicePdfService with a real PdfRenderer (using the
 /// `pdf` package) but fake template assets to avoid Flutter asset bundle
 /// dependencies.
+/// Valid PNG bytes for use as signature images in PDF rendering tests.
+late Uint8List _validSignaturePng;
+
 void main() {
   late _FakeTemplateLoader templateLoader;
   late PdfSizeBudgetConfigStore sizeBudgetStore;
   late OnDevicePdfService service;
+
+  setUpAll(() {
+    final sigImage = img.Image(width: 4, height: 4);
+    img.fill(sigImage, color: img.ColorRgb8(0, 0, 0));
+    _validSignaturePng = Uint8List.fromList(img.encodePng(sigImage));
+  });
 
   setUp(() {
     templateLoader = _FakeTemplateLoader();
@@ -48,7 +59,7 @@ void main() {
 
   group('fourPoint E2E', () {
     test('generates PDF with all fields populated', () async {
-      final photoFile = await _writeTempJpeg();
+      final photoFile = await _writeTempPng();
       final input = PdfGenerationInput(
         inspectionId: 'insp-e2e-4pt',
         organizationId: 'org-1',
@@ -105,7 +116,7 @@ void main() {
           'photo:hvac_data_plate': [photoFile.path],
           'photo:hazard_photo': [photoFile.path],
         },
-        signatureBytes: Uint8List.fromList(<int>[9, 9, 9, 9]),
+        signatureBytes: _validSignaturePng,
       );
 
       final file = await service.generate(input);
@@ -141,7 +152,7 @@ void main() {
 
   group('roofCondition E2E', () {
     test('generates PDF with all fields populated including defect', () async {
-      final photoFile = await _writeTempJpeg();
+      final photoFile = await _writeTempPng();
       final input = PdfGenerationInput(
         inspectionId: 'insp-e2e-roof',
         organizationId: 'org-1',
@@ -168,7 +179,7 @@ void main() {
           'photo:roof_condition_secondary_slope': [photoFile.path],
           'photo:roof_defect': [photoFile.path],
         },
-        signatureBytes: Uint8List.fromList(<int>[9, 9, 9]),
+        signatureBytes: _validSignaturePng,
       );
 
       final file = await service.generate(input);
@@ -197,7 +208,7 @@ void main() {
 
   group('windMitigation E2E', () {
     test('generates PDF with all fields and document requirements', () async {
-      final photoFile = await _writeTempJpeg();
+      final photoFile = await _writeTempPng();
       final input = PdfGenerationInput(
         inspectionId: 'insp-e2e-wind',
         organizationId: 'org-1',
@@ -244,7 +255,7 @@ void main() {
           'document:wind_opening_protection': [photoFile.path],
           'document:wind_permit_year': [photoFile.path],
         },
-        signatureBytes: Uint8List.fromList(<int>[7, 7, 7]),
+        signatureBytes: _validSignaturePng,
       );
 
       final file = await service.generate(input);
@@ -272,7 +283,7 @@ void main() {
 
   group('wdo E2E', () {
     test('generates PDF with all WDO fields and branch flags', () async {
-      final photoFile = await _writeTempJpeg();
+      final photoFile = await _writeTempPng();
       final input = PdfGenerationInput(
         inspectionId: 'insp-e2e-wdo',
         organizationId: 'org-1',
@@ -318,7 +329,7 @@ void main() {
           'photo:wdo_damage_area': [photoFile.path],
           'photo:wdo_inaccessible_area': [photoFile.path],
         },
-        signatureBytes: Uint8List.fromList(<int>[5, 5, 5]),
+        signatureBytes: _validSignaturePng,
       );
 
       final file = await service.generate(input);
@@ -346,7 +357,7 @@ void main() {
 
   group('sinkholeInspection E2E', () {
     test('generates PDF with all sinkhole fields and checkboxes', () async {
-      final photoFile = await _writeTempJpeg();
+      final photoFile = await _writeTempPng();
       final input = PdfGenerationInput(
         inspectionId: 'insp-e2e-sink',
         organizationId: 'org-1',
@@ -404,7 +415,7 @@ void main() {
           'photo:sinkhole_garage_crack': [photoFile.path],
           'photo:sinkhole_adjacent_structure': [photoFile.path],
         },
-        signatureBytes: Uint8List.fromList(<int>[3, 3, 3]),
+        signatureBytes: _validSignaturePng,
       );
 
       final file = await service.generate(input);
@@ -469,15 +480,16 @@ void main() {
 // Helpers
 // ---------------------------------------------------------------------------
 
-Future<File> _writeTempJpeg() async {
-  // Minimal valid JPEG: SOI marker + minimal data + EOI marker
+Future<File> _writeTempPng() async {
+  // Generate a real 4x4 white PNG using the image package (same library
+  // that the pdf package uses to decode images).
+  final image = img.Image(width: 4, height: 4);
+  img.fill(image, color: img.ColorRgb8(255, 255, 255));
+  final pngBytes = Uint8List.fromList(img.encodePng(image));
   final output = File(
-    '${Directory.systemTemp.path}/pdf-e2e-${DateTime.now().microsecondsSinceEpoch}.jpg',
+    '${Directory.systemTemp.path}/pdf-e2e-${DateTime.now().microsecondsSinceEpoch}.png',
   );
-  await output.writeAsBytes(
-    <int>[0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x02, 0xFF, 0xD9],
-    flush: true,
-  );
+  await output.writeAsBytes(pngBytes, flush: true);
   return output;
 }
 

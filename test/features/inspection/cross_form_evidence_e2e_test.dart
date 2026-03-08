@@ -94,6 +94,7 @@ void main() {
         // Semantic: hvacDataPlate <-> generalDataPlate
         'photo:hvac_data_plate': true,
         'photo:general_data_plate': true,
+        'photo:general_data_plate#2': true, // minimumCount: 2
       };
 
       final state = buildState(
