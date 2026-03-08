@@ -12,7 +12,8 @@ class NarrativeRenderException implements Exception {
   final Object? cause;
 
   @override
-  String toString() => 'NarrativeRenderException($formType): $message';
+  String toString() =>
+      'NarrativeRenderException($formType): $message${cause != null ? ' cause=$cause' : ''}';
 }
 
 class NarrativeTemplateNotFoundError implements Exception {

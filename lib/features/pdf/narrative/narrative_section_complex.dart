@@ -249,22 +249,7 @@ class ChecklistSummarySection extends NarrativeSection {
   }
 
   PdfColor _statusColor(String status, NarrativePrintTheme theme) {
-    switch (status.trim().toLowerCase()) {
-      case 'satisfactory':
-      case 'good':
-      case 'pass':
-        return theme.ratingGood;
-      case 'marginal':
-      case 'fair':
-      case 'caution':
-        return theme.ratingCaution;
-      case 'deficient':
-      case 'poor':
-      case 'fail':
-        return theme.ratingDeficient;
-      default:
-        return theme.ratingNA;
-    }
+    return ConditionRating.parse(status).color(theme);
   }
 }
 
@@ -369,7 +354,11 @@ class ConditionRatingSection extends NarrativeSection {
         }
       }
 
-      widgets.add(pw.Row(children: photoCells));
+      widgets.add(pw.Wrap(
+        spacing: theme.photoGridSpacing,
+        runSpacing: theme.photoGridSpacing,
+        children: photoCells,
+      ));
       widgets.add(pw.SizedBox(height: theme.paragraphSpacing));
     }
 

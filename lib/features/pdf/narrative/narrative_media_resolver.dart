@@ -70,6 +70,7 @@ class NarrativeMediaResolver {
     required PdfSizeRetryStep retryStep,
   }) async {
     // Try local file first
+    String? localFailureReason;
     try {
       final file = File(path);
       if (await file.exists()) {
@@ -81,9 +82,12 @@ class NarrativeMediaResolver {
             bytes: bytes,
           );
         }
+        localFailureReason = 'Local file exists but is empty';
+      } else {
+        localFailureReason = 'File not found locally';
       }
     } catch (e) {
-      // Fall through to remote attempt
+      localFailureReason = 'Local read failed: $e';
     }
 
     // Try remote reader if available
@@ -102,7 +106,7 @@ class NarrativeMediaResolver {
         return ResolvedNarrativePhoto(
           sourceKey: sourceKey,
           originalPath: path,
-          failureReason: 'Remote read failed: $e',
+          failureReason: '$localFailureReason; remote read failed: $e',
         );
       }
     }
@@ -110,8 +114,9 @@ class NarrativeMediaResolver {
     return ResolvedNarrativePhoto(
       sourceKey: sourceKey,
       originalPath: path,
-      failureReason: 'Unable to resolve: file not found locally'
-          '${remoteReader == null ? "" : " and remote read returned no data"}',
+      failureReason: localFailureReason ??
+          'Unable to resolve'
+              '${remoteReader == null ? "" : " and remote read returned no data"}',
     );
   }
 }

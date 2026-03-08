@@ -69,6 +69,7 @@ class NarrativeReportEngine {
         branchContext: branchContext,
       );
     } catch (e) {
+      if (e is NarrativeTemplateNotFoundError) rethrow;
       throw NarrativeRenderException(
         message: 'Failed to render narrative PDF',
         formType: formType,
@@ -92,8 +93,20 @@ class NarrativeReportEngine {
       inspectorCompany: input.fieldValues['inspector_company'] ?? '',
       clientName: input.clientName,
       propertyAddress: input.propertyAddress,
-      inspectionDate: DateTime.now(),
+      inspectionDate: _parseInspectionDate(formData) ?? DateTime.now(),
       inspectionId: input.inspectionId,
     );
+  }
+
+  /// Parses an inspection date from narrative form data.
+  ///
+  /// Checks conventional keys used by both templates: 'assessment_date'
+  /// (mold) and 'inspection_date' (general). Falls back to null.
+  static DateTime? _parseInspectionDate(Map<String, dynamic> formData) {
+    final raw = formData['assessment_date'] ?? formData['inspection_date'];
+    if (raw is String && raw.isNotEmpty) {
+      return DateTime.tryParse(raw);
+    }
+    return null;
   }
 }

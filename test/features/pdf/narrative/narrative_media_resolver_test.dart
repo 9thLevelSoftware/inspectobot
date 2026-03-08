@@ -154,7 +154,7 @@ void main() {
       expect(result['error_photo']!.first.isResolved, isFalse);
       expect(
         result['error_photo']!.first.failureReason,
-        contains('Remote read failed'),
+        contains('remote read failed'),
       );
     });
 
