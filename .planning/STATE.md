@@ -1,19 +1,20 @@
 # Project State
 
 ## Current Position
-- **Phase**: 4 of 10 (complete)
-- **Status**: Phase 4 complete — review passed (2 cycles)
-- **Last Activity**: Phase 4 review passed (2026-03-08)
+- **Phase**: 5 of 10 (executed, pending review)
+- **Status**: Phase 5 complete — all 4 plans executed successfully
+- **Last Activity**: Phase 5 execution (2026-03-07)
 
 ## Progress
 ```
-[##################................................] 37% — 18/49 plans complete
+[#######################...........................] 46% — 22/48 plans complete
 ```
 
 ## GitHub
 - Phase 2 issue: #9
 - Phase 3 issue: #10
 - Phase 4 issue: #11
+- Phase 5 issue: #12
 
 ## Recent Decisions
 - Exploration crystallized: AI-Assist layer strategy, schema + forms first, AI deferred to v2
@@ -38,6 +39,9 @@
 - Phase 4 architecture: Clean approach selected (from 3 competing proposals: Minimal, Clean, Pragmatic)
 - Phase 4 spec pipeline: completed (04-wdo-form-spec.md, 1,084 lines)
 - Phase 4 critique: CAUTION verdict — 4 blockers fixed (InspectionDraft mutable pattern, controller.draft final, PdfGenerationInput wiring, TabBarView layout), 6 warnings fixed (wave parallelism, SectionHeader subtitle, AppTextField initialValue, AppDropdown bug, field count clarification, duplicate toggle suppression)
+- Old Phase 5 plans (05-field-usability-hierarchy) archived to .planning/archive/
+- Phase 5 architecture: Clean approach selected (from 3 competing proposals: Minimal, Clean, Pragmatic)
+- Phase 5 critique: CAUTION verdict — 3 blockers fixed (exhaustive switch placeholder B1, FieldGroup visibility ownership B2, FormSectionDefinition extension B3), 6 warnings fixed (controller PDF wiring W1, FieldGroup accepted as non-duplicate W2, computed sinkholeAnyYes predicate W3, tri-state PDF checkbox mapping W4, key alignment W5, comprehensive round-trip tests W6)
 
 ## Phase 3 Execution Results
 - Plan 03-01 (Backend Architect): Core Shared Models + Enums — PASS (RatingScale 7 values, UniversalPropertyFields 8 fields, SharedBuildingSystemFields 13 fields, FormType +4 values)
@@ -51,5 +55,11 @@
 - Plan 04-04 (Senior Developer): Controller + Data Pipeline — PASS (InspectionDraft.formData, controller methods, PropertyData bridge, PDF wiring, 16 tests)
 - Plan 04-05 (Mobile App Builder): WdoFormStep + Wizard Integration — PASS (TabBar 5 sections, wizard routing, bounded height fix, toggle suppression, 12 tests)
 
+## Phase 5 Execution Results
+- Plan 05-01 (Backend Architect): Domain Abstractions — PASS (FieldType.triState, FieldGroup, RepeatingFieldGroup, SinkholeFormData 67 fields, FormSectionDefinition extended, anySinkholeYes predicate, 62 tests)
+- Plan 05-02 (Mobile App Builder): UI Widgets — PASS (TriStateChipGroup, RepeatingGroupCard, FormFieldInput triState case, FormSectionUI FieldGroup/RepeatingFieldGroup rendering, 19 tests)
+- Plan 05-03 (Senior Developer): Section Definitions + PDF Assets — PASS (7 sections, 67 fields, PDF stub + field map JSON, PdfTemplateManifest sinkhole entry, 23 tests)
+- Plan 05-04 (Mobile App Builder): SinkholeFormStep + Wizard Integration — PASS (7-tab scrollable TabBar, wizard routing, controller PDF wiring, scheduling key remapping, 19 tests)
+
 ## Next Action
-Run `/legion:plan 5` to plan the next phase: Sinkhole Form Implementation
+Run `/legion:review` to verify Phase 5: Sinkhole Form Implementation
