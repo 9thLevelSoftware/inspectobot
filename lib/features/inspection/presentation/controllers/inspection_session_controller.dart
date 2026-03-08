@@ -31,6 +31,7 @@ import '../../domain/inspection_draft.dart';
 import '../../domain/inspection_wizard_state.dart';
 import '../../domain/report_readiness.dart';
 import '../../domain/required_photo_category.dart';
+import '../../domain/general_inspection_form_data.dart';
 import '../../domain/mold_form_data.dart';
 import '../../domain/sinkhole_form_data.dart';
 
@@ -157,6 +158,9 @@ class InspectionSessionController {
   MoldFormData _moldFormData = MoldFormData.empty();
   MoldFormData get moldFormData => _moldFormData;
 
+  GeneralInspectionFormData _generalFormData = GeneralInspectionFormData.empty();
+  GeneralInspectionFormData get generalFormData => _generalFormData;
+
   // -- Computed getters ------------------------------------------------------
 
   InspectionWizardState get wizardState => InspectionWizardState(
@@ -236,6 +240,7 @@ class InspectionSessionController {
 
     _snapshot = draft.wizardSnapshot;
     _hydrateMoldFormData();
+    _hydrateGeneralFormData();
     _hydrateCapturedFromSnapshot();
 
     final requestedStep = draft.initialStepIndex;
@@ -407,6 +412,11 @@ class InspectionSessionController {
                 MoldFormData.fromJson(Map<String, dynamic>.from(rawData));
             narrativeFormData[form] =
                 Map<String, dynamic>.from(moldData.toFormDataMap());
+          } else if (form == FormType.generalInspection) {
+            final generalData = GeneralInspectionFormData.fromJson(
+                Map<String, dynamic>.from(rawData));
+            narrativeFormData[form] =
+                Map<String, dynamic>.from(generalData.toFormDataMap());
           } else {
             narrativeFormData[form] = Map<String, dynamic>.from(rawData);
           }
@@ -557,6 +567,14 @@ class InspectionSessionController {
     _notify();
   }
 
+  /// Updates the general inspection form data and persists it to [draft.formData].
+  void updateGeneralFormData(GeneralInspectionFormData data) {
+    _generalFormData = data;
+    draft.formData[FormType.generalInspection] =
+        Map<String, dynamic>.from(data.toJson());
+    _notify();
+  }
+
   /// Updates a branch flag in the wizard snapshot.
   void setBranchFlag(String key, bool value) {
     final updatedContext = Map<String, dynamic>.from(_snapshot.branchContext)
@@ -639,6 +657,13 @@ class InspectionSessionController {
     final moldRawData = draft.formData[FormType.moldAssessment];
     if (moldRawData != null && moldRawData.isNotEmpty) {
       _moldFormData = MoldFormData.fromJson(moldRawData);
+    }
+  }
+
+  void _hydrateGeneralFormData() {
+    final rawData = draft.formData[FormType.generalInspection];
+    if (rawData != null && rawData.isNotEmpty) {
+      _generalFormData = GeneralInspectionFormData.fromJson(rawData);
     }
   }
 

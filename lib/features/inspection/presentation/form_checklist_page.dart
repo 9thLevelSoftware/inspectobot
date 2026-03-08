@@ -226,6 +226,11 @@ class _FormChecklistPageState extends State<FormChecklistPage> {
             _controller.updateMoldFormData(data);
             setState(() {});
           },
+          generalFormData: _controller.generalFormData,
+          onGeneralChanged: (data) {
+            _controller.updateGeneralFormData(data);
+            setState(() {});
+          },
         );
       case 1:
         return EvidenceCaptureView(

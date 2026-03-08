@@ -7,9 +7,11 @@ import '../../domain/evidence_requirement.dart';
 import '../../domain/form_requirements.dart';
 import '../../domain/form_type.dart';
 import '../../domain/inspection_wizard_state.dart';
+import '../../domain/general_inspection_form_data.dart';
 import '../../domain/mold_form_data.dart';
 import '../shared_widgets/branch_flag_toggle_tile.dart';
 import '../shared_widgets/evidence_requirement_card.dart';
+import 'general_inspection_form_step.dart';
 import 'mold_form_step.dart';
 import 'sinkhole_form_step.dart';
 import 'wdo_form_step.dart';
@@ -36,6 +38,8 @@ class WizardNavigationView extends StatelessWidget {
     this.onFieldChanged,
     this.moldFormData,
     this.onMoldChanged,
+    this.generalFormData,
+    this.onGeneralChanged,
   });
 
   final InspectionWizardState wizardState;
@@ -49,6 +53,8 @@ class WizardNavigationView extends StatelessWidget {
   final void Function(FormType form, String key, dynamic value)? onFieldChanged;
   final MoldFormData? moldFormData;
   final ValueChanged<MoldFormData>? onMoldChanged;
+  final GeneralInspectionFormData? generalFormData;
+  final ValueChanged<GeneralInspectionFormData>? onGeneralChanged;
 
   Widget? _buildFormStepWidget(WizardStepDefinition step) {
     if (step.form == FormType.wdo) {
@@ -75,6 +81,12 @@ class WizardNavigationView extends StatelessWidget {
       return MoldFormStep(
         formData: moldFormData ?? MoldFormData.empty(),
         onChanged: (data) => onMoldChanged?.call(data),
+      );
+    }
+    if (step.form == FormType.generalInspection) {
+      return GeneralInspectionFormStep(
+        formData: generalFormData ?? GeneralInspectionFormData.empty(),
+        onChanged: (data) => onGeneralChanged?.call(data),
       );
     }
     return null;
