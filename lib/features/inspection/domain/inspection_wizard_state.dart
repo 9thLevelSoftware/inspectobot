@@ -92,10 +92,41 @@ class FormProgressSummary {
   const FormProgressSummary({
     required this.form,
     required this.missingRequirements,
+    required this.totalRequirements,
   });
 
   final FormType form;
   final List<EvidenceRequirement> missingRequirements;
+  final int totalRequirements;
+
+  /// Percentage of requirements completed (0–100).
+  int get percentComplete {
+    if (totalRequirements == 0) return 100;
+    return ((totalRequirements - missingRequirements.length) /
+            totalRequirements *
+            100)
+        .round();
+  }
+
+  /// Short abbreviation label for the form type.
+  String get abbreviation {
+    switch (form) {
+      case FormType.fourPoint:
+        return '4PT';
+      case FormType.roofCondition:
+        return 'ROOF';
+      case FormType.windMitigation:
+        return 'WIND';
+      case FormType.wdo:
+        return 'WDO';
+      case FormType.sinkholeInspection:
+        return 'SINK';
+      case FormType.moldAssessment:
+        return 'MOLD';
+      case FormType.generalInspection:
+        return 'GEN';
+    }
+  }
 
   List<RequiredPhotoCategory> get missingCategories {
     return missingRequirements
@@ -183,7 +214,11 @@ class InspectionWizardState {
                 requirement.minimumCount,
           )
           .toList(growable: false);
-      return FormProgressSummary(form: form, missingRequirements: missing);
+      return FormProgressSummary(
+        form: form,
+        missingRequirements: missing,
+        totalRequirements: requirements.length,
+      );
     }).toList(growable: false);
   }
 

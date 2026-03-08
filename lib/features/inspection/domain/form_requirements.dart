@@ -1,4 +1,5 @@
 import 'evidence_requirement.dart';
+import 'evidence_sharing_matrix.dart';
 import 'form_type.dart';
 import 'required_photo_category.dart';
 
@@ -641,6 +642,16 @@ class FormRequirements {
       }
     }
     return keys;
+  }
+
+  /// Returns all [FormType]s that require the given [category], including
+  /// forms that accept semantically equivalent categories.
+  ///
+  /// Delegates to [EvidenceSharingMatrix.formsAcceptingCategory].
+  static Set<FormType> formsRequiringCategory(
+    RequiredPhotoCategory category,
+  ) {
+    return EvidenceSharingMatrix.formsAcceptingCategory(category);
   }
 
   static void _assertUniqueKeys(List<EvidenceRequirement> requirements) {
