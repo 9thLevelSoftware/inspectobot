@@ -114,9 +114,9 @@ class NarrativeMediaResolver {
     return ResolvedNarrativePhoto(
       sourceKey: sourceKey,
       originalPath: path,
-      failureReason: localFailureReason ??
-          'Unable to resolve'
-              '${remoteReader == null ? "" : " and remote read returned no data"}',
+      failureReason: remoteReader != null
+          ? '$localFailureReason; remote read returned no data'
+          : localFailureReason ?? 'Unable to resolve',
     );
   }
 }
