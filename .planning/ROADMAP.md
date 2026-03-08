@@ -181,7 +181,7 @@
 | 5. Sinkhole Form | 4 | 4 | Complete (reviewed) |
 | 6. Narrative Report Engine | 5 | 5 | Complete (reviewed) |
 | 7. Mold Assessment | 5 | 5 | Complete (reviewed) |
-| 8. General Inspection | 6 | 0 | Pending |
+| 8. General Inspection | 6 | 6 | Complete |
 | 9. Cross-Form Integration | 5 | 0 | Pending |
 | 10. Testing & Polish | 5 | 0 | Pending |
-| **Total** | **48** | **32** | **67%** |
+| **Total** | **48** | **38** | **79%** |

@@ -1,13 +1,13 @@
 # Project State
 
 ## Current Position
-- **Phase**: 7 of 10 (complete)
-- **Status**: Phase 7 complete — review passed (3 cycles)
-- **Last Activity**: Phase 7 review passed (2026-03-08)
+- **Phase**: 8 of 10 (executed, pending review)
+- **Status**: Phase 8 complete — all 6 plans executed successfully
+- **Last Activity**: Phase 8 execution (2026-03-08)
 
 ## Progress
 ```
-[#################################.................] 67% — 32/48 plans complete
+[########################################..........] 79% — 38/48 plans complete
 ```
 
 ## GitHub
@@ -17,6 +17,7 @@
 - Phase 5 issue: #12
 - Phase 6 issue: #13
 - Phase 7 issue: #14
+- Phase 8 issue: #15
 
 ## Recent Decisions
 - Exploration crystallized: AI-Assist layer strategy, schema + forms first, AI deferred to v2
@@ -103,5 +104,21 @@
 - Cycle 3: All fixes verified, PASS from both reviewers
 - Key fix: storage/hydration key mismatch (BLOCKER — toFormDataMap snake_case vs fromJson camelCase, silent data loss on reload)
 
+## Phase 8 Architecture
+- Pragmatic Hierarchical Systems Model selected (over Minimal and Clean)
+- Reusable SystemInspectionData composed 9× into GeneralInspectionFormData
+- Single generic GeneralInspectionSystemStep widget for all 9 systems
+- ConditionRating + ComplianceCheckResult extracted to domain layer (layering fix)
+- Spec pipeline: 5-stage pipeline completed, spec critiqued and revised (11 changes)
+- Plan critique: CAUTION verdict — 2 blockers fixed (photo key alignment test, parameter sources), 1 dependency fixed (08-04 depends on 08-03)
+
+## Phase 8 Execution Results
+- Plan 08-01 (Backend Architect): ConditionRating Extraction + SystemInspectionData — PASS (ConditionRating to domain, ComplianceCheckResult shared, SystemInspectionData 9 factories, SubsystemData, 48 tests)
+- Plan 08-02 (Senior Developer): GeneralInspectionFormData + ComplianceValidator — PASS (GeneralInspectionFormData 15 fields + toFormDataMap 72 keys, GeneralInspectionComplianceValidator 9 systems + photos + branch flags, 51 tests)
+- Plan 08-03 (Mobile App Builder): UI Step Widgets — PASS (GeneralInspectionSystemStep reusable for 9 systems, ScopeStep, ReviewStep with compliance banner + branch toggles, 15 tests)
+- Plan 08-04 (Senior Developer): FormStep Shell + Controller + Wizard Routing — PASS (11-tab GeneralInspectionFormStep, controller _generalFormData/updateGeneralFormData/_hydrateGeneralFormData, wizard routing, 11 tests)
+- Plan 08-05 (Mobile App Builder): Integration Tests + Compliance Validation — PASS (16 key alignment + round-trip tests, 34 compliance integration tests, 50 tests)
+- Plan 08-06 (Senior Developer): E2E PDF Test + Regression — PASS (6 PDF generation tests, full regression check 1188 pass/15 pre-existing failures, 6 tests)
+
 ## Next Action
-Run `/legion:plan 8` to plan the next phase
+Run `/legion:review` to verify Phase 8: General Inspection Implementation
