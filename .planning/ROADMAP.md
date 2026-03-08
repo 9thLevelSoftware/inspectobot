@@ -179,9 +179,9 @@
 | 3. Data Model Evolution | 3 | 3 | Complete (reviewed) |
 | 4. WDO Form | 5 | 5 | Complete (reviewed) |
 | 5. Sinkhole Form | 4 | 4 | Complete (reviewed) |
-| 6. Narrative Report Engine | 5 | 0 | Pending |
+| 6. Narrative Report Engine | 5 | 5 | Complete |
 | 7. Mold Assessment | 5 | 0 | Pending |
 | 8. General Inspection | 6 | 0 | Pending |
 | 9. Cross-Form Integration | 5 | 0 | Pending |
 | 10. Testing & Polish | 5 | 0 | Pending |
-| **Total** | **48** | **22** | **46%** |
+| **Total** | **48** | **27** | **56%** |
