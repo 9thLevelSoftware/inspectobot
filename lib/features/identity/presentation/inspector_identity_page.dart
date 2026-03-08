@@ -57,7 +57,7 @@ class _InspectorIdentityPageState extends State<InspectorIdentityPage> {
       _signatureController = SignatureController(
         penStrokeWidth: 3.0,
         penColor: Theme.of(context).colorScheme.onSurface,
-        exportBackgroundColor: Colors.transparent,
+        exportBackgroundColor: const Color(0x00000000),
       );
       _controllerInitialized = true;
     }

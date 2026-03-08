@@ -76,7 +76,7 @@ class SignaturePad extends StatelessWidget {
                 if (!enabled)
                   Positioned.fill(
                     child: AbsorbPointer(
-                      child: Container(color: Colors.transparent),
+                      child: SizedBox.expand(),
                     ),
                   ),
                 // Hint text overlay when empty.

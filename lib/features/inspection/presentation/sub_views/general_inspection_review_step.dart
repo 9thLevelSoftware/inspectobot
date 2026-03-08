@@ -60,7 +60,7 @@ class GeneralInspectionReviewStep extends StatelessWidget {
             return ListTile(
               leading: Icon(
                 isRated ? Icons.check_circle : Icons.cancel,
-                color: isRated ? Colors.green : Palette.error,
+                color: isRated ? Palette.success : Palette.error,
               ),
               title: Text(system.systemName),
               trailing: Text(system.rating.displayLabel),
@@ -137,10 +137,10 @@ class GeneralInspectionReviewStep extends StatelessWidget {
       widgets.add(
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(12),
+          padding: AppEdgeInsets.cardPaddingCompact,
           decoration: BoxDecoration(
             color: Palette.error.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: AppRadii.md,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,7 +151,7 @@ class GeneralInspectionReviewStep extends StatelessWidget {
                       color: Palette.error,
                     ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.spacingXs),
               ...result.missingElements.map(
                 (e) => Padding(
                   padding: const EdgeInsets.only(top: 2),
@@ -173,10 +173,10 @@ class GeneralInspectionReviewStep extends StatelessWidget {
       widgets.add(
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(12),
+          padding: AppEdgeInsets.cardPaddingCompact,
           decoration: BoxDecoration(
             color: Palette.warning.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: AppRadii.md,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,7 +187,7 @@ class GeneralInspectionReviewStep extends StatelessWidget {
                       color: Palette.warning,
                     ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.spacingXs),
               ...result.warnings.map(
                 (w) => Padding(
                   padding: const EdgeInsets.only(top: 2),

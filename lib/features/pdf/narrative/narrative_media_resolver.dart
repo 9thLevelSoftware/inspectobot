@@ -116,7 +116,7 @@ class NarrativeMediaResolver {
       originalPath: path,
       failureReason: remoteReader != null
           ? '$localFailureReason; remote read returned no data'
-          : localFailureReason ?? 'Unable to resolve',
+          : localFailureReason,
     );
   }
 }

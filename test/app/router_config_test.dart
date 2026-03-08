@@ -4,9 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inspectobot/app/auth_notifier.dart';
+import 'package:inspectobot/app/navigation_service.dart';
 import 'package:inspectobot/app/router_config.dart';
 import 'package:inspectobot/app/routes.dart';
+import 'package:inspectobot/app/service_locator.dart';
 import 'package:inspectobot/features/auth/data/auth_repository.dart';
+import 'package:inspectobot/theme/theme.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthChangeEvent;
 
 // ---------------------------------------------------------------------------
@@ -40,14 +44,38 @@ class _FakeAuthRepository extends Fake implements AuthRepository {
 }
 
 // ---------------------------------------------------------------------------
+// Mocks
+// ---------------------------------------------------------------------------
+
+class _MockNavigationService extends Mock implements NavigationService {}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 Widget _buildApp(GoRouter router) {
-  return MaterialApp.router(routerConfig: router);
+  return MaterialApp.router(
+    routerConfig: router,
+    theme: AppTheme.dark(),
+  );
 }
 
 void main() {
+  late _MockNavigationService mockNav;
+
+  setUp(() {
+    mockNav = _MockNavigationService();
+    when(() => mockNav.go(any(), extra: any(named: 'extra'))).thenReturn(null);
+    when(() => mockNav.go(any())).thenReturn(null);
+    when(() => mockNav.push<void>(any(), extra: any(named: 'extra')))
+        .thenAnswer((_) async {});
+    setupTestServiceLocator(navigationService: mockNav);
+  });
+
+  tearDown(() async {
+    await resetServiceLocator();
+  });
+
   group('createRouter redirect logic', () {
     late _FakeAuthRepository repo;
     late AuthNotifier notifier;
@@ -96,7 +124,7 @@ void main() {
       await tester.pumpAndSettle();
       // Should redirect to dashboard — look for the dashboard title
       expect(
-        find.text('Florida Insurance Inspection Workflow'),
+        find.text('InspectoBot'),
         findsOneWidget,
       );
     });
@@ -114,7 +142,7 @@ void main() {
       await tester.pumpWidget(_buildApp(router));
       await tester.pumpAndSettle();
       expect(
-        find.text('Florida Insurance Inspection Workflow'),
+        find.text('InspectoBot'),
         findsOneWidget,
       );
     });
@@ -133,7 +161,7 @@ void main() {
       await tester.pumpWidget(_buildApp(router));
       await tester.pumpAndSettle();
       expect(
-        find.text('Florida Insurance Inspection Workflow'),
+        find.text('InspectoBot'),
         findsOneWidget,
       );
     });
@@ -248,7 +276,7 @@ void main() {
       await tester.pumpWidget(_buildApp(router));
       await tester.pumpAndSettle();
       expect(
-        find.text('Florida Insurance Inspection Workflow'),
+        find.text('InspectoBot'),
         findsOneWidget,
       );
     });
@@ -276,7 +304,7 @@ void main() {
       await tester.pumpAndSettle();
       // Should redirect to dashboard because extra is null
       expect(
-        find.text('Florida Insurance Inspection Workflow'),
+        find.text('InspectoBot'),
         findsOneWidget,
       );
     });
@@ -340,7 +368,7 @@ void main() {
       await tester.pumpAndSettle();
       // Should redirect to dashboard because extra is wrong type
       expect(
-        find.text('Florida Insurance Inspection Workflow'),
+        find.text('InspectoBot'),
         findsOneWidget,
       );
     });
