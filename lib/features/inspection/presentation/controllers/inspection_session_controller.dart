@@ -25,6 +25,7 @@ import '../../../signing/domain/report_signature_evidence.dart';
 import '../../../identity/data/signature_repository.dart';
 import '../../data/inspection_repository.dart';
 import '../../domain/evidence_requirement.dart';
+import '../../domain/evidence_sharing_matrix.dart';
 import '../../domain/form_requirements.dart';
 import '../../domain/form_type.dart';
 import '../../domain/inspection_draft.dart';
@@ -314,6 +315,9 @@ class InspectionSessionController {
     draft.capturedPhotoPaths[category] = result.filePath;
     draft.capturedEvidencePaths[requirement.key] = <String>[result.filePath];
     _snapshot = _snapshot.copyWith(completion: completion);
+
+    _markCrossFormCompletion(requirement, result.filePath);
+
     _notify();
 
     await _syncReadinessFromSnapshot();
@@ -585,6 +589,90 @@ class InspectionSessionController {
   }
 
   // -- Private helpers -------------------------------------------------------
+
+  /// Marks evidence completion across all enabled forms that share the
+  /// captured photo's category, using [EvidenceSharingMatrix].
+  ///
+  /// Handles two sharing modes:
+  /// 1. **Semantic equivalents**: Different enum values representing the same
+  ///    physical subject (e.g., exteriorFront ↔ generalFrontElevation).
+  /// 2. **Native shares**: Same enum value used by multiple forms
+  ///    (e.g., roofSlopeMain used by fourPoint + roofCondition).
+  void _markCrossFormCompletion(
+    EvidenceRequirement requirement,
+    String filePath,
+  ) {
+    final category = requirement.category;
+    if (category == null) return;
+
+    final completion = Map<String, bool>.from(_snapshot.completion);
+    final branchContext = _snapshot.branchContext;
+    var changed = false;
+
+    // --- Semantic equivalents ---
+    final equivalents = EvidenceSharingMatrix.equivalentCategories(category);
+    for (final equivCategory in equivalents) {
+      // Find which enabled forms own this equivalent category.
+      final owningForms = EvidenceSharingMatrix.formsAcceptingCategoryFiltered(
+        equivCategory,
+        draft.enabledForms,
+      );
+      for (final form in owningForms) {
+        // Skip the original capture's form.
+        if (form == requirement.form) continue;
+
+        final formReqs = FormRequirements.forFormRequirements(
+          form,
+          branchContext: branchContext,
+        );
+        for (final req in formReqs) {
+          if (req.category != equivCategory) continue;
+
+          // Don't double-mark already-completed keys.
+          if (completion[req.key] == true) continue;
+
+          // For multi-capture requirements on other forms, only mark the
+          // base key (satisfies 1 of N).
+          completion[req.key] = true;
+          changed = true;
+
+          // Copy photo path so other form's PDF generation can find it.
+          draft.capturedCategories.add(equivCategory);
+          draft.capturedPhotoPaths[equivCategory] = filePath;
+          draft.capturedEvidencePaths[req.key] = <String>[filePath];
+        }
+      }
+    }
+
+    // --- Native shares (same category enum, different form) ---
+    final nativeForms = EvidenceSharingMatrix.formsAcceptingCategoryFiltered(
+      category,
+      draft.enabledForms,
+    );
+    for (final form in nativeForms) {
+      if (form == requirement.form) continue;
+
+      final formReqs = FormRequirements.forFormRequirements(
+        form,
+        branchContext: branchContext,
+      );
+      for (final req in formReqs) {
+        if (req.category != category) continue;
+
+        if (completion[req.key] == true) continue;
+
+        completion[req.key] = true;
+        changed = true;
+
+        // Evidence paths for the other form's requirement key.
+        draft.capturedEvidencePaths[req.key] = <String>[filePath];
+      }
+    }
+
+    if (changed) {
+      _snapshot = _snapshot.copyWith(completion: completion);
+    }
+  }
 
   void _notify() {
     onStateChanged?.call();

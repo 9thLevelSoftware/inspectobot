@@ -4,18 +4,25 @@ import 'package:inspectobot/common/widgets/widgets.dart';
 import 'package:inspectobot/theme/theme.dart';
 
 import '../../domain/evidence_requirement.dart';
+import '../../domain/form_type.dart';
+import '../widgets/cross_form_evidence_badge.dart';
 
 /// A reusable card displaying a single evidence requirement with its capture
 /// status and an action button.
 ///
 /// - Captured: trailing [StatusBadge] with 'Complete'.
 /// - Missing: trailing [StatusBadge] 'Missing' with action button below.
+///
+/// Optionally displays a [CrossFormEvidenceBadge] when [sharedForms] is
+/// provided and non-empty, indicating other forms that also benefit from
+/// capturing this evidence.
 class EvidenceRequirementCard extends StatelessWidget {
   const EvidenceRequirementCard({
     super.key,
     required this.requirement,
     required this.isCaptured,
     this.onCapture,
+    this.sharedForms,
   });
 
   /// The evidence requirement to display.
@@ -27,6 +34,11 @@ class EvidenceRequirementCard extends StatelessWidget {
   /// Called when the user taps the Capture/Upload button.
   /// When `null`, the button is disabled.
   final VoidCallback? onCapture;
+
+  /// Other forms that also accept this evidence category.
+  /// When non-null and non-empty, a [CrossFormEvidenceBadge] is rendered
+  /// below the requirement description.
+  final Set<FormType>? sharedForms;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +67,8 @@ class EvidenceRequirementCard extends StatelessWidget {
                       isCaptured ? 'Captured' : 'Missing required item',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
+                    if (sharedForms != null && sharedForms!.isNotEmpty)
+                      CrossFormEvidenceBadge(sharedForms: sharedForms!),
                   ],
                 ),
               ),
