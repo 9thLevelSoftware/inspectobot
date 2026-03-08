@@ -9,6 +9,7 @@ import 'package:inspectobot/common/widgets/reach_zone_scaffold.dart';
 import 'package:inspectobot/common/widgets/section_card.dart';
 import 'package:inspectobot/common/widgets/section_header.dart';
 import 'package:inspectobot/common/widgets/status_badge.dart';
+import 'package:inspectobot/common/widgets/inspection_card.dart';
 import 'package:inspectobot/features/inspection/data/inspection_repository.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_draft.dart';
 import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.dart';
@@ -287,6 +288,18 @@ class _DashboardPageState extends State<DashboardPage> {
                   final isComplete =
                       displayStatus == _InspectionDisplayStatus.complete;
 
+                  // Build per-form progress summaries when the
+                  // inspection has meaningful wizard data.
+                  List<FormProgressSummary>? summaries;
+                  if (inspection.snapshot.completion.isNotEmpty ||
+                      inspection.snapshot.lastStepIndex > 0) {
+                    final wizardState = InspectionWizardState(
+                      enabledForms: inspection.enabledForms,
+                      snapshot: inspection.snapshot,
+                    );
+                    summaries = wizardState.buildFormSummaries();
+                  }
+
                   return Padding(
                     padding: EdgeInsets.only(
                       bottom: AppSpacing.spacingMd,
@@ -295,6 +308,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       inspection: inspection,
                       displayStatus: displayStatus,
                       isComplete: isComplete,
+                      formSummaries: summaries,
                       onTap: () => _resumeInspection(inspection),
                       onAction: () => _resumeInspection(inspection),
                     ),
@@ -344,6 +358,7 @@ class _InspectionListCard extends StatelessWidget {
     required this.isComplete,
     required this.onTap,
     required this.onAction,
+    this.formSummaries,
   });
 
   final InspectionWizardProgress inspection;
@@ -351,6 +366,7 @@ class _InspectionListCard extends StatelessWidget {
   final bool isComplete;
   final VoidCallback onTap;
   final VoidCallback onAction;
+  final List<FormProgressSummary>? formSummaries;
 
   StatusBadge _buildBadge() {
     return switch (displayStatus) {
@@ -419,6 +435,13 @@ class _InspectionListCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
+
+              // Per-form progress chips
+              if (formSummaries != null && formSummaries!.isNotEmpty) ...[
+                SizedBox(height: AppSpacing.spacingSm),
+                FormProgressChips(summaries: formSummaries!),
+              ],
+
               SizedBox(height: AppSpacing.spacingSm),
 
               // Footer row: timestamp + action button

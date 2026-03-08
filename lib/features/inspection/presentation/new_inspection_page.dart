@@ -51,6 +51,23 @@ class NewInspectionPage extends StatefulWidget {
 
 class _NewInspectionPageState extends State<NewInspectionPage> {
   static const Uuid _uuid = Uuid();
+
+  /// Form categories for grouped display in the form selection section.
+  static const _formCategories = <String, List<FormType>>{
+    'Core Inspections': [
+      FormType.fourPoint,
+      FormType.roofCondition,
+      FormType.windMitigation,
+    ],
+    'Specialized Inspections': [
+      FormType.wdo,
+      FormType.sinkholeInspection,
+    ],
+    'Narrative Reports': [
+      FormType.moldAssessment,
+      FormType.generalInspection,
+    ],
+  };
   final _formKey = GlobalKey<FormState>();
   final _clientNameController = TextEditingController();
   final _clientEmailController = TextEditingController();
@@ -347,23 +364,59 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
                 shape: expansionTileShape,
                 collapsedShape: expansionTileShape,
                 children: [
-                  for (final form in FormType.values) ...[
-                    FormTypeCard(
-                      label: form.label,
-                      description: _formDescriptions[form] ?? '',
-                      selected: _selectedForms.contains(form),
-                      onChanged: (selected) {
+                  // Select All / Deselect All toggle
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
                         setState(() {
-                          if (selected) {
-                            _selectedForms.add(form);
+                          if (_selectedForms.length == FormType.values.length) {
+                            _selectedForms.clear();
                           } else {
-                            _selectedForms.remove(form);
+                            _selectedForms.addAll(FormType.values);
                           }
                         });
                       },
+                      child: Text(
+                        _selectedForms.length == FormType.values.length
+                            ? 'Deselect All'
+                            : 'Select All',
+                      ),
                     ),
-                    if (form != FormType.values.last)
+                  ),
+                  // Category-grouped form cards
+                  for (final entry in _formCategories.entries) ...[
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: entry.key == _formCategories.keys.first
+                            ? 0
+                            : AppSpacing.spacingSm,
+                        bottom: AppSpacing.spacingXs,
+                      ),
+                      child: Text(
+                        entry.key,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ),
+                    for (final form in entry.value) ...[
+                      FormTypeCard(
+                        label: form.label,
+                        description: _formDescriptions[form] ?? '',
+                        selected: _selectedForms.contains(form),
+                        onChanged: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedForms.add(form);
+                            } else {
+                              _selectedForms.remove(form);
+                            }
+                          });
+                        },
+                      ),
                       SizedBox(height: AppSpacing.spacingSm),
+                    ],
                   ],
                 ],
               ),

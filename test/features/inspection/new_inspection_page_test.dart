@@ -100,20 +100,14 @@ void main() {
 
     await fillValidForm(tester);
 
-    // Deselect all form types by tapping each FormTypeCard.
-    // Must scroll each into view individually and pump between taps.
-    for (final form in FormType.values) {
-      final cardFinder = find.widgetWithText(FormTypeCard, form.label);
-      await tester.scrollUntilVisible(
-        cardFinder,
-        100,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.ensureVisible(cardFinder);
-      await tester.pumpAndSettle();
-      await tester.tap(cardFinder);
-      await tester.pumpAndSettle();
-    }
+    // Deselect all form types using the "Deselect All" toggle button.
+    await tester.scrollUntilVisible(
+      find.text('Deselect All'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Deselect All'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Continue'));
     await tester.pump();
@@ -365,17 +359,162 @@ void main() {
 
       expect(findCheckboxInCard().value, isTrue);
 
-      // Tap to deselect
-      await tester.tap(firstCard);
+      // Tap to deselect (use warnIfMissed: false — card may overlap stickyBottom)
+      await tester.ensureVisible(firstCard);
+      await tester.pumpAndSettle();
+      await tester.tap(firstCard, warnIfMissed: false);
       await tester.pump();
 
       expect(findCheckboxInCard().value, isFalse);
 
       // Tap to re-select
-      await tester.tap(firstCard);
+      await tester.tap(firstCard, warnIfMissed: false);
       await tester.pump();
 
       expect(findCheckboxInCard().value, isTrue);
+    });
+
+    testWidgets('form selection renders 3 category headers', (tester) async {
+      await pumpPage(
+        tester,
+        provider: _TestRepositoryProvider(
+          InspectionRepository(_SpyInspectionStore()),
+        ),
+      );
+
+      // Scroll to the Inspection Forms section
+      await tester.scrollUntilVisible(
+        find.text('Inspection Forms'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+
+      // All 3 category headers should be visible (may need scrolling)
+      for (final header in [
+        'Core Inspections',
+        'Specialized Inspections',
+        'Narrative Reports',
+      ]) {
+        await tester.scrollUntilVisible(
+          find.text(header),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.text(header), findsOneWidget);
+      }
+    });
+
+    testWidgets('Select All selects all 7 forms', (tester) async {
+      await pumpPage(
+        tester,
+        provider: _TestRepositoryProvider(
+          InspectionRepository(_SpyInspectionStore()),
+        ),
+      );
+
+      // All forms start selected, so first deselect one to make "Select All" appear
+      final firstCardFinder =
+          find.widgetWithText(FormTypeCard, 'Insp4pt 03-25');
+      await tester.scrollUntilVisible(
+        firstCardFinder,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(firstCardFinder);
+      await tester.pumpAndSettle();
+      await tester.tap(firstCardFinder, warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      // Now "Select All" should be shown — scroll back up to find it
+      // (scrollUntilVisible with negative delta to scroll up)
+      await tester.scrollUntilVisible(
+        find.text('Select All'),
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('Select All'));
+      await tester.pumpAndSettle();
+      expect(find.text('Select All'), findsOneWidget);
+
+      // Tap "Select All"
+      await tester.tap(find.text('Select All'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      // Now "Deselect All" should appear (all selected) — may need to scroll
+      await tester.scrollUntilVisible(
+        find.text('Deselect All'),
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Deselect All'), findsOneWidget);
+
+      // Verify all checkboxes are checked
+      final checkboxes = tester.widgetList<Checkbox>(find.byType(Checkbox));
+      for (final cb in checkboxes) {
+        expect(cb.value, isTrue);
+      }
+    });
+
+    testWidgets('Deselect All clears all forms', (tester) async {
+      await pumpPage(
+        tester,
+        provider: _TestRepositoryProvider(
+          InspectionRepository(_SpyInspectionStore()),
+        ),
+      );
+
+      // All forms start selected, so "Deselect All" should be visible
+      await tester.scrollUntilVisible(
+        find.text('Deselect All'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Deselect All'), findsOneWidget);
+
+      // Tap "Deselect All"
+      await tester.tap(find.text('Deselect All'));
+      await tester.pumpAndSettle();
+
+      // Now "Select All" should appear
+      await tester.scrollUntilVisible(
+        find.text('Select All'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Select All'), findsOneWidget);
+
+      // Verify all checkboxes are unchecked
+      final checkboxes = tester.widgetList<Checkbox>(find.byType(Checkbox));
+      for (final cb in checkboxes) {
+        expect(cb.value, isFalse);
+      }
+    });
+
+    testWidgets('deselecting all then tapping continue shows validation error',
+        (tester) async {
+      final store = _SpyInspectionStore();
+      await pumpPage(
+        tester,
+        provider: _TestRepositoryProvider(InspectionRepository(store)),
+      );
+
+      await fillValidForm(tester);
+
+      // Deselect all using the toggle
+      await tester.scrollUntilVisible(
+        find.text('Deselect All'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Deselect All'));
+      await tester.pumpAndSettle();
+
+      // Continue button
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+
+      expect(find.text('Select at least one inspection form.'), findsOneWidget);
+      expect(store.createCalls, 0);
     });
 
     testWidgets('can submit with subset of forms selected', (tester) async {
@@ -400,8 +539,10 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.tap(firstCardFinder);
-      await tester.pump();
+      await tester.ensureVisible(firstCardFinder);
+      await tester.pumpAndSettle();
+      await tester.tap(firstCardFinder, warnIfMissed: false);
+      await tester.pumpAndSettle();
 
       // Tap Continue
       await tester.tap(find.text('Continue'));
