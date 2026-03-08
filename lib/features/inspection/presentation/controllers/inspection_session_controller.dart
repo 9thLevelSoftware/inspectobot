@@ -31,6 +31,7 @@ import '../../domain/inspection_draft.dart';
 import '../../domain/inspection_wizard_state.dart';
 import '../../domain/report_readiness.dart';
 import '../../domain/required_photo_category.dart';
+import '../../domain/mold_form_data.dart';
 import '../../domain/sinkhole_form_data.dart';
 
 // ---------------------------------------------------------------------------
@@ -153,6 +154,9 @@ class InspectionSessionController {
   String? _auditTimelineError;
   String? get auditTimelineError => _auditTimelineError;
 
+  MoldFormData _moldFormData = MoldFormData.empty();
+  MoldFormData get moldFormData => _moldFormData;
+
   // -- Computed getters ------------------------------------------------------
 
   InspectionWizardState get wizardState => InspectionWizardState(
@@ -175,6 +179,12 @@ class InspectionSessionController {
     final captured = snapshot.completion.values.where((v) => v == true).length;
     return ((captured / totalRequirements) * 100).round();
   }
+
+  /// Whether the remediation protocol section should be shown.
+  bool get shouldShowRemediationProtocol => _moldFormData.remediationRecommended;
+
+  /// Whether the air sample results section should be shown.
+  bool get shouldShowAirSampleResults => _moldFormData.airSamplesTaken;
 
   // -- Static maps (delegated to domain layer) --------------------------------
 
@@ -225,6 +235,7 @@ class InspectionSessionController {
         );
 
     _snapshot = draft.wizardSnapshot;
+    _hydrateMoldFormData();
     _hydrateCapturedFromSnapshot();
 
     final requestedStep = draft.initialStepIndex;
@@ -523,6 +534,14 @@ class InspectionSessionController {
     );
   }
 
+  /// Updates the mold form data and persists it to [draft.formData].
+  void updateMoldFormData(MoldFormData data) {
+    _moldFormData = data;
+    draft.formData[FormType.moldAssessment] =
+        Map<String, dynamic>.from(data.toFormDataMap());
+    _notify();
+  }
+
   /// Updates a branch flag in the wizard snapshot.
   void setBranchFlag(String key, bool value) {
     final updatedContext = Map<String, dynamic>.from(_snapshot.branchContext)
@@ -599,6 +618,13 @@ class InspectionSessionController {
       completion: _snapshot.completion,
       branchContext: _snapshot.branchContext,
     );
+  }
+
+  void _hydrateMoldFormData() {
+    final moldRawData = draft.formData[FormType.moldAssessment];
+    if (moldRawData != null && moldRawData.isNotEmpty) {
+      _moldFormData = MoldFormData.fromJson(moldRawData);
+    }
   }
 
   void _hydrateCapturedFromSnapshot() {
