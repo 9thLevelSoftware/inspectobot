@@ -707,8 +707,13 @@ void main() {
       expect(genBytes, isNotEmpty);
       expect(genBytes[0], 0x25);
 
-      // Both should be valid but different PDFs
-      expect(moldBytes.length, isNot(equals(genBytes.length)));
+      // Both should be valid but distinct PDFs — verify by content, not just size.
+      // PDF streams are compressed, so we verify byte-level distinctness.
+      expect(
+        moldBytes,
+        isNot(equals(genBytes)),
+        reason: 'Mold and General PDFs should have distinct content',
+      );
     });
   });
 }

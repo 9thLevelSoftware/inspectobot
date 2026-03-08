@@ -24,6 +24,11 @@ class NarrativeMediaResolver {
   /// Keys with no media paths in [input.evidenceMediaPaths] are skipped.
   /// Failures are captured in [ResolvedNarrativePhoto.failureReason] --
   /// this method never throws.
+  ///
+  /// Note: [retryStep] is accepted for API symmetry with the fillable PDF
+  /// pipeline but is not currently used — narrative photos are embedded at
+  /// their original resolution. Image resizing for size budget retry is not
+  /// yet implemented for narrative PDFs.
   Future<Map<String, List<ResolvedNarrativePhoto>>> resolveAll({
     required PdfGenerationInput input,
     required Set<String> photoKeys,

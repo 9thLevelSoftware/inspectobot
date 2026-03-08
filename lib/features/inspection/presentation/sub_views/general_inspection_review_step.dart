@@ -125,6 +125,7 @@ class GeneralInspectionReviewStep extends StatelessWidget {
   }
 
   Widget _buildComplianceBanner(BuildContext context) {
+    final tokens = context.appTokens;
     final result = GeneralInspectionComplianceValidator.validate(
       formData,
       hasInspectorLicense: hasInspectorLicense,
@@ -151,7 +152,7 @@ class GeneralInspectionReviewStep extends StatelessWidget {
                       color: Palette.error,
                     ),
               ),
-              const SizedBox(height: AppSpacing.spacingXs),
+              SizedBox(height: tokens.spacingXs),
               ...result.missingElements.map(
                 (e) => Padding(
                   padding: const EdgeInsets.only(top: 2),
@@ -187,7 +188,7 @@ class GeneralInspectionReviewStep extends StatelessWidget {
                       color: Palette.warning,
                     ),
               ),
-              const SizedBox(height: AppSpacing.spacingXs),
+              SizedBox(height: tokens.spacingXs),
               ...result.warnings.map(
                 (w) => Padding(
                   padding: const EdgeInsets.only(top: 2),

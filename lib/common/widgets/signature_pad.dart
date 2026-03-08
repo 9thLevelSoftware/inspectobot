@@ -10,7 +10,7 @@ export 'package:signature/signature.dart' show SignatureController;
 ///
 /// All visual defaults are derived from the current theme -- no hardcoded
 /// colors, spacing, or radii.
-class SignaturePad extends StatelessWidget {
+class SignaturePad extends StatefulWidget {
   const SignaturePad({
     super.key,
     required this.controller,
@@ -48,14 +48,42 @@ class SignaturePad extends StatelessWidget {
   final bool enabled;
 
   @override
+  State<SignaturePad> createState() => _SignaturePadState();
+}
+
+class _SignaturePadState extends State<SignaturePad> {
+  late _EmptyNotifier _emptyNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _emptyNotifier = _EmptyNotifier(widget.controller);
+  }
+
+  @override
+  void didUpdateWidget(SignaturePad oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      _emptyNotifier.dispose();
+      _emptyNotifier = _EmptyNotifier(widget.controller);
+    }
+  }
+
+  @override
+  void dispose() {
+    _emptyNotifier.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final effectiveBackgroundColor =
-        backgroundColor ?? colorScheme.surfaceContainerHighest;
-    final effectiveBorderColor = borderColor ?? colorScheme.outline;
+        widget.backgroundColor ?? colorScheme.surfaceContainerHighest;
+    final effectiveBorderColor = widget.borderColor ?? colorScheme.outline;
 
     return Semantics(
-      label: semanticLabel ?? 'Signature capture area',
+      label: widget.semanticLabel ?? 'Signature capture area',
       child: ClipRRect(
         borderRadius: AppRadii.md,
         child: DecoratedBox(
@@ -65,15 +93,15 @@ class SignaturePad extends StatelessWidget {
             borderRadius: AppRadii.md,
           ),
           child: SizedBox(
-            height: height,
+            height: widget.height,
             width: double.infinity,
             child: Stack(
               children: [
                 Signature(
-                  controller: controller,
+                  controller: widget.controller,
                   backgroundColor: effectiveBackgroundColor,
                 ),
-                if (!enabled)
+                if (!widget.enabled)
                   Positioned.fill(
                     child: AbsorbPointer(
                       child: SizedBox.expand(),
@@ -81,13 +109,13 @@ class SignaturePad extends StatelessWidget {
                   ),
                 // Hint text overlay when empty.
                 ValueListenableBuilder<bool>(
-                  valueListenable: _EmptyNotifier(controller),
+                  valueListenable: _emptyNotifier,
                   builder: (context, isEmpty, _) {
                     if (!isEmpty) return const SizedBox.shrink();
                     return Center(
                       child: IgnorePointer(
                         child: Text(
-                          hintText ?? 'Draw your signature here',
+                          widget.hintText ?? 'Draw your signature here',
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
