@@ -137,6 +137,9 @@ class _FormFieldInputState extends State<FormFieldInput> {
           selected: (widget.value as List<String>?) ?? const [],
           onChanged: (updated) => widget.onChanged(field.key, updated),
         );
+
+      case FieldType.triState:
+        throw UnimplementedError('triState rendering added in Plan 05-02');
     }
   }
 

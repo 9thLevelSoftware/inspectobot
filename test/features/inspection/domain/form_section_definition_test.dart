@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:inspectobot/features/inspection/domain/field_definition.dart';
+import 'package:inspectobot/features/inspection/domain/field_group.dart';
 import 'package:inspectobot/features/inspection/domain/field_type.dart';
 import 'package:inspectobot/features/inspection/domain/form_section_definition.dart';
+import 'package:inspectobot/features/inspection/domain/repeating_field_group.dart';
 
 void main() {
   group('FormSectionDefinition', () {
@@ -176,6 +178,187 @@ void main() {
         // description is filled -> 0
         // detail is required but hidden -> skipped
         expect(count, 0);
+      });
+    });
+
+    group('with FieldGroups', () {
+      const trigger = FieldDefinition(
+        key: 'ext1Depression',
+        label: 'Depression',
+        type: FieldType.triState,
+        isRequired: true,
+      );
+      const detail = FieldDefinition(
+        key: 'ext1Detail',
+        label: 'Detail',
+        type: FieldType.textarea,
+        isRequired: true,
+      );
+
+      const sectionWithGroups = FormSectionDefinition(
+        id: 'exterior',
+        title: 'Exterior',
+        fieldDefinitions: [],
+        fieldGroups: [
+          FieldGroup(
+            groupKey: 'ext1',
+            triggerField: trigger,
+            dependentFields: [detail],
+          ),
+        ],
+      );
+
+      test('visibleFields includes FieldGroup allFields', () {
+        final visible = sectionWithGroups.visibleFields(const {});
+        expect(visible, hasLength(2));
+      });
+
+      test('countIncomplete delegates to FieldGroup', () {
+        // Trigger unanswered: 1 incomplete
+        expect(
+          sectionWithGroups.countIncomplete(const {}, const {}),
+          1,
+        );
+
+        // Trigger Yes, detail missing: 1 incomplete
+        expect(
+          sectionWithGroups.countIncomplete(
+            {'ext1Depression': 'Yes'},
+            const {},
+          ),
+          1,
+        );
+
+        // Both filled
+        expect(
+          sectionWithGroups.countIncomplete(
+            {'ext1Depression': 'Yes', 'ext1Detail': 'desc'},
+            const {},
+          ),
+          0,
+        );
+
+        // Trigger No, detail hidden
+        expect(
+          sectionWithGroups.countIncomplete(
+            {'ext1Depression': 'No'},
+            const {},
+          ),
+          0,
+        );
+      });
+    });
+
+    group('with RepeatingFieldGroups', () {
+      const sectionWithRepeating = FormSectionDefinition(
+        id: 'scheduling',
+        title: 'Scheduling',
+        fieldDefinitions: [],
+        repeatingFieldGroups: [
+          RepeatingFieldGroup(
+            groupKey: 'attempt',
+            label: 'Attempts',
+            repetitions: 2,
+            fieldTemplate: [
+              FieldDefinition(
+                key: 'date',
+                label: 'Date',
+                type: FieldType.date,
+                isRequired: true,
+              ),
+              FieldDefinition(
+                key: 'result',
+                label: 'Result',
+                type: FieldType.text,
+                isRequired: false,
+              ),
+            ],
+          ),
+        ],
+      );
+
+      test('visibleFields includes template fields', () {
+        final visible = sectionWithRepeating.visibleFields(const {});
+        expect(visible, hasLength(2)); // template fields
+      });
+
+      test('countIncomplete checks all concrete keys', () {
+        // 2 repetitions x 1 required field = 2 incomplete
+        expect(
+          sectionWithRepeating.countIncomplete(const {}, const {}),
+          2,
+        );
+
+        // Fill one
+        expect(
+          sectionWithRepeating.countIncomplete(
+            {'attempt_1_date': '2026-01-01'},
+            const {},
+          ),
+          1,
+        );
+
+        // Fill both
+        expect(
+          sectionWithRepeating.countIncomplete(
+            {
+              'attempt_1_date': '2026-01-01',
+              'attempt_2_date': '2026-01-02',
+            },
+            const {},
+          ),
+          0,
+        );
+      });
+    });
+
+    group('backward compatibility', () {
+      test('section without groups works as before', () {
+        const section = FormSectionDefinition(
+          id: 'basic',
+          title: 'Basic',
+          fieldDefinitions: [
+            FieldDefinition(key: 'a', label: 'A', type: FieldType.text),
+          ],
+        );
+
+        expect(section.fieldGroups, isEmpty);
+        expect(section.repeatingFieldGroups, isEmpty);
+        expect(section.visibleFields(const {}), hasLength(1));
+        expect(section.countIncomplete(const {}, const {}), 0);
+      });
+    });
+
+    group('equality', () {
+      test('equal sections', () {
+        const a = FormSectionDefinition(
+          id: 'test',
+          title: 'Test',
+          fieldDefinitions: [],
+        );
+        const b = FormSectionDefinition(
+          id: 'test',
+          title: 'Test',
+          fieldDefinitions: [],
+        );
+
+        expect(a, equals(b));
+        expect(a.hashCode, equals(b.hashCode));
+      });
+
+      test('different sections', () {
+        const a = FormSectionDefinition(
+          id: 'test',
+          title: 'Test',
+          fieldDefinitions: [],
+        );
+        const b = FormSectionDefinition(
+          id: 'other',
+          title: 'Other',
+          fieldDefinitions: [],
+        );
+
+        expect(a, isNot(equals(b)));
       });
     });
   });

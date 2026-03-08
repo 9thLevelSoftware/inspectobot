@@ -334,7 +334,7 @@ class FormRequirements {
         form: FormType.sinkholeInspection,
         category: RequiredPhotoCategory.sinkholeChecklistItem,
         minimumCount: 2,
-        when: _boolFlag(sinkholeAnyYesBranchFlag),
+        when: anySinkholeYes,
       ),
       _photo(
         key: 'photo:sinkhole_garage_crack',
@@ -698,6 +698,14 @@ class FormRequirements {
         ctx['wdo_exterior_inaccessible'] == true ||
         ctx['wdo_crawlspace_inaccessible'] == true ||
         ctx['wdo_other_inaccessible'] == true;
+  }
+
+  /// Returns true if any of the 4 sinkhole section flags are true.
+  static bool anySinkholeYes(Map<String, dynamic> ctx) {
+    return ctx[sinkholeAnyExteriorYesBranchFlag] == true ||
+        ctx[sinkholeAnyInteriorYesBranchFlag] == true ||
+        ctx[sinkholeAnyGarageYesBranchFlag] == true ||
+        ctx[sinkholeAnyAppurtenantYesBranchFlag] == true;
   }
 
   static bool _always(Map<String, dynamic> _) => true;

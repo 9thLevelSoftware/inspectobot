@@ -31,23 +31,62 @@ void main() {
   });
 
   group('FormRequirements extended — Sinkhole', () {
-    test('sinkhole_checklist_item appears with sinkhole_any_yes flag', () {
+    test('sinkhole_checklist_item appears when any section flag is true', () {
       final requirements = FormRequirements.forFormRequirements(
         FormType.sinkholeInspection,
-        branchContext: const {'sinkhole_any_yes': true},
+        branchContext: const {'sinkhole_any_exterior_yes': true},
       );
       final keys = requirements.map((r) => r.key).toSet();
 
       expect(keys, contains('photo:sinkhole_checklist_item'));
     });
 
-    test('sinkhole_checklist_item absent without flag', () {
+    test('sinkhole_checklist_item absent without any section flags', () {
       final requirements = FormRequirements.forFormRequirements(
         FormType.sinkholeInspection,
       );
       final keys = requirements.map((r) => r.key).toSet();
 
       expect(keys, isNot(contains('photo:sinkhole_checklist_item')));
+    });
+
+    test('anySinkholeYes returns true when any section flag is true', () {
+      expect(
+        FormRequirements.anySinkholeYes(
+            {'sinkhole_any_exterior_yes': true}),
+        isTrue,
+      );
+      expect(
+        FormRequirements.anySinkholeYes(
+            {'sinkhole_any_interior_yes': true}),
+        isTrue,
+      );
+      expect(
+        FormRequirements.anySinkholeYes(
+            {'sinkhole_any_garage_yes': true}),
+        isTrue,
+      );
+      expect(
+        FormRequirements.anySinkholeYes(
+            {'sinkhole_any_appurtenant_yes': true}),
+        isTrue,
+      );
+    });
+
+    test('anySinkholeYes returns false when all flags are false', () {
+      expect(
+        FormRequirements.anySinkholeYes(const {}),
+        isFalse,
+      );
+      expect(
+        FormRequirements.anySinkholeYes({
+          'sinkhole_any_exterior_yes': false,
+          'sinkhole_any_interior_yes': false,
+          'sinkhole_any_garage_yes': false,
+          'sinkhole_any_appurtenant_yes': false,
+        }),
+        isFalse,
+      );
     });
   });
 
