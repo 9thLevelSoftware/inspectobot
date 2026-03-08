@@ -349,11 +349,10 @@ class InspectionSessionController {
         if (sinkholeRawData != null) {
           // Remap RepeatingFieldGroup keys (attempt_N_Key) to SinkholeFormData
           // camelCase keys (attemptNKey) before constructing the typed object.
-          final remapped = remapSinkholeSchedulingKeys(sinkholeRawData);
+          final remapped =
+              SinkholeFormData.remapSchedulingKeys(sinkholeRawData);
           final sinkholeData = SinkholeFormData.fromJson(remapped);
-          final pdfMaps = sinkholeData.toPdfMaps(
-            branchContext: _snapshot.branchContext,
-          );
+          final pdfMaps = sinkholeData.toPdfMaps();
           fieldValues.addAll(pdfMaps.fieldValues);
           checkboxValues.addAll(pdfMaps.checkboxValues);
         }
@@ -505,30 +504,6 @@ class InspectionSessionController {
   }
 
   // -- Private helpers -------------------------------------------------------
-
-  /// Remaps RepeatingFieldGroup scheduling keys from the generated pattern
-  /// (`attempt_N_Key`) to SinkholeFormData's camelCase pattern (`attemptNKey`).
-  ///
-  /// Non-scheduling keys pass through unchanged.
-  static Map<String, dynamic> remapSinkholeSchedulingKeys(
-    Map<String, dynamic> rawData,
-  ) {
-    final result = <String, dynamic>{};
-    final schedulingPattern = RegExp(r'^attempt_(\d+)_(\w+)$');
-    for (final entry in rawData.entries) {
-      final match = schedulingPattern.firstMatch(entry.key);
-      if (match != null) {
-        final index = match.group(1)!;
-        final fieldPart = match.group(2)!;
-        // Template keys already start with uppercase (Date, Time, etc.)
-        // which concatenates naturally: attempt + 1 + Date = attempt1Date.
-        result['attempt$index$fieldPart'] = entry.value;
-      } else {
-        result[entry.key] = entry.value;
-      }
-    }
-    return result;
-  }
 
   void _notify() {
     onStateChanged?.call();

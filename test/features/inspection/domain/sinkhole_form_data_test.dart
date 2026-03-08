@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:inspectobot/features/inspection/domain/form_requirements.dart';
 import 'package:inspectobot/features/inspection/domain/sinkhole_form_data.dart';
+import 'package:inspectobot/features/inspection/domain/sinkhole_section_definitions.dart';
 import 'package:inspectobot/features/inspection/domain/universal_property_fields.dart';
 
 void main() {
@@ -138,39 +138,18 @@ void main() {
         const data = SinkholeFormData(ext1Depression: 'Yes');
         final result = data.toPdfMaps();
 
-        expect(result.checkboxValues['ext1Depression_yes'], isTrue);
-        expect(result.checkboxValues['ext1Depression_no'], isFalse);
-        expect(result.checkboxValues['ext1Depression_na'], isFalse);
+        expect(result.checkboxValues['ext1Depression__yes'], isTrue);
+        expect(result.checkboxValues['ext1Depression__no'], isFalse);
+        expect(result.checkboxValues['ext1Depression__na'], isFalse);
       });
 
       test('tri-state N/A maps correctly', () {
         const data = SinkholeFormData(ext3SoilErosion: 'N/A');
         final result = data.toPdfMaps();
 
-        expect(result.checkboxValues['ext3SoilErosion_yes'], isFalse);
-        expect(result.checkboxValues['ext3SoilErosion_no'], isFalse);
-        expect(result.checkboxValues['ext3SoilErosion_na'], isTrue);
-      });
-
-      test('merges canonical sinkhole branch flags', () {
-        const data = SinkholeFormData(insuredName: 'Test');
-        final result = data.toPdfMaps(branchContext: {
-          FormRequirements.sinkholeAnyExteriorYesBranchFlag: true,
-          FormRequirements.sinkholeAnyGarageYesBranchFlag: false,
-          'unrelated_flag': true,
-        });
-
-        expect(
-          result.checkboxValues[
-              FormRequirements.sinkholeAnyExteriorYesBranchFlag],
-          isTrue,
-        );
-        expect(
-          result.checkboxValues[
-              FormRequirements.sinkholeAnyGarageYesBranchFlag],
-          isFalse,
-        );
-        expect(result.checkboxValues.containsKey('unrelated_flag'), isFalse);
+        expect(result.checkboxValues['ext3SoilErosion__yes'], isFalse);
+        expect(result.checkboxValues['ext3SoilErosion__no'], isFalse);
+        expect(result.checkboxValues['ext3SoilErosion__na'], isTrue);
       });
 
       test('excludes null text fields from fieldValues', () {
@@ -255,6 +234,18 @@ void main() {
         final b = a.copyWith(insuredName: () => 'Different');
 
         expect(a, isNot(equals(b)));
+      });
+    });
+
+    group('_triStateKeys derivation', () {
+      test('derived tri-state keys has exactly 19 entries', () {
+        // Verify the derived set from SinkholeSectionDefinitions matches the
+        // expected count of tri-state trigger fields.
+        final derivedKeys = SinkholeSectionDefinitions.all
+            .expand((s) => s.fieldGroups)
+            .map((g) => g.triggerField.key)
+            .toSet();
+        expect(derivedKeys.length, 19);
       });
     });
   });

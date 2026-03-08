@@ -1,4 +1,4 @@
-import 'form_requirements.dart';
+import 'sinkhole_section_definitions.dart';
 import 'universal_property_fields.dart';
 
 /// Typed data class for the Sinkhole Inspection form (Citizens ver. 2, Ed.
@@ -404,13 +404,13 @@ class SinkholeFormData {
   // toPdfMaps
   // ---------------------------------------------------------------------------
 
-  /// Separates text fields into [fieldValues] and merges [branchContext]
+  /// Separates text fields into [fieldValues] and tri-state / branch flag
   /// booleans into [checkboxValues] for PDF generation.
   ///
-  /// Tri-state fields map to 3 checkboxes each: `{key}_yes`, `{key}_no`,
-  /// `{key}_na`.
+  /// Tri-state fields map to 3 checkboxes each: `{key}__yes`, `{key}__no`,
+  /// `{key}__na` (double underscore to match the PDF field map convention).
   ({Map<String, String> fieldValues, Map<String, bool> checkboxValues})
-      toPdfMaps({Map<String, dynamic>? branchContext}) {
+      toPdfMaps() {
     final fieldValues = <String, String>{};
     final checkboxValues = <String, bool>{};
 
@@ -422,59 +422,51 @@ class SinkholeFormData {
 
       // Tri-state fields: expand to 3 checkboxes
       if (_triStateKeys.contains(entry.key)) {
-        checkboxValues['${entry.key}_yes'] = value == 'Yes';
-        checkboxValues['${entry.key}_no'] = value == 'No';
-        checkboxValues['${entry.key}_na'] = value == 'N/A';
+        checkboxValues['${entry.key}__yes'] = value == 'Yes';
+        checkboxValues['${entry.key}__no'] = value == 'No';
+        checkboxValues['${entry.key}__na'] = value == 'N/A';
       } else {
         fieldValues[entry.key] = value;
-      }
-    }
-
-    // Merge branch context flags (only canonical sinkhole flags)
-    if (branchContext != null) {
-      for (final flag in _sinkholeBranchFlagKeys) {
-        final value = branchContext[flag];
-        if (value is bool) {
-          checkboxValues[flag] = value;
-        }
       }
     }
 
     return (fieldValues: fieldValues, checkboxValues: checkboxValues);
   }
 
-  static const _triStateKeys = <String>{
-    'ext1Depression',
-    'ext2AdjacentSinkholes',
-    'ext3SoilErosion',
-    'ext4FoundationCracks',
-    'ext5ExteriorWallCracks',
-    'int1DoorsOutOfPlumb',
-    'int2DoorsWindowsOutOfSquare',
-    'int3CompressionCracks',
-    'int4FloorsOutOfLevel',
-    'int5CabinetsPulledFromWall',
-    'int6InteriorWallCracks',
-    'int7CeilingCracks',
-    'int8FlooringCracks',
-    'gar1WallToSlabCracks',
-    'gar2FloorCracksRadiate',
-    'app1CracksNoted',
-    'app2UpliftNoted',
-    'app3PoolCracksDamage',
-    'app4PoolDeckCracks',
-  };
+  /// Derived from [SinkholeSectionDefinitions]: the set of all tri-state
+  /// trigger field keys across every section's [FieldGroup]s.
+  static final Set<String> _triStateKeys = SinkholeSectionDefinitions.all
+      .expand((s) => s.fieldGroups)
+      .map((g) => g.triggerField.key)
+      .toSet();
 
-  static const _sinkholeBranchFlagKeys = <String>[
-    FormRequirements.sinkholeAnyExteriorYesBranchFlag,
-    FormRequirements.sinkholeAnyInteriorYesBranchFlag,
-    FormRequirements.sinkholeAnyGarageYesBranchFlag,
-    FormRequirements.sinkholeAnyAppurtenantYesBranchFlag,
-    FormRequirements.sinkholeAnyYesBranchFlag,
-    FormRequirements.sinkholeTownhouseBranchFlag,
-    FormRequirements.sinkholeUnableToScheduleBranchFlag,
-    FormRequirements.sinkholeCrackSignificantBranchFlag,
-  ];
+  // ---------------------------------------------------------------------------
+  // remapSchedulingKeys
+  // ---------------------------------------------------------------------------
+
+  /// Remaps RepeatingFieldGroup scheduling keys from the generated pattern
+  /// (`attempt_N_Key`) to SinkholeFormData's camelCase pattern (`attemptNKey`).
+  ///
+  /// Non-scheduling keys pass through unchanged.
+  static Map<String, dynamic> remapSchedulingKeys(
+    Map<String, dynamic> rawData,
+  ) {
+    final result = <String, dynamic>{};
+    final schedulingPattern = RegExp(r'^attempt_(\d+)_(\w+)$');
+    for (final entry in rawData.entries) {
+      final match = schedulingPattern.firstMatch(entry.key);
+      if (match != null) {
+        final index = match.group(1)!;
+        final fieldPart = match.group(2)!;
+        // Template keys already start with uppercase (Date, Time, etc.)
+        // which concatenates naturally: attempt + 1 + Date = attempt1Date.
+        result['attempt$index$fieldPart'] = entry.value;
+      } else {
+        result[entry.key] = entry.value;
+      }
+    }
+    return result;
+  }
 
   // ---------------------------------------------------------------------------
   // toFormDataMap

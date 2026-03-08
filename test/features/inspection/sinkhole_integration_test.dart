@@ -170,35 +170,24 @@ void main() {
         attempt1Date: '2026-03-01',
       );
 
-      final branchCtx = <String, dynamic>{
-        FormRequirements.sinkholeAnyExteriorYesBranchFlag: true,
-        FormRequirements.sinkholeAnyYesBranchFlag: true,
-      };
-
-      final maps = data.toPdfMaps(branchContext: branchCtx);
+      final maps = data.toPdfMaps();
 
       // Text fields
       expect(maps.fieldValues['insuredName'], 'Alice');
       expect(maps.fieldValues['attempt1Date'], '2026-03-01');
 
-      // Tri-state checkboxes expanded to 3 each
-      expect(maps.checkboxValues['ext1Depression_yes'], isTrue);
-      expect(maps.checkboxValues['ext1Depression_no'], isFalse);
-      expect(maps.checkboxValues['ext1Depression_na'], isFalse);
+      // Tri-state checkboxes expanded to 3 each (double underscore)
+      expect(maps.checkboxValues['ext1Depression__yes'], isTrue);
+      expect(maps.checkboxValues['ext1Depression__no'], isFalse);
+      expect(maps.checkboxValues['ext1Depression__na'], isFalse);
 
-      expect(maps.checkboxValues['ext2AdjacentSinkholes_yes'], isFalse);
-      expect(maps.checkboxValues['ext2AdjacentSinkholes_no'], isTrue);
-      expect(maps.checkboxValues['ext2AdjacentSinkholes_na'], isFalse);
+      expect(maps.checkboxValues['ext2AdjacentSinkholes__yes'], isFalse);
+      expect(maps.checkboxValues['ext2AdjacentSinkholes__no'], isTrue);
+      expect(maps.checkboxValues['ext2AdjacentSinkholes__na'], isFalse);
 
-      expect(maps.checkboxValues['ext3SoilErosion_yes'], isFalse);
-      expect(maps.checkboxValues['ext3SoilErosion_no'], isFalse);
-      expect(maps.checkboxValues['ext3SoilErosion_na'], isTrue);
-
-      // Branch flags merged
-      expect(maps.checkboxValues[FormRequirements.sinkholeAnyExteriorYesBranchFlag],
-          isTrue);
-      expect(maps.checkboxValues[FormRequirements.sinkholeAnyYesBranchFlag],
-          isTrue);
+      expect(maps.checkboxValues['ext3SoilErosion__yes'], isFalse);
+      expect(maps.checkboxValues['ext3SoilErosion__no'], isFalse);
+      expect(maps.checkboxValues['ext3SoilErosion__na'], isTrue);
 
       // Tri-state keys should NOT appear as text fieldValues
       expect(maps.fieldValues.containsKey('ext1Depression'), isFalse);
@@ -217,10 +206,9 @@ void main() {
       controller.setFormFieldValue(
           FormType.sinkholeInspection, 'attempt_1_Result', 'No answer');
 
-      // Verify the remapping via static helper
+      // Verify the remapping via static helper on SinkholeFormData
       final rawData = draft.formData[FormType.sinkholeInspection]!;
-      final remapped =
-          InspectionSessionController.remapSinkholeSchedulingKeys(rawData);
+      final remapped = SinkholeFormData.remapSchedulingKeys(rawData);
 
       expect(remapped['attempt1Date'], '2026-03-01');
       expect(remapped['attempt1Time'], '10:00 AM');
@@ -230,9 +218,8 @@ void main() {
       // Non-scheduling keys pass through
       controller.setFormFieldValue(
           FormType.sinkholeInspection, 'insuredName', 'Alice');
-      final remapped2 =
-          InspectionSessionController.remapSinkholeSchedulingKeys(
-              draft.formData[FormType.sinkholeInspection]!);
+      final remapped2 = SinkholeFormData.remapSchedulingKeys(
+          draft.formData[FormType.sinkholeInspection]!);
       expect(remapped2['insuredName'], 'Alice');
     });
 

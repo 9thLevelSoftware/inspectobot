@@ -582,7 +582,7 @@ class SinkholeSectionDefinitions {
     ],
   );
 
-  static String _schedulingAttemptLabel(int index) => 'Attempt $index';
+  static String _schedulingAttemptLabel(int _) => 'Attempt';
 
   // ---------------------------------------------------------------------------
   // Aggregate

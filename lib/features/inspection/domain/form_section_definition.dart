@@ -51,6 +51,11 @@ class FormSectionDefinition {
   /// Includes fields from [fieldDefinitions], [fieldGroups] (all fields), and
   /// [repeatingFieldGroups] (template fields only -- concrete keys are
   /// generated at rendering time).
+  ///
+  /// Note: For FieldGroup sections, returns all fields (trigger + dependents)
+  /// regardless of intra-group trigger state. Use [countIncomplete] with
+  /// formValues for accurate validation counts. FieldGroup visibility is
+  /// handled by FormSectionUI at render time.
   List<FieldDefinition> visibleFields(Map<String, dynamic> branchContext) {
     final result = <FieldDefinition>[];
 
