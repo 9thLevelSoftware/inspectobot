@@ -4,8 +4,8 @@ import 'package:inspectobot/features/inspection/domain/field_type.dart';
 
 void main() {
   group('FieldType', () {
-    test('has exactly 6 values', () {
-      expect(FieldType.values.length, 6);
+    test('has exactly 7 values', () {
+      expect(FieldType.values.length, 7);
     });
 
     test('contains expected values', () {
@@ -16,6 +16,7 @@ void main() {
         FieldType.date,
         FieldType.textarea,
         FieldType.multiSelect,
+        FieldType.triState,
       ]));
     });
   });

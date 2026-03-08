@@ -12,8 +12,6 @@ import 'package:inspectobot/features/pdf/data/pdf_template_asset_loader.dart';
 import 'package:inspectobot/features/pdf/models/pdf_template_manifest.dart';
 import 'package:inspectobot/features/pdf/on_device_pdf_service.dart';
 import 'package:inspectobot/features/pdf/pdf_generation_input.dart';
-import 'package:inspectobot/features/pdf/services/pdf_renderer.dart';
-
 /// End-to-end integration tests for fillable PDF generation across all 5
 /// overlay form types: fourPoint, roofCondition, windMitigation, wdo,
 /// sinkholeInspection.
