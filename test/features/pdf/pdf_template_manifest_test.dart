@@ -19,6 +19,7 @@ void main() {
         FormType.roofCondition,
         FormType.windMitigation,
         FormType.wdo,
+        FormType.sinkholeInspection,
       });
 
       final fourPoint = manifest.requireForForm(FormType.fourPoint);
@@ -40,6 +41,18 @@ void main() {
       expect(wdo.revisionLabel, 'FDACS-13645 Rev. 10/22');
       expect(wdo.templateAssetId, isNotEmpty);
       expect(wdo.mapVersion, 'v1');
+
+      final sinkhole = manifest.requireForForm(FormType.sinkholeInspection);
+      expect(sinkhole.revisionLabel, 'Citizens Sinkhole v2 Ed. 6/2012');
+      expect(
+        sinkhole.templateAssetId,
+        'assets/pdf/templates/sinkhole_inspection.pdf',
+      );
+      expect(
+        sinkhole.mapAssetPath,
+        'assets/pdf/maps/sinkhole_inspection.v1.json',
+      );
+      expect(sinkhole.mapVersion, 'v1');
     });
 
     test('throws deterministic error for unknown form code or revision', () {
@@ -190,6 +203,7 @@ void main() {
         'assets/pdf/maps/rcf1_03_25.v1.json',
         'assets/pdf/maps/oir_b1_1802_rev_04_26.v1.json',
         'assets/pdf/maps/fdacs_13645_rev_10_22.v1.json',
+        'assets/pdf/maps/sinkhole_inspection.v1.json',
       ];
 
       final sourceKeys = <String>{};

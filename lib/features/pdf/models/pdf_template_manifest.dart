@@ -33,6 +33,13 @@ class PdfTemplateManifest {
         mapAssetPath: 'assets/pdf/maps/fdacs_13645_rev_10_22.v1.json',
         mapVersion: 'v1',
       ),
+      FormType.sinkholeInspection: const PdfTemplateManifestEntry(
+        formType: FormType.sinkholeInspection,
+        revisionLabel: 'Citizens Sinkhole v2 Ed. 6/2012',
+        templateAssetId: 'assets/pdf/templates/sinkhole_inspection.pdf',
+        mapAssetPath: 'assets/pdf/maps/sinkhole_inspection.v1.json',
+        mapVersion: 'v1',
+      ),
     });
   }
 
