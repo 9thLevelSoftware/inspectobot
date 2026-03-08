@@ -48,6 +48,47 @@ class PdfTemplateAssetLoader {
     'license_number',
   };
 
+  /// WDO form text field source keys used in FDACS-13645 PDF field maps.
+  static const Set<String> wdoFormFieldSourceKeys = <String>{
+    'gen_company_name',
+    'gen_business_license',
+    'gen_company_address',
+    'gen_phone',
+    'gen_city_state_zip',
+    'gen_inspection_date',
+    'gen_inspector_name',
+    'gen_inspector_id',
+    'gen_property_address',
+    'gen_structures',
+    'gen_requested_by',
+    'gen_report_sent_to',
+    'find_live_description',
+    'find_evidence_description',
+    'find_damage_description',
+    'find_notes',
+    'attic_specific_areas',
+    'attic_reason',
+    'interior_specific_areas',
+    'interior_reason',
+    'exterior_specific_areas',
+    'exterior_reason',
+    'crawlspace_specific_areas',
+    'crawlspace_reason',
+    'other_specific_areas',
+    'other_reason',
+    'treat_prev_description',
+    'treat_notice_location',
+    'treat_organism',
+    'treat_pesticide',
+    'treat_terms',
+    'treat_spot_description',
+    'treat_notice_treatment_location',
+    'comments',
+    'sig_date',
+    'repeat_property_address',
+    'repeat_inspection_date',
+  };
+
   PdfTemplateAssetLoader({
     PdfTemplateManifest? manifest,
     PdfMapAssetReader? readMapAsset,
@@ -67,6 +108,7 @@ class PdfTemplateAssetLoader {
                     'client_name',
                     'property_address',
                     'inspector_signature',
+                    ...wdoFormFieldSourceKeys,
                   },
             // AUTH-04 POLICY: Exclude license keys from allowlist — see policy doc above.
             )..removeAll(inspectorLicenseSourceKeys);

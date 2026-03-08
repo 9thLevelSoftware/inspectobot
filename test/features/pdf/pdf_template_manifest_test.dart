@@ -18,6 +18,7 @@ void main() {
         FormType.fourPoint,
         FormType.roofCondition,
         FormType.windMitigation,
+        FormType.wdo,
       });
 
       final fourPoint = manifest.requireForForm(FormType.fourPoint);
@@ -34,6 +35,11 @@ void main() {
       expect(wind.revisionLabel, 'OIR-B1-1802 Rev 04/26');
       expect(wind.templateAssetId, isNotEmpty);
       expect(wind.mapVersion, 'v1');
+
+      final wdo = manifest.requireForForm(FormType.wdo);
+      expect(wdo.revisionLabel, 'FDACS-13645 Rev. 10/22');
+      expect(wdo.templateAssetId, isNotEmpty);
+      expect(wdo.mapVersion, 'v1');
     });
 
     test('throws deterministic error for unknown form code or revision', () {
@@ -183,6 +189,7 @@ void main() {
         'assets/pdf/maps/insp4pt_03_25.v1.json',
         'assets/pdf/maps/rcf1_03_25.v1.json',
         'assets/pdf/maps/oir_b1_1802_rev_04_26.v1.json',
+        'assets/pdf/maps/fdacs_13645_rev_10_22.v1.json',
       ];
 
       final sourceKeys = <String>{};

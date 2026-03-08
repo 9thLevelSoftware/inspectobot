@@ -15,6 +15,7 @@ export 'app_text_field.dart';
 export 'app_dropdown.dart';
 export 'app_checkbox_tile.dart';
 export 'app_date_picker.dart';
+export 'app_multi_select_chips.dart';
 export 'section_header.dart';
 
 // Status

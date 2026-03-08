@@ -26,6 +26,13 @@ class PdfTemplateManifest {
         mapAssetPath: 'assets/pdf/maps/oir_b1_1802_rev_04_26.v1.json',
         mapVersion: 'v1',
       ),
+      FormType.wdo: const PdfTemplateManifestEntry(
+        formType: FormType.wdo,
+        revisionLabel: 'FDACS-13645 Rev. 10/22',
+        templateAssetId: 'assets/pdf/templates/fdacs_13645_rev_10_22.pdf',
+        mapAssetPath: 'assets/pdf/maps/fdacs_13645_rev_10_22.v1.json',
+        mapVersion: 'v1',
+      ),
     });
   }
 
