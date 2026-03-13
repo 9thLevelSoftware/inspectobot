@@ -57,7 +57,7 @@ void main() {
         onChanged: (value) => result = value,
       ));
 
-      await tester.tap(find.text('B'));
+      await tester.tap(find.widgetWithText(FilterChip, 'B'));
       await tester.pumpAndSettle();
 
       expect(result, isNotNull);
@@ -74,7 +74,7 @@ void main() {
         onChanged: (value) => result = value,
       ));
 
-      await tester.tap(find.text('A'));
+      await tester.tap(find.widgetWithText(FilterChip, 'A'));
       await tester.pumpAndSettle();
 
       expect(result, isNotNull);
@@ -94,7 +94,7 @@ void main() {
         },
       ));
 
-      await tester.tap(find.text('X'));
+      await tester.tap(find.widgetWithText(FilterChip, 'X'));
       await tester.pumpAndSettle();
 
       expect(callCount, 1);

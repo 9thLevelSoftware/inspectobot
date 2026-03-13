@@ -46,7 +46,7 @@ void main() {
     Map<String, dynamic>? formData,
     Map<String, dynamic>? shared,
   }) {
-    return <String, dynamic>{
+    final json = <String, dynamic>{
       'inspection_id': 'json-001',
       'organization_id': 'org-001',
       'user_id': 'user-001',
@@ -61,10 +61,15 @@ void main() {
         'inspector_license_number': 'LIC-A',
         'client_name': 'Client B',
       },
-      if (shared != null) 'shared': shared,
-      if (formData != null) 'form_data': formData,
       'schema_version': schemaVersion ?? 1,
     };
+    if (shared != null) {
+      json['shared'] = shared;
+    }
+    if (formData != null) {
+      json['form_data'] = formData;
+    }
+    return json;
   }
 
   group('PropertyData v1 migration', () {

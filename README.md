@@ -1,50 +1,49 @@
 # inspectobot
 
-InspectoBot is a Flutter app for Florida insurance inspections (4-Point, Roof Condition, and Wind Mitigation).
+InspectoBot is a local-first Flutter app for Florida insurance inspections. The current codebase supports 7 form types across dual PDF pipelines:
 
-## Current Milestone (Phase 1.6 Sync Queue Scaffold)
+- Fillable overlay PDFs: 4-Point, Roof Condition, Wind Mitigation, WDO, Sinkhole
+- Narrative PDFs: Mold Assessment, General Inspection
 
-Implemented in this repository:
+## Current Feature Surface
 
-- Dashboard with `New Inspection` entrypoint
-- Inspection setup with required fields and multi-form selection
-- Required-photo compliance checklist with hard gate before PDF generation
-- Real camera capture + JPEG compression pipeline for required photos
-- Local media manifest persistence per inspection (`media_manifests/<inspectionId>.json`)
-- Local pending media sync queue (`sync_queue/pending_media_sync.json`)
-- Hybrid PDF orchestration (`on-device` primary, cloud fallback interface)
-- On-device PDF generation to a temporary file path
-
-## Project Structure (implemented)
-
-- `lib/app/` app shell and routing
-- `lib/features/inspection/` domain + presentation for inspection flow
-- `lib/features/media/` capture service, local manifest store, and pending sync queue store
-- `lib/features/pdf/` PDF strategy/orchestrator and on-device generation
+- Supabase-backed auth with tenant membership resolution
+- Dashboard for starting and resuming in-progress inspections
+- Inspector identity profile and signature capture
+- Guided multi-step inspection wizard with cross-form evidence sharing
+- Camera/document evidence capture with local manifests and pending sync queue
+- On-device PDF generation plus a cloud-PDF backend contract
+- Report artifact persistence, signed download links, secure share, and audit trail
+- Offline-first inspection persistence with sync outbox and retry scheduling
 
 ## Quick Start
 
 ```powershell
 flutter pub get
+flutter analyze
 flutter test
-flutter run
+flutter test integration_test
+flutter run --dart-define-from-file=.env
 ```
 
-## Notes
+## Runtime Notes
 
-- Cloud PDF fallback service is scaffolded and returns `null` until API integration is added.
-- Supabase uploader/auth are not wired yet; pending media queue is local-only for now.
-- Next milestone should wire Supabase auth/storage/RLS and consume pending queue for remote sync.
+- Remote paths require `SUPABASE_URL` and `SUPABASE_ANON_KEY` via `--dart-define-from-file=.env`.
+- Without Supabase configuration, several repositories fall back to in-memory or local-only behavior for development and tests. That is useful for local iteration, but it does not prove remote operational readiness.
+- The cloud PDF branch expects a deployed Supabase Edge Function named `generate-report-pdf` when that path is enabled.
 
-## Getting Started
+## Repository Layout
 
-This project is a starting point for a Flutter application.
+- `lib/app/`: app bootstrap, router, service locator
+- `lib/features/`: feature modules for auth, identity, inspection, media, PDF, sync, delivery, audit, retention
+- `assets/pdf/`: pinned fillable PDF templates and field maps
+- `supabase/migrations/`: database, storage, and RLS contracts
+- `docs/operational-readiness/`: current operational review artifacts and findings
 
-A few resources to get you started if this is your first Flutter project:
+## Operational Review
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+The current functional readiness review artifacts live under `docs/operational-readiness/` and include:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- the review matrix
+- the March 12, 2026 findings report
+- the integration smoke harness added under `integration_test/`
