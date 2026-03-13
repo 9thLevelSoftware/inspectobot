@@ -46,3 +46,5 @@ app.*.map.json
 
 # GSD planning artifacts (local-only)
 .planning/
+/.env
+/AGENTS.md
