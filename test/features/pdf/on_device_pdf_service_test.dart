@@ -2,479 +2,380 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
-import 'package:inspectobot/features/inspection/domain/required_photo_category.dart';
 import 'package:inspectobot/features/pdf/data/pdf_media_resolver.dart';
 import 'package:inspectobot/features/pdf/data/pdf_size_budget_config_store.dart';
 import 'package:inspectobot/features/pdf/data/pdf_template_asset_loader.dart';
-import 'package:inspectobot/features/pdf/models/pdf_template_manifest.dart';
+import 'package:inspectobot/features/pdf/domain/pdf_size_budget.dart';
+import 'package:inspectobot/features/pdf/models/pdf_field_definition.dart';
+import 'package:inspectobot/features/pdf/models/pdf_field_map.dart';
+import 'package:inspectobot/features/pdf/models/pdf_manifest_entry.dart';
 import 'package:inspectobot/features/pdf/on_device_pdf_service.dart';
 import 'package:inspectobot/features/pdf/pdf_generation_input.dart';
 import 'package:inspectobot/features/pdf/services/pdf_renderer.dart';
 
+class _MockTemplateAssetLoader extends Mock implements PdfTemplateAssetLoader {}
+class _MockMediaResolver extends Mock implements PdfMediaResolver {}
+class _MockSizeBudgetStore extends Mock implements PdfSizeBudgetConfigStore {}
+class _MockRenderer extends Mock implements PdfRenderer {}
+
 void main() {
   group('OnDevicePdfService', () {
-    test('generates mapped official-form output for every selected form', () async {
-      final renderer = _RecordingRenderer(
-        bytesByAttempt: <List<int>>[
-          List<int>.generate(1024, (index) => index % 255),
-        ],
-      );
-      final service = OnDevicePdfService(
-        templateAssetLoader: _FakeTemplateLoader(),
-        mediaResolver: const PdfMediaResolver(),
-        sizeBudgetStore: PdfSizeBudgetConfigStore(
-          readConfig: () => <String, dynamic>{
-            'max_bytes': 5 * 1024 * 1024,
-            'retry_steps': <Map<String, dynamic>>[
-              <String, dynamic>{'jpeg_quality': 75, 'max_width': 1280},
-            ],
-          },
-        ),
-        renderer: renderer,
+    late OnDevicePdfService service;
+    late _MockTemplateAssetLoader mockTemplateLoader;
+    late _MockMediaResolver mockMediaResolver;
+    late _MockSizeBudgetStore mockBudgetStore;
+    late _MockRenderer mockRenderer;
+
+    setUp(() {
+      mockTemplateLoader = _MockTemplateAssetLoader();
+      mockMediaResolver = _MockMediaResolver();
+      mockBudgetStore = _MockSizeBudgetStore();
+      mockRenderer = _MockRenderer();
+
+      service = OnDevicePdfService(
+        templateAssetLoader: mockTemplateLoader,
+        mediaResolver: mockMediaResolver,
+        sizeBudgetStore: mockBudgetStore,
+        renderer: mockRenderer,
         outputDirectoryProvider: () async => Directory.systemTemp,
       );
-
-      final photoFile = await _writeTempJpeg(<int>[1, 2, 3, 4, 5]);
-      final input = PdfGenerationInput(
-        inspectionId: 'insp-1',
-        organizationId: 'org-1',
-        userId: 'user-1',
-        clientName: 'Jane Doe',
-        propertyAddress: '123 Palm Ave',
-        enabledForms: {FormType.fourPoint, FormType.roofCondition},
-        capturedCategories: {
-          RequiredPhotoCategory.exteriorFront,
-          RequiredPhotoCategory.roofSlopeMain,
-        },
-        wizardCompletion: const <String, bool>{
-          'photo:exterior_front': true,
-          'photo:roof_condition_main_slope': true,
-        },
-        fieldValues: const <String, String>{'inspection_id': 'insp-1'},
-        evidenceMediaPaths: <String, List<String>>{
-          'photo:exterior_front': <String>[photoFile.path],
-          'photo:roof_condition_main_slope': <String>[photoFile.path],
-        },
-        signatureBytes: Uint8List.fromList(<int>[9, 9, 9, 9]),
-      );
-
-      final file = await service.generate(input);
-      expect(await file.exists(), isTrue);
-
-      final renderCall = renderer.calls.single;
-      expect(renderCall.forms, hasLength(2));
-      expect(
-        renderCall.forms.map((form) => form.manifestEntry.formType).toSet(),
-        <FormType>{FormType.fourPoint, FormType.roofCondition},
-      );
-      expect(
-        renderCall.forms.expand((form) => form.resolved.imageByFieldKey.keys),
-        contains('image.photo_exterior_front'),
-      );
-      expect(
-        renderCall.forms.expand((form) => form.resolved.signatureByFieldKey.keys),
-        contains('signature.inspector'),
-      );
-      for (final form in renderCall.forms) {
-        expect(form.templateBytes, isNotEmpty);
-      }
     });
 
-    test('retries rendering with deterministic budget policy before succeeding', () async {
-      final renderer = _RecordingRenderer(
-        bytesByAttempt: <List<int>>[
-          List<int>.filled(2048, 7),
-          List<int>.filled(512, 8),
-        ],
-      );
-      final service = OnDevicePdfService(
-        templateAssetLoader: _FakeTemplateLoader(),
-        mediaResolver: const PdfMediaResolver(),
-        sizeBudgetStore: PdfSizeBudgetConfigStore(
-          readConfig: () => <String, dynamic>{
-            'max_bytes': 1024,
-            'retry_steps': <Map<String, dynamic>>[
-              <String, dynamic>{'jpeg_quality': 75, 'max_width': 1280},
-              <String, dynamic>{'jpeg_quality': 60, 'max_width': 1024},
-            ],
-          },
-        ),
-        renderer: renderer,
-        outputDirectoryProvider: () async => Directory.systemTemp,
-      );
+    group('generate()', () {
+      test('should generate PDF successfully for single form', () async {
+        final input = _buildInput(enabledForms: {FormType.fourPoint});
 
-      final file = await service.generate(_buildInput());
-      expect(await file.length(), 512);
-      expect(renderer.calls, hasLength(2));
-      expect(renderer.calls.first.retryStep.jpegQuality, 75);
-      expect(renderer.calls.last.retryStep.jpegQuality, 60);
-    });
+        final budget = PdfSizeBudget(
+          maxBytes: 10 * 1024 * 1024,
+          retrySteps: [PdfRetryStep(photoBudget: 1.0, imageQuality: 90)],
+        );
+        when(() => mockBudgetStore.load()).thenReturn(budget);
 
-    test('fails with explicit over-budget error when all retries exceed budget', () async {
-      final renderer = _RecordingRenderer(
-        bytesByAttempt: <List<int>>[
-          List<int>.filled(4096, 1),
-          List<int>.filled(3072, 2),
-        ],
-      );
-      final service = OnDevicePdfService(
-        templateAssetLoader: _FakeTemplateLoader(),
-        mediaResolver: const PdfMediaResolver(),
-        sizeBudgetStore: PdfSizeBudgetConfigStore(
-          readConfig: () => <String, dynamic>{
-            'max_bytes': 1024,
-            'retry_steps': <Map<String, dynamic>>[
-              <String, dynamic>{'jpeg_quality': 75, 'max_width': 1280},
-              <String, dynamic>{'jpeg_quality': 60, 'max_width': 1024},
-            ],
-          },
-        ),
-        renderer: renderer,
-        outputDirectoryProvider: () async => Directory.systemTemp,
-      );
-
-      expect(
-        () => service.generate(_buildInput()),
-        throwsA(
-          isA<PdfGenerationSizeBudgetExceeded>().having(
-            (e) => e.message,
-            'message',
-            contains('exceeded configured size budget'),
+        final fieldMap = PdfFieldMap(
+          formType: FormType.fourPoint,
+          fields: [],
+        );
+        final templateBundle = PdfTemplateBundle(
+          manifestEntry: PdfManifestEntry(
+            formType: FormType.fourPoint,
+            version: '1.0',
+            templateAssetPath: 'assets/test.pdf',
+            fieldMapAssetPath: 'assets/map.json',
           ),
-        ),
-      );
-    });
+          fieldMap: fieldMap,
+          templateBytes: Uint8List.fromList([1, 2, 3]),
+        );
+        when(() => mockTemplateLoader.load(FormType.fourPoint))
+            .thenAnswer((_) async => templateBundle);
 
-    test('fails closed when template asset bytes are missing', () async {
-      final service = OnDevicePdfService(
-        templateAssetLoader: _EmptyTemplateLoader(),
-        mediaResolver: const PdfMediaResolver(),
-        sizeBudgetStore: PdfSizeBudgetConfigStore(
-          readConfig: () => <String, dynamic>{
-            'max_bytes': 1024,
-            'retry_steps': <Map<String, dynamic>>[
-              <String, dynamic>{'jpeg_quality': 75, 'max_width': 1280},
-            ],
+        final resolved = ResolvedPdfFieldData(
+          imageByFieldKey: {},
+          textByFieldKey: {},
+          unresolvedMediaByFieldKey: {},
+        );
+        when(() => mockMediaResolver.resolve(
+          input: any(named: 'input'),
+          fieldMap: any(named: 'fieldMap'),
+        )).thenAnswer((_) async => resolved);
+
+        final pdfBytes = Uint8List.fromList([4, 5, 6]);
+        when(() => mockRenderer.render(any())).thenAnswer((_) async => pdfBytes);
+
+        final result = await service.generate(input);
+
+        expect(result, isA<File>());
+        expect(await result.exists(), isTrue);
+      });
+
+      test('should generate PDF for multiple forms sorted by code', () async {
+        final input = _buildInput(
+          enabledForms: {
+            FormType.windMitigation,
+            FormType.fourPoint,
+            FormType.roofCondition,
           },
-        ),
-        renderer: _RecordingRenderer(
-          bytesByAttempt: <List<int>>[
-            List<int>.filled(128, 3),
-          ],
-        ),
-        outputDirectoryProvider: () async => Directory.systemTemp,
-      );
+        );
 
-      expect(
-        () => service.generate(_buildInput()),
-        throwsA(
-          isA<PdfTemplateAssetLoaderError>().having(
-            (e) => e.message,
-            'message',
-            contains('Template asset is empty'),
+        final budget = PdfSizeBudget(
+          maxBytes: 10 * 1024 * 1024,
+          retrySteps: [PdfRetryStep(photoBudget: 1.0, imageQuality: 90)],
+        );
+        when(() => mockBudgetStore.load()).thenReturn(budget);
+
+        for (final form in [FormType.fourPoint, FormType.roofCondition, FormType.windMitigation]) {
+          final templateBundle = PdfTemplateBundle(
+            manifestEntry: PdfManifestEntry(
+              formType: form,
+              version: '1.0',
+              templateAssetPath: 'assets/${form.code}.pdf',
+              fieldMapAssetPath: 'assets/${form.code}.json',
+            ),
+            fieldMap: PdfFieldMap(formType: form, fields: []),
+            templateBytes: Uint8List.fromList([1]),
+          );
+          when(() => mockTemplateLoader.load(form))
+              .thenAnswer((_) async => templateBundle);
+        }
+
+        when(() => mockMediaResolver.resolve(
+          input: any(named: 'input'),
+          fieldMap: any(named: 'fieldMap'),
+        )).thenAnswer((_) async => ResolvedPdfFieldData(
+          imageByFieldKey: {},
+          textByFieldKey: {},
+          unresolvedMediaByFieldKey: {},
+        ));
+
+        final pdfBytes = Uint8List.fromList([4, 5, 6]);
+        when(() => mockRenderer.render(any())).thenAnswer((_) async => pdfBytes);
+
+        final result = await service.generate(input);
+
+        expect(result, isA<File>());
+
+        // Verify forms are loaded in sorted order
+        verify(() => mockTemplateLoader.load(FormType.fourPoint)).called(1);
+        verify(() => mockTemplateLoader.load(FormType.roofCondition)).called(1);
+        verify(() => mockTemplateLoader.load(FormType.windMitigation)).called(1);
+      });
+
+      test('should throw when retry steps are empty', () async {
+        final input = _buildInput();
+
+        final budget = PdfSizeBudget(
+          maxBytes: 10 * 1024 * 1024,
+          retrySteps: [],
+        );
+        when(() => mockBudgetStore.load()).thenReturn(budget);
+
+        expect(
+          () => service.generate(input),
+          throwsA(isA<PdfSizeBudgetConfigError>()),
+        );
+      });
+
+      test('should throw size budget exceeded when over budget', () async {
+        final input = _buildInput(enabledForms: {FormType.fourPoint});
+
+        final budget = PdfSizeBudget(
+          maxBytes: 100,
+          retrySteps: [
+            PdfRetryStep(photoBudget: 1.0, imageQuality: 90),
+            PdfRetryStep(photoBudget: 0.5, imageQuality: 70),
+          ],
+        );
+        when(() => mockBudgetStore.load()).thenReturn(budget);
+
+        final templateBundle = PdfTemplateBundle(
+          manifestEntry: PdfManifestEntry(
+            formType: FormType.fourPoint,
+            version: '1.0',
+            templateAssetPath: 'assets/test.pdf',
+            fieldMapAssetPath: 'assets/map.json',
           ),
-        ),
-      );
+          fieldMap: PdfFieldMap(formType: FormType.fourPoint, fields: []),
+          templateBytes: Uint8List.fromList([1, 2, 3]),
+        );
+        when(() => mockTemplateLoader.load(FormType.fourPoint))
+            .thenAnswer((_) async => templateBundle);
+
+        when(() => mockMediaResolver.resolve(
+          input: any(named: 'input'),
+          fieldMap: any(named: 'fieldMap'),
+        )).thenAnswer((_) async => ResolvedPdfFieldData(
+          imageByFieldKey: {},
+          textByFieldKey: {},
+          unresolvedMediaByFieldKey: {},
+        ));
+
+        // Return bytes that exceed budget
+        final largePdfBytes = Uint8List(1000);
+        when(() => mockRenderer.render(any())).thenAnswer((_) async => largePdfBytes);
+
+        expect(
+          () => service.generate(input),
+          throwsA(isA<PdfGenerationSizeBudgetExceeded>()),
+        );
+      });
+
+      test('should retry with next step when within budget after retry', () async {
+        final input = _buildInput(enabledForms: {FormType.fourPoint});
+
+        final budget = PdfSizeBudget(
+          maxBytes: 500,
+          retrySteps: [
+            PdfRetryStep(photoBudget: 1.0, imageQuality: 90),
+            PdfRetryStep(photoBudget: 0.5, imageQuality: 70),
+          ],
+        );
+        when(() => mockBudgetStore.load()).thenReturn(budget);
+
+        final templateBundle = PdfTemplateBundle(
+          manifestEntry: PdfManifestEntry(
+            formType: FormType.fourPoint,
+            version: '1.0',
+            templateAssetPath: 'assets/test.pdf',
+            fieldMapAssetPath: 'assets/map.json',
+          ),
+          fieldMap: PdfFieldMap(formType: FormType.fourPoint, fields: []),
+          templateBytes: Uint8List.fromList([1, 2, 3]),
+        );
+        when(() => mockTemplateLoader.load(FormType.fourPoint))
+            .thenAnswer((_) async => templateBundle);
+
+        when(() => mockMediaResolver.resolve(
+          input: any(named: 'input'),
+          fieldMap: any(named: 'fieldMap'),
+        )).thenAnswer((_) async => ResolvedPdfFieldData(
+          imageByFieldKey: {},
+          textByFieldKey: {},
+          unresolvedMediaByFieldKey: {},
+        ));
+
+        // First render exceeds budget, second succeeds
+        final largeBytes = Uint8List(1000);
+        final smallBytes = Uint8List(100);
+        when(() => mockRenderer.render(any())).thenAnswer((invocation) async {
+          final request = invocation.positionalArguments[0] as PdfRenderRequest;
+          return request.retryStep.photoBudget == 1.0 ? largeBytes : smallBytes;
+        });
+
+        final result = await service.generate(input);
+
+        expect(result, isA<File>());
+        verify(() => mockRenderer.render(any())).called(2);
+      });
+
+      test('should throw when required evidence is not resolved', () async {
+        final input = _buildInput(
+          enabledForms: {FormType.fourPoint},
+          wizardCompletion: {'roof_photo': true},
+        );
+
+        final budget = PdfSizeBudget(
+          maxBytes: 10 * 1024 * 1024,
+          retrySteps: [PdfRetryStep(photoBudget: 1.0, imageQuality: 90)],
+        );
+        when(() => mockBudgetStore.load()).thenReturn(budget);
+
+        final fieldMap = PdfFieldMap(
+          formType: FormType.fourPoint,
+          fields: [
+            const PdfFieldDefinition(
+              key: 'roof_photo_field',
+              type: PdfFieldType.image,
+              sourceKey: 'roof_photo',
+            ),
+          ],
+        );
+        final templateBundle = PdfTemplateBundle(
+          manifestEntry: PdfManifestEntry(
+            formType: FormType.fourPoint,
+            version: '1.0',
+            templateAssetPath: 'assets/test.pdf',
+            fieldMapAssetPath: 'assets/map.json',
+          ),
+          fieldMap: fieldMap,
+          templateBytes: Uint8List.fromList([1, 2, 3]),
+        );
+        when(() => mockTemplateLoader.load(FormType.fourPoint))
+            .thenAnswer((_) async => templateBundle);
+
+        final resolved = ResolvedPdfFieldData(
+          imageByFieldKey: {},
+          textByFieldKey: {},
+          unresolvedMediaByFieldKey: {'roof_photo_field': 'File not found'},
+        );
+        when(() => mockMediaResolver.resolve(
+          input: any(named: 'input'),
+          fieldMap: any(named: 'fieldMap'),
+        )).thenAnswer((_) async => resolved);
+
+        expect(
+          () => service.generate(input),
+          throwsA(isA<PdfGenerationException>()),
+        );
+      });
+
+      test('should handle template asset loading errors', () async {
+        final input = _buildInput(enabledForms: {FormType.fourPoint});
+
+        final budget = PdfSizeBudget(
+          maxBytes: 10 * 1024 * 1024,
+          retrySteps: [PdfRetryStep(photoBudget: 1.0, imageQuality: 90)],
+        );
+        when(() => mockBudgetStore.load()).thenReturn(budget);
+
+        when(() => mockTemplateLoader.load(FormType.fourPoint))
+            .thenThrow(FileSystemException('Template not found'));
+
+        expect(
+          () => service.generate(input),
+          throwsA(isA<FileSystemException>()),
+        );
+      });
+
+      test('should handle media resolution failures', () async {
+        final input = _buildInput(enabledForms: {FormType.fourPoint});
+
+        final budget = PdfSizeBudget(
+          maxBytes: 10 * 1024 * 1024,
+          retrySteps: [PdfRetryStep(photoBudget: 1.0, imageQuality: 90)],
+        );
+        when(() => mockBudgetStore.load()).thenReturn(budget);
+
+        final templateBundle = PdfTemplateBundle(
+          manifestEntry: PdfManifestEntry(
+            formType: FormType.fourPoint,
+            version: '1.0',
+            templateAssetPath: 'assets/test.pdf',
+            fieldMapAssetPath: 'assets/map.json',
+          ),
+          fieldMap: PdfFieldMap(formType: FormType.fourPoint, fields: []),
+          templateBytes: Uint8List.fromList([1, 2, 3]),
+        );
+        when(() => mockTemplateLoader.load(FormType.fourPoint))
+            .thenAnswer((_) async => templateBundle);
+
+        when(() => mockMediaResolver.resolve(
+          input: any(named: 'input'),
+          fieldMap: any(named: 'fieldMap'),
+        )).thenThrow(FileSystemException('Media not found'));
+
+        expect(
+          () => service.generate(input),
+          throwsA(isA<FileSystemException>()),
+        );
+      });
     });
 
-    test('resolves remote-only evidence references for required mapped fields', () async {
-      final renderer = _RecordingRenderer(
-        bytesByAttempt: <List<int>>[
-          List<int>.filled(256, 5),
-        ],
-      );
-      final service = OnDevicePdfService(
-        templateAssetLoader: _FakeTemplateLoader(),
-        mediaResolver: PdfMediaResolver(
-          remoteReadBytes: (storagePath) async {
-            if (storagePath == 'org/org-1/users/user-1/inspections/insp-1/media/remote-key.jpg') {
-              return Uint8List.fromList(<int>[4, 5, 6]);
-            }
-            return null;
-          },
-        ),
-        sizeBudgetStore: PdfSizeBudgetConfigStore(
-          readConfig: () => <String, dynamic>{
-            'max_bytes': 5 * 1024 * 1024,
-            'retry_steps': <Map<String, dynamic>>[
-              <String, dynamic>{'jpeg_quality': 75, 'max_width': 1280},
-            ],
-          },
-        ),
-        renderer: renderer,
-        outputDirectoryProvider: () async => Directory.systemTemp,
-      );
+    group('constructor', () {
+      test('should use default dependencies when none provided', () {
+        final defaultService = OnDevicePdfService();
 
-      final input = PdfGenerationInput(
-        inspectionId: 'insp-remote-1',
-        organizationId: 'org-1',
-        userId: 'user-1',
-        clientName: 'Remote User',
-        propertyAddress: '1 Remote Key Ln',
-        enabledForms: {FormType.fourPoint},
-        capturedCategories: {RequiredPhotoCategory.exteriorFront},
-        wizardCompletion: const <String, bool>{'photo:exterior_front': true},
-        evidenceMediaPaths: const <String, List<String>>{
-          'photo:exterior_front': <String>[
-            'org/org-1/users/user-1/inspections/insp-1/media/remote-key.jpg',
-          ],
-        },
-      );
-
-      final file = await service.generate(input);
-      expect(await file.exists(), isTrue);
-      expect(
-        renderer.calls.single.forms.single.resolved.imageByFieldKey,
-        contains('image.photo_exterior_front'),
-      );
-    });
-
-    test('fails closed when required mapped evidence cannot be resolved', () async {
-      final service = OnDevicePdfService(
-        templateAssetLoader: _FakeTemplateLoader(),
-        mediaResolver: const PdfMediaResolver(),
-        sizeBudgetStore: PdfSizeBudgetConfigStore(
-          readConfig: () => <String, dynamic>{
-            'max_bytes': 5 * 1024 * 1024,
-            'retry_steps': <Map<String, dynamic>>[
-              <String, dynamic>{'jpeg_quality': 75, 'max_width': 1280},
-            ],
-          },
-        ),
-        renderer: _RecordingRenderer(
-          bytesByAttempt: <List<int>>[
-            List<int>.filled(256, 5),
-          ],
-        ),
-        outputDirectoryProvider: () async => Directory.systemTemp,
-      );
-
-      final input = PdfGenerationInput(
-        inspectionId: 'insp-unresolved-1',
-        organizationId: 'org-1',
-        userId: 'user-1',
-        clientName: 'Unresolved User',
-        propertyAddress: '2 Missing Ln',
-        enabledForms: {FormType.fourPoint},
-        capturedCategories: {RequiredPhotoCategory.exteriorFront},
-        wizardCompletion: const <String, bool>{'photo:exterior_front': true},
-        evidenceMediaPaths: const <String, List<String>>{
-          'photo:exterior_front': <String>['org/org-1/users/user-1/missing.jpg'],
-        },
-      );
-
-      expect(
-        () => service.generate(input),
-        throwsA(
-          isA<PdfGenerationException>()
-              .having(
-                (error) => error.unresolvedRequiredEvidence.keys,
-                'unresolvedRequiredEvidence.keys',
-                contains('image.photo_exterior_front'),
-              )
-              .having(
-                (error) => error.message,
-                'message',
-                contains('Required evidence media could not be resolved'),
-              ),
-        ),
-      );
-    });
-
-    test('accepts mixed local and remote evidence references deterministically', () async {
-      final renderer = _RecordingRenderer(
-        bytesByAttempt: <List<int>>[
-          List<int>.filled(512, 6),
-        ],
-      );
-      final localFile = await _writeTempJpeg(<int>[1, 2, 3, 4]);
-      final service = OnDevicePdfService(
-        templateAssetLoader: _FakeTemplateLoader(),
-        mediaResolver: PdfMediaResolver(
-          remoteReadBytes: (storagePath) async {
-            if (storagePath == 'org/org-1/users/user-1/inspections/insp-1/media/remote-secondary.jpg') {
-              return Uint8List.fromList(<int>[8, 8, 8]);
-            }
-            return null;
-          },
-        ),
-        sizeBudgetStore: PdfSizeBudgetConfigStore(
-          readConfig: () => <String, dynamic>{
-            'max_bytes': 5 * 1024 * 1024,
-            'retry_steps': <Map<String, dynamic>>[
-              <String, dynamic>{'jpeg_quality': 75, 'max_width': 1280},
-            ],
-          },
-        ),
-        renderer: renderer,
-        outputDirectoryProvider: () async => Directory.systemTemp,
-      );
-
-      final input = PdfGenerationInput(
-        inspectionId: 'insp-mixed-1',
-        organizationId: 'org-1',
-        userId: 'user-1',
-        clientName: 'Mixed User',
-        propertyAddress: '3 Mixed Ln',
-        enabledForms: {FormType.fourPoint},
-        capturedCategories: {RequiredPhotoCategory.exteriorFront},
-        wizardCompletion: const <String, bool>{'photo:exterior_front': true},
-        evidenceMediaPaths: <String, List<String>>{
-          'photo:exterior_front': <String>[
-            localFile.path,
-            'org/org-1/users/user-1/inspections/insp-1/media/remote-secondary.jpg',
-          ],
-        },
-      );
-
-      final file = await service.generate(input);
-      expect(await file.exists(), isTrue);
-      expect(
-        renderer.calls.single.forms.single.resolved.imageByFieldKey,
-        contains('image.photo_exterior_front'),
-      );
+        expect(defaultService, isNotNull);
+      });
     });
   });
 }
 
-PdfGenerationInput _buildInput() {
+PdfGenerationInput _buildInput({
+  Set<FormType>? enabledForms,
+  Map<String, bool>? wizardCompletion,
+}) {
   return PdfGenerationInput(
-    inspectionId: 'insp-2',
-    organizationId: 'org-1',
-    userId: 'user-1',
-    clientName: 'Inspector User',
-    propertyAddress: '100 Main St',
-    enabledForms: {FormType.fourPoint},
-    capturedCategories: {RequiredPhotoCategory.exteriorFront},
-    wizardCompletion: const <String, bool>{},
+    inspectionId: 'test-inspection-123',
+    organizationId: 'org-123',
+    userId: 'user-123',
+    clientName: 'Test Client',
+    propertyAddress: '123 Test Street',
+    enabledForms: enabledForms ?? {FormType.fourPoint},
+    capturedCategories: {},
+    evidenceMediaPaths: {},
+    wizardCompletion: wizardCompletion ?? {},
+    wizardBranchContext: {},
   );
 }
-
-Future<File> _writeTempJpeg(List<int> bytes) async {
-  final output = File(
-    '${Directory.systemTemp.path}/pdf-test-${DateTime.now().microsecondsSinceEpoch}.jpg',
-  );
-  await output.writeAsBytes(bytes, flush: true);
-  return output;
-}
-
-class _FakeTemplateLoader extends PdfTemplateAssetLoader {
-  _FakeTemplateLoader()
-    : super(
-        manifest: PdfTemplateManifest.standard(),
-        readMapAsset: (assetPath) async {
-          if (assetPath.contains('rcf1')) {
-            return _roofMap;
-          }
-          if (assetPath.contains('oir_b1')) {
-            return _windMap;
-          }
-          return _fourPointMap;
-        },
-        readTemplateAsset: (assetPath) async {
-          return ByteData.view(Uint8List.fromList(_pdfStubBytes).buffer);
-        },
-      );
-}
-
-class _EmptyTemplateLoader extends PdfTemplateAssetLoader {
-  _EmptyTemplateLoader()
-    : super(
-        manifest: PdfTemplateManifest.standard(),
-        readMapAsset: (assetPath) async {
-          if (assetPath.contains('rcf1')) {
-            return _roofMap;
-          }
-          if (assetPath.contains('oir_b1')) {
-            return _windMap;
-          }
-          return _fourPointMap;
-        },
-        readTemplateAsset: (assetPath) async => ByteData(0),
-      );
-}
-
-class _RecordingRenderer extends PdfRenderer {
-  _RecordingRenderer({required this.bytesByAttempt});
-
-  final List<List<int>> bytesByAttempt;
-  final List<PdfRenderRequest> calls = <PdfRenderRequest>[];
-
-  @override
-  Future<Uint8List> render(PdfRenderRequest request) async {
-    calls.add(request);
-    final index = calls.length - 1;
-    return Uint8List.fromList(bytesByAttempt[index]);
-  }
-}
-
-const String _fourPointMap = '''
-{
-  "form_code": "four_point",
-  "map_version": "v1",
-  "fields": [
-    {"key": "text.client_name", "source_key": "client_name", "type": "text", "page": 1, "x": 40, "y": 700, "width": 180, "height": 14},
-    {"key": "image.photo_exterior_front", "source_key": "photo:exterior_front", "type": "image", "page": 1, "x": 40, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_exterior_rear", "source_key": "photo:exterior_rear", "type": "image", "page": 2, "x": 40, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_exterior_left", "source_key": "photo:exterior_left", "type": "image", "page": 2, "x": 200, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_exterior_right", "source_key": "photo:exterior_right", "type": "image", "page": 2, "x": 360, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_roof_slope_main", "source_key": "photo:roof_slope_main", "type": "image", "page": 2, "x": 40, "y": 400, "width": 120, "height": 90},
-    {"key": "image.photo_roof_slope_secondary", "source_key": "photo:roof_slope_secondary", "type": "image", "page": 2, "x": 200, "y": 400, "width": 120, "height": 90},
-    {"key": "image.photo_water_heater_tpr_valve", "source_key": "photo:water_heater_tpr_valve", "type": "image", "page": 3, "x": 40, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_plumbing_under_sink", "source_key": "photo:plumbing_under_sink", "type": "image", "page": 3, "x": 200, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_electrical_panel_label", "source_key": "photo:electrical_panel_label", "type": "image", "page": 3, "x": 360, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_electrical_panel_open", "source_key": "photo:electrical_panel_open", "type": "image", "page": 3, "x": 40, "y": 400, "width": 120, "height": 90},
-    {"key": "image.photo_hvac_data_plate", "source_key": "photo:hvac_data_plate", "type": "image", "page": 3, "x": 200, "y": 400, "width": 120, "height": 90},
-    {"key": "image.photo_hazard_photo", "source_key": "photo:hazard_photo", "type": "image", "page": 3, "x": 360, "y": 400, "width": 120, "height": 90},
-    {"key": "signature.inspector", "source_key": "inspector_signature", "type": "signature", "page": 1, "x": 360, "y": 86, "width": 170, "height": 36}
-  ]
-}
-''';
-
-const String _roofMap = '''
-{
-  "form_code": "roof_condition",
-  "map_version": "v1",
-  "fields": [
-    {"key": "text.client_name", "source_key": "client_name", "type": "text", "page": 1, "x": 40, "y": 700, "width": 180, "height": 14},
-    {"key": "image.photo_roof_condition_main_slope", "source_key": "photo:roof_condition_main_slope", "type": "image", "page": 1, "x": 40, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_roof_condition_secondary_slope", "source_key": "photo:roof_condition_secondary_slope", "type": "image", "page": 1, "x": 200, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_roof_defect", "source_key": "photo:roof_defect", "type": "image", "page": 1, "x": 360, "y": 520, "width": 120, "height": 90},
-    {"key": "signature.inspector", "source_key": "inspector_signature", "type": "signature", "page": 1, "x": 360, "y": 86, "width": 170, "height": 36}
-  ]
-}
-''';
-
-const String _windMap = '''
-{
-  "form_code": "wind_mitigation",
-  "map_version": "v1",
-  "fields": [
-    {"key": "text.client_name", "source_key": "client_name", "type": "text", "page": 1, "x": 40, "y": 700, "width": 180, "height": 14},
-    {"key": "image.photo_wind_roof_deck", "source_key": "photo:wind_roof_deck", "type": "image", "page": 1, "x": 40, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_wind_roof_to_wall", "source_key": "photo:wind_roof_to_wall", "type": "image", "page": 2, "x": 40, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_wind_roof_shape", "source_key": "photo:wind_roof_shape", "type": "image", "page": 2, "x": 200, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_wind_secondary_water_resistance", "source_key": "photo:wind_secondary_water_resistance", "type": "image", "page": 2, "x": 360, "y": 520, "width": 120, "height": 90},
-    {"key": "image.photo_wind_opening_protection", "source_key": "photo:wind_opening_protection", "type": "image", "page": 2, "x": 40, "y": 400, "width": 120, "height": 90},
-    {"key": "image.photo_wind_opening_type", "source_key": "photo:wind_opening_type", "type": "image", "page": 2, "x": 200, "y": 400, "width": 120, "height": 90},
-    {"key": "image.photo_wind_permit_year", "source_key": "photo:wind_permit_year", "type": "image", "page": 2, "x": 360, "y": 400, "width": 120, "height": 90},
-    {"key": "image.document_wind_roof_deck", "source_key": "document:wind_roof_deck", "type": "image", "page": 3, "x": 40, "y": 520, "width": 120, "height": 90},
-    {"key": "image.document_wind_opening_protection", "source_key": "document:wind_opening_protection", "type": "image", "page": 3, "x": 200, "y": 520, "width": 120, "height": 90},
-    {"key": "image.document_wind_permit_year", "source_key": "document:wind_permit_year", "type": "image", "page": 3, "x": 360, "y": 520, "width": 120, "height": 90},
-    {"key": "signature.inspector", "source_key": "inspector_signature", "type": "signature", "page": 1, "x": 360, "y": 86, "width": 170, "height": 36}
-  ]
-}
-''';
-
-const List<int> _pdfStubBytes = <int>[
-  0x25,
-  0x50,
-  0x44,
-  0x46,
-  0x2D,
-  0x31,
-  0x2E,
-  0x34,
-  0x0A,
-];

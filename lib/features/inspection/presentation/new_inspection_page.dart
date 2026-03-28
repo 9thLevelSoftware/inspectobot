@@ -156,10 +156,9 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
     if (_selectedForms.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select at least one inspection form.')),
-      );
+      AppSnackBar.warning(context, 'Please select at least one inspection form to continue.');
       return;
     }
 
@@ -244,7 +243,7 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
             loadingLabel: 'Saving...',
             isLoading: _isSaving,
             isThumbZone: true,
-            onPressed: _isSaving ? null : _continue,
+            onPressed: (_isSaving || _selectedForms.isEmpty) ? null : _continue,
           ),
         ),
         body: Form(
@@ -364,6 +363,25 @@ class _NewInspectionPageState extends State<NewInspectionPage> {
                 shape: expansionTileShape,
                 collapsedShape: expansionTileShape,
                 children: [
+                  // Form count indicator
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: AppSpacing.spacingLg,
+                        top: AppSpacing.spacingSm,
+                        bottom: AppSpacing.spacingSm,
+                      ),
+                      child: Text(
+                        '${_selectedForms.length} form${_selectedForms.length == 1 ? '' : 's'} selected',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: _selectedForms.isEmpty
+                                  ? Palette.error
+                                  : Palette.success,
+                            ),
+                      ),
+                    ),
+                  ),
                   // Select All / Deselect All toggle
                   Align(
                     alignment: Alignment.centerRight,

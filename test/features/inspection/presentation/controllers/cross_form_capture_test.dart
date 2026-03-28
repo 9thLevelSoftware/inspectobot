@@ -448,7 +448,7 @@ class _SuccessfulMediaCaptureService extends MediaCaptureService {
         );
 
   @override
-  Future<MediaCaptureResult?> captureRequiredPhoto({
+  Future<MediaCaptureServiceResult> captureRequiredPhoto({
     required String inspectionId,
     required String organizationId,
     required String userId,
@@ -457,10 +457,12 @@ class _SuccessfulMediaCaptureService extends MediaCaptureService {
     CapturedMediaType mediaType = CapturedMediaType.photo,
     String? evidenceInstanceId,
   }) async {
-    return MediaCaptureResult(
-      category: category,
-      filePath: '/tmp/captured_${category.name}.jpg',
-      byteSize: 1024,
+    return MediaCaptureServiceResult.success(
+      MediaCaptureResult(
+        category: category,
+        filePath: '/tmp/captured_${category.name}.jpg',
+        byteSize: 1024,
+      ),
     );
   }
 }

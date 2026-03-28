@@ -13,6 +13,89 @@ import 'media_sync_task.dart';
 import 'pending_media_sync_store.dart';
 import '../sync/sync_operation.dart';
 
+/// Error types for media capture operations.
+enum MediaCaptureError {
+  /// Camera permission was denied by the user.
+  cameraPermissionDenied,
+
+  /// Gallery/photos permission was denied by the user.
+  galleryPermissionDenied,
+
+  /// Photo capture was canceled by the user.
+  captureCanceled,
+
+  /// Photo compression failed.
+  compressionFailed,
+
+  /// File save operation failed.
+  saveFailed,
+
+  /// Unsupported document type.
+  unsupportedDocumentType,
+
+  /// Unknown error occurred.
+  unknown,
+}
+
+/// Result type for media capture operations that can fail.
+class MediaCaptureServiceResult {
+  const MediaCaptureServiceResult._({
+    this.result,
+    this.error,
+    this.errorMessage,
+  });
+
+  /// Success result with captured media.
+  factory MediaCaptureServiceResult.success(MediaCaptureResult result) {
+    return MediaCaptureServiceResult._(result: result);
+  }
+
+  /// Error result with specific error type and message.
+  factory MediaCaptureServiceResult.error(
+    MediaCaptureError error, {
+    String? message,
+  }) {
+    return MediaCaptureServiceResult._(
+      error: error,
+      errorMessage: message ?? _defaultErrorMessage(error),
+    );
+  }
+
+  /// The captured media result, if successful.
+  final MediaCaptureResult? result;
+
+  /// The error type, if failed.
+  final MediaCaptureError? error;
+
+  /// Human-readable error message.
+  final String? errorMessage;
+
+  /// Whether the operation was successful.
+  bool get isSuccess => result != null;
+
+  /// Whether the operation failed.
+  bool get isError => error != null;
+
+  static String _defaultErrorMessage(MediaCaptureError error) {
+    return switch (error) {
+      MediaCaptureError.cameraPermissionDenied =>
+        'Camera permission denied. Please enable camera access in Settings > Privacy > Camera.',
+      MediaCaptureError.galleryPermissionDenied =>
+        'Gallery permission denied. Please enable photo access in Settings > Privacy > Photos.',
+      MediaCaptureError.captureCanceled =>
+        'Photo capture was canceled.',
+      MediaCaptureError.compressionFailed =>
+        'Failed to process the image. Please try again.',
+      MediaCaptureError.saveFailed =>
+        'Failed to save the image. Please check storage space and try again.',
+      MediaCaptureError.unsupportedDocumentType =>
+        'Unsupported file type. Please select a PDF or image file.',
+      MediaCaptureError.unknown =>
+        'An unexpected error occurred. Please try again.',
+    };
+  }
+}
+
 typedef PickPhoto = Future<String?> Function();
 typedef PickDocument = Future<String?> Function();
 typedef CompressPhoto = Future<List<int>?> Function(String path);
@@ -51,7 +134,11 @@ class MediaCaptureService {
   final PendingMediaSyncStore _pendingSyncStore;
   final OperationIdFactory _operationIdFactory;
 
-  Future<MediaCaptureResult?> captureRequiredPhoto({
+  /// Captures a required photo for an inspection.
+  /// 
+  /// Returns a [MediaCaptureServiceResult] which contains either the
+  /// successful [MediaCaptureResult] or an error with user-friendly message.
+  Future<MediaCaptureServiceResult> captureRequiredPhoto({
     required String inspectionId,
     required String organizationId,
     required String userId,
@@ -60,46 +147,94 @@ class MediaCaptureService {
     CapturedMediaType mediaType = CapturedMediaType.photo,
     String? evidenceInstanceId,
   }) async {
-    final pickedPath = mediaType == CapturedMediaType.document
-        ? await _pickDocument()
-        : await _pickPhoto();
+    String? pickedPath;
+    try {
+      pickedPath = mediaType == CapturedMediaType.document
+          ? await _pickDocument()
+          : await _pickPhoto();
+    } catch (e) {
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('permission') ||
+          errorString.contains('denied')) {
+        return MediaCaptureServiceResult.error(
+          mediaType == CapturedMediaType.document
+              ? MediaCaptureError.galleryPermissionDenied
+              : MediaCaptureError.cameraPermissionDenied,
+        );
+      }
+      return MediaCaptureServiceResult.error(
+        MediaCaptureError.unknown,
+        message: 'Failed to capture: $e',
+      );
+    }
+    
     if (pickedPath == null) {
-      return null;
+      return MediaCaptureServiceResult.error(MediaCaptureError.captureCanceled);
     }
 
     File outputFile;
     int byteSize;
     if (mediaType == CapturedMediaType.document) {
       if (!_isSupportedDocumentPath(pickedPath)) {
-        return null;
+        return MediaCaptureServiceResult.error(
+          MediaCaptureError.unsupportedDocumentType,
+        );
       }
-      outputFile = await _writeCapture(
-        inspectionId: inspectionId,
-        category: category,
-        mediaType: mediaType,
-        sourcePath: pickedPath,
-      );
-      byteSize = await outputFile.length();
+      try {
+        outputFile = await _writeCapture(
+          inspectionId: inspectionId,
+          category: category,
+          mediaType: mediaType,
+          sourcePath: pickedPath,
+        );
+        byteSize = await outputFile.length();
+      } catch (e) {
+        return MediaCaptureServiceResult.error(
+          MediaCaptureError.saveFailed,
+          message: 'Failed to save document: $e',
+        );
+      }
     } else {
-      final compressed = await _compressPhoto(pickedPath);
-      if (compressed == null || compressed.isEmpty) {
-        return null;
+      List<int>? compressed;
+      try {
+        compressed = await _compressPhoto(pickedPath);
+      } catch (e) {
+        return MediaCaptureServiceResult.error(
+          MediaCaptureError.compressionFailed,
+          message: 'Failed to compress image: $e',
+        );
       }
-      outputFile = await _writeCapture(
-        inspectionId: inspectionId,
-        category: category,
-        mediaType: mediaType,
-        sourcePath: pickedPath,
-        bytes: compressed,
-      );
-      byteSize = compressed.length;
+      
+      if (compressed == null || compressed.isEmpty) {
+        return MediaCaptureServiceResult.error(MediaCaptureError.compressionFailed);
+      }
+      
+      try {
+        outputFile = await _writeCapture(
+          inspectionId: inspectionId,
+          category: category,
+          mediaType: mediaType,
+          sourcePath: pickedPath,
+          bytes: compressed,
+        );
+        byteSize = compressed.length;
+      } catch (e) {
+        return MediaCaptureServiceResult.error(
+          MediaCaptureError.saveFailed,
+          message: 'Failed to save photo: $e',
+        );
+      }
     }
 
-    await _localStore.saveCapture(
-      inspectionId: inspectionId,
-      category: category,
-      filePath: outputFile.path,
-    );
+    try {
+      await _localStore.saveCapture(
+        inspectionId: inspectionId,
+        category: category,
+        filePath: outputFile.path,
+      );
+    } catch (e) {
+      // Non-fatal: continue even if local store save fails
+    }
 
     final resolvedRequirementKey =
         requirementKey ?? FormRequirements.requirementKeyForPhoto(category);
@@ -123,40 +258,62 @@ class MediaCaptureService {
       // Local capture continuity is more important than immediate queue persistence.
     }
 
-    return MediaCaptureResult(
-      category: category,
-      filePath: outputFile.path,
-      byteSize: byteSize,
+    return MediaCaptureServiceResult.success(
+      MediaCaptureResult(
+        category: category,
+        filePath: outputFile.path,
+        byteSize: byteSize,
+      ),
     );
   }
 
   static Future<String?> _defaultPickPhoto() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.camera);
-    if (picked != null) {
-      return picked.path;
-    }
+    try {
+      final picked = await picker.pickImage(source: ImageSource.camera);
+      if (picked != null) {
+        return picked.path;
+      }
 
-    final lostData = await picker.retrieveLostData();
-    if (lostData.isEmpty) {
+      final lostData = await picker.retrieveLostData();
+      if (lostData.isEmpty) {
+        return null;
+      }
+      final recovered =
+          lostData.file ??
+          (lostData.files?.isNotEmpty == true ? lostData.files!.first : null);
+      if (recovered == null) {
+        return null;
+      }
+      return recovered.path;
+    } on Exception catch (e) {
+      // Handle permission errors from image_picker
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('permission') || 
+          errorString.contains('denied') ||
+          errorString.contains('camera_access')) {
+        throw _CameraPermissionException();
+      }
       return null;
     }
-    final recovered =
-        lostData.file ??
-        (lostData.files?.isNotEmpty == true ? lostData.files!.first : null);
-    if (recovered == null) {
-      return null;
-    }
-    return recovered.path;
   }
 
   static Future<String?> _defaultPickDocument() async {
-    final picked = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const <String>['pdf', 'png', 'jpg', 'jpeg'],
-    );
-    final file = picked?.files.isNotEmpty == true ? picked!.files.first : null;
-    return file?.path;
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const <String>['pdf', 'png', 'jpg', 'jpeg'],
+      );
+      final file = picked?.files.isNotEmpty == true ? picked!.files.first : null;
+      return file?.path;
+    } on Exception catch (e) {
+      // Handle permission errors from file_picker
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('permission') || errorString.contains('denied')) {
+        throw _GalleryPermissionException();
+      }
+      return null;
+    }
   }
 
   static Future<List<int>?> _defaultCompressPhoto(String path) {
@@ -213,4 +370,16 @@ class MediaCaptureService {
     }
     return path.substring(dotIndex).toLowerCase();
   }
+}
+
+/// Exception thrown when camera permission is denied.
+class _CameraPermissionException implements Exception {
+  @override
+  String toString() => 'Camera permission denied';
+}
+
+/// Exception thrown when gallery/photos permission is denied.
+class _GalleryPermissionException implements Exception {
+  @override
+  String toString() => 'Gallery permission denied';
 }

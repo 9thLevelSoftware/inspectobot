@@ -56,9 +56,9 @@ void main() {
       category: RequiredPhotoCategory.exteriorRear,
     );
 
-    expect(result, isNotNull);
-    expect(result!.filePath, outputFile.path);
-    expect(result.byteSize, 3);
+    expect(result.isSuccess, isTrue);
+    expect(result.result!.filePath, outputFile.path);
+    expect(result.result!.byteSize, 3);
 
     final manifest = await store.readCaptures('inspection-2');
     expect(manifest[RequiredPhotoCategory.exteriorRear], outputFile.path);
@@ -113,7 +113,8 @@ void main() {
       category: RequiredPhotoCategory.exteriorRear,
     );
 
-    expect(result, isNull);
+    expect(result.isError, isTrue);
+    expect(result.error, MediaCaptureError.captureCanceled);
     final pending = await pendingStore.listPending();
     expect(pending, isEmpty);
   });
@@ -165,8 +166,8 @@ void main() {
       category: RequiredPhotoCategory.exteriorFront,
     );
 
-    expect(result, isNotNull);
-    expect(result!.filePath, outputFile.path);
+    expect(result.isSuccess, isTrue);
+    expect(result.result!.filePath, outputFile.path);
 
     final manifest = await store.readCaptures('inspection-4');
     expect(manifest[RequiredPhotoCategory.exteriorFront], outputFile.path);
@@ -233,9 +234,9 @@ void main() {
         evidenceInstanceId: 'document:wind_roof_deck',
       );
 
-      expect(result, isNotNull);
-      expect(result!.filePath, outputDoc.path);
-      expect(result.byteSize, 4);
+      expect(result.isSuccess, isTrue);
+      expect(result.result!.filePath, outputDoc.path);
+      expect(result.result!.byteSize, 4);
       expect(compressCalled, isFalse);
 
       final pending = await pendingStore.listPending();
@@ -284,7 +285,54 @@ void main() {
       mediaType: CapturedMediaType.document,
     );
 
-    expect(result, isNull);
+    expect(result.isError, isTrue);
+    expect(result.error, MediaCaptureError.unsupportedDocumentType);
     expect(writeCalled, isFalse);
+  });
+
+  test('media capture service returns error on camera permission denied', () async {
+    final tempRoot = await Directory.systemTemp.createTemp(
+      'inspectobot_capture_permission_',
+    );
+    addTearDown(() async {
+      if (await tempRoot.exists()) {
+        await tempRoot.delete(recursive: true);
+      }
+    });
+
+    final store = LocalMediaStore(directoryProvider: () async => tempRoot);
+    final pendingStore = PendingMediaSyncStore(
+      directoryProvider: () async => tempRoot,
+    );
+
+    final service = MediaCaptureService(
+      pickPhoto: () async => throw Exception('camera permission denied'),
+      compressPhoto: (path) async => <int>[1, 2, 3],
+      writeCapture:
+          ({
+            required inspectionId,
+            required category,
+            required mediaType,
+            required sourcePath,
+            bytes,
+          }) async {
+            throw StateError('should not write when permission denied');
+          },
+      localStore: store,
+      pendingSyncStore: pendingStore,
+    );
+
+    final result = await service.captureRequiredPhoto(
+      inspectionId: 'inspection-perm',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      category: RequiredPhotoCategory.exteriorRear,
+    );
+
+    expect(result.isError, isTrue);
+    expect(result.errorMessage, isNotNull);
+    expect(result.errorMessage!.toLowerCase(), contains('camera'));
+    final pending = await pendingStore.listPending();
+    expect(pending, isEmpty);
   });
 }

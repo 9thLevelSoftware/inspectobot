@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../common/widgets/widgets.dart';
 import '../features/auth/presentation/forgot_password_page.dart';
 import '../features/auth/presentation/reset_password_page.dart';
 import '../features/auth/presentation/sign_in_page.dart';
@@ -20,11 +21,11 @@ import 'routes.dart';
 /// - Auth routes (no bottom nav): /auth/sign-in, /auth/sign-up, etc.
 /// - App shell (bottom nav): /dashboard, /inspector-identity
 /// - Full-screen flows (no bottom nav): /inspections/new, /inspections/:id/checklist
-GoRouter createRouter(AuthNotifier authNotifier) {
+GoRouter createRouter(AuthNotifier authNotifier, {VoidCallback? onAuthRedirect}) {
   return GoRouter(
     initialLocation: AppRoutes.signIn,
     refreshListenable: authNotifier,
-    redirect: (context, state) => _redirect(authNotifier, state),
+    redirect: (context, state) => _redirect(authNotifier, state, context, onAuthRedirect),
     routes: [
       // Auth routes — no bottom navigation
       GoRoute(
@@ -147,7 +148,12 @@ GoRouter createRouter(AuthNotifier authNotifier) {
 /// 3. Not authenticated => redirect to sign-in (unless already on auth route)
 /// 4. Authenticated + on auth route => redirect to dashboard
 /// 5. Authenticated + on root => redirect to dashboard
-String? _redirect(AuthNotifier authNotifier, GoRouterState state) {
+String? _redirect(
+  AuthNotifier authNotifier,
+  GoRouterState state,
+  BuildContext context,
+  VoidCallback? onAuthRedirect,
+) {
   final currentPath = state.matchedLocation;
   final isOnAuthRoute = currentPath.startsWith('/auth');
 
@@ -177,6 +183,8 @@ String? _redirect(AuthNotifier authNotifier, GoRouterState state) {
     if (isOnAuthRoute) {
       return null; // Already on auth route
     }
+    // Show notification when redirecting to sign-in due to auth failure
+    _notifyRedirect(context, 'Please sign in to continue', onAuthRedirect);
     return AppRoutes.signIn;
   }
 
@@ -185,12 +193,31 @@ String? _redirect(AuthNotifier authNotifier, GoRouterState state) {
     return AppRoutes.dashboard;
   }
 
-  // 5. Authenticated on root — redirect to dashboard
+  // 5. Authenticated + on root — redirect to dashboard
   if (currentPath == '/') {
     return AppRoutes.dashboard;
   }
 
   return null;
+}
+
+/// Shows a snackbar notification for auth redirects.
+/// Uses post-frame callback to ensure context is valid for showing snackbar.
+void _notifyRedirect(BuildContext context, String message, VoidCallback? onAuthRedirect) {
+  // If an external callback is provided, use it
+  if (onAuthRedirect != null) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      onAuthRedirect();
+    });
+    return;
+  }
+
+  // Otherwise, show snackbar directly
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (context.mounted) {
+      AppSnackBar.info(context, message);
+    }
+  });
 }
 
 /// Fade transition for auth pages.

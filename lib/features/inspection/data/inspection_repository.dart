@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:inspectobot/data/supabase/supabase_client_provider.dart';
 import 'package:inspectobot/features/audit/data/audit_event_repository.dart';
 import 'package:inspectobot/features/inspection/domain/form_type.dart';
@@ -7,7 +11,11 @@ import 'package:inspectobot/features/inspection/domain/inspection_wizard_state.d
 import 'package:inspectobot/features/inspection/domain/report_readiness.dart';
 import 'package:inspectobot/features/sync/sync_operation.dart';
 import 'package:inspectobot/features/sync/sync_outbox_store.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// Type alias for directory provider functions (used for testing).
+typedef DirectoryProvider = Future<Directory> Function();
 
 abstract class InspectionStore {
   Future<Map<String, dynamic>> create(Map<String, dynamic> inspectionJson);
@@ -100,7 +108,7 @@ class InspectionRepository {
         _auditRepository = auditRepository;
 
   factory InspectionRepository.live() {
-    final localStore = InMemoryInspectionStore();
+    final localStore = FileBasedInspectionStore();
     final remoteStore = SupabaseClientProvider.isConfigured
         ? SupabaseInspectionStore(SupabaseClientProvider.client)
         : null;
@@ -683,6 +691,247 @@ class InMemoryInspectionStore implements InspectionStore {
   }
 }
 
+/// File-based implementation of [InspectionStore] that persists inspections
+/// as JSON files in the application's documents directory.
+/// 
+/// File structure: `inspections/{inspectionId}.json`
+/// 
+/// Report readiness is stored separately: `inspections/readiness/{inspectionId}.json`
+class FileBasedInspectionStore implements InspectionStore {
+  FileBasedInspectionStore({DirectoryProvider? directoryProvider})
+      : _directoryProvider = directoryProvider ?? getApplicationDocumentsDirectory;
+
+  final DirectoryProvider _directoryProvider;
+
+  Future<Directory> _inspectionsDirectory() async {
+    final dir = await _directoryProvider();
+    final inspectionsDir = Directory('${dir.path}/inspections');
+    await inspectionsDir.create(recursive: true);
+    return inspectionsDir;
+  }
+
+  Future<Directory> _readinessDirectory() async {
+    final dir = await _directoryProvider();
+    final readinessDir = Directory('${dir.path}/inspections/readiness');
+    await readinessDir.create(recursive: true);
+    return readinessDir;
+  }
+
+  Future<File> _inspectionFile(String inspectionId) async {
+    final dir = await _inspectionsDirectory();
+    return File('${dir.path}/$inspectionId.json');
+  }
+
+  Future<File> _readinessFile(String inspectionId) async {
+    final dir = await _readinessDirectory();
+    return File('${dir.path}/$inspectionId.json');
+  }
+
+  Future<Map<String, dynamic>?> _readInspectionFile(File file) async {
+    if (!await file.exists()) {
+      return null;
+    }
+    try {
+      final raw = await file.readAsString();
+      if (raw.trim().isEmpty) {
+        return null;
+      }
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        debugPrint('[FileBasedInspectionStore] Invalid JSON structure in ${file.path}');
+        return null;
+      }
+      return decoded;
+    } on FormatException catch (e) {
+      debugPrint('[FileBasedInspectionStore] JSON parse error in ${file.path}: $e');
+      return null;
+    } catch (e) {
+      debugPrint('[FileBasedInspectionStore] Error reading ${file.path}: $e');
+      return null;
+    }
+  }
+
+  Future<void> _writeInspectionFile(String inspectionId, Map<String, dynamic> data) async {
+    final file = await _inspectionFile(inspectionId);
+    try {
+      await file.writeAsString(jsonEncode(data), flush: true);
+    } catch (e) {
+      debugPrint('[FileBasedInspectionStore] Error writing inspection $inspectionId: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _writeReadinessFile(String inspectionId, Map<String, dynamic> data) async {
+    final file = await _readinessFile(inspectionId);
+    try {
+      await file.writeAsString(jsonEncode(data), flush: true);
+    } catch (e) {
+      debugPrint('[FileBasedInspectionStore] Error writing readiness $inspectionId: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> create(Map<String, dynamic> inspectionJson) async {
+    final id = (inspectionJson['id'] as String?) ?? SyncOperation.newId();
+    final payload = Map<String, dynamic>.from(inspectionJson)
+      ..['id'] = id
+      ..putIfAbsent('wizard_last_step', () => 0)
+      ..putIfAbsent('wizard_completion', () => <String, bool>{})
+      ..putIfAbsent('wizard_branch_context', () => <String, dynamic>{})
+      ..putIfAbsent('wizard_status', () => 'in_progress');
+    
+    await _writeInspectionFile(id, payload);
+    return payload;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchById({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    final file = await _inspectionFile(inspectionId);
+    final inspection = await _readInspectionFile(file);
+    if (inspection == null) {
+      return null;
+    }
+    if (inspection['organization_id'] != organizationId ||
+        inspection['user_id'] != userId) {
+      return null;
+    }
+    return inspection;
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateWizardProgress({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required int wizardLastStep,
+    required Map<String, bool> wizardCompletion,
+    required Map<String, dynamic> wizardBranchContext,
+    required String wizardStatus,
+  }) async {
+    final file = await _inspectionFile(inspectionId);
+    final inspection = await _readInspectionFile(file);
+    if (inspection == null) {
+      throw StateError('Inspection not found for wizard progress update: $inspectionId');
+    }
+    if (inspection['organization_id'] != organizationId ||
+        inspection['user_id'] != userId) {
+      throw StateError('Inspection not found for organization/user: $inspectionId');
+    }
+    
+    final updated = Map<String, dynamic>.from(inspection)
+      ..['wizard_last_step'] = wizardLastStep
+      ..['wizard_completion'] = Map<String, bool>.from(wizardCompletion)
+      ..['wizard_branch_context'] = Map<String, dynamic>.from(wizardBranchContext)
+      ..['wizard_status'] = wizardStatus;
+    
+    await _writeInspectionFile(inspectionId, updated);
+    return updated;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchWizardProgress({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) {
+    return fetchById(
+      inspectionId: inspectionId,
+      organizationId: organizationId,
+      userId: userId,
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> listInProgressInspections({
+    required String organizationId,
+    required String userId,
+  }) async {
+    final inspectionsDir = await _inspectionsDirectory();
+    if (!await inspectionsDir.exists()) {
+      return [];
+    }
+
+    final results = <Map<String, dynamic>>[];
+    try {
+      final files = await inspectionsDir
+          .list()
+          .where((entity) => entity is File && entity.path.endsWith('.json'))
+          .cast<File>()
+          .toList();
+      
+      for (final file in files) {
+        final inspection = await _readInspectionFile(file);
+        if (inspection == null) continue;
+        
+        if (inspection['organization_id'] == organizationId &&
+            inspection['user_id'] == userId &&
+            inspection['wizard_status'] == 'in_progress') {
+          results.add(inspection);
+        }
+      }
+      
+      // Sort by updated_at if available, otherwise by inspection date
+      results.sort((a, b) {
+        final aUpdated = a['updated_at'];
+        final bUpdated = b['updated_at'];
+        if (aUpdated is String && bUpdated is String) {
+          return bUpdated.compareTo(aUpdated);
+        }
+        return 0;
+      });
+    } catch (e) {
+      debugPrint('[FileBasedInspectionStore] Error listing in-progress inspections: $e');
+    }
+    
+    return results;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+  }) async {
+    final file = await _readinessFile(inspectionId);
+    final readiness = await _readInspectionFile(file);
+    if (readiness == null) {
+      return null;
+    }
+    if (readiness['inspection_id'] != inspectionId ||
+        readiness['organization_id'] != organizationId ||
+        readiness['user_id'] != userId) {
+      return null;
+    }
+    return readiness;
+  }
+
+  @override
+  Future<Map<String, dynamic>> upsertReportReadiness({
+    required String inspectionId,
+    required String organizationId,
+    required String userId,
+    required String status,
+    required List<String> missingItems,
+    required DateTime computedAt,
+  }) async {
+    final payload = <String, dynamic>{
+      'inspection_id': inspectionId,
+      'organization_id': organizationId,
+      'user_id': userId,
+      'status': status,
+      'missing_items': List<String>.from(missingItems),
+      'computed_at': computedAt.toIso8601String(),
+    };
+    await _writeReadinessFile(inspectionId, payload);
+    return payload;
+  }
+}
+
 class OfflineFirstInspectionStore implements InspectionStore {
   OfflineFirstInspectionStore({
     required InspectionStore localStore,
@@ -704,7 +953,8 @@ class OfflineFirstInspectionStore implements InspectionStore {
       final remote = await _remoteStore.create(inspectionJson);
       await _localStore.create(remote);
       return remote;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[OfflineFirstInspectionStore] Remote create failed, returning local: $e');
       return local;
     }
   }
@@ -737,7 +987,8 @@ class OfflineFirstInspectionStore implements InspectionStore {
         await _localStore.create(remote);
       }
       return remote;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[OfflineFirstInspectionStore] Remote fetch failed: $e');
       return null;
     }
   }
@@ -778,7 +1029,8 @@ class OfflineFirstInspectionStore implements InspectionStore {
       );
       await _localStore.create(remote);
       return remote;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[OfflineFirstInspectionStore] Remote update failed, returning local: $e');
       return local;
     }
   }
@@ -818,7 +1070,8 @@ class OfflineFirstInspectionStore implements InspectionStore {
         await _localStore.create(row);
       }
       return remoteRows;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[OfflineFirstInspectionStore] Remote list failed, returning local: $e');
       return localRows;
     }
   }
@@ -855,7 +1108,8 @@ class OfflineFirstInspectionStore implements InspectionStore {
         );
       }
       return remote;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[OfflineFirstInspectionStore] Remote fetch readiness failed: $e');
       return local;
     }
   }
@@ -899,7 +1153,8 @@ class OfflineFirstInspectionStore implements InspectionStore {
         computedAt: DateTime.parse(remote['computed_at'] as String).toUtc(),
       );
       return remote;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[OfflineFirstInspectionStore] Remote upsert readiness failed, returning local: $e');
       return local;
     }
   }

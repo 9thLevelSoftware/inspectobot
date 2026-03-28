@@ -42,7 +42,7 @@ import '../../domain/sinkhole_form_data.dart';
 
 enum ContinueStepResult { advanced, finished, blocked, error }
 
-enum CaptureResult { captured, cancelled }
+enum CaptureResult { captured, cancelled, error }
 
 class PdfGenerationResult {
   const PdfGenerationResult({
@@ -293,7 +293,7 @@ class InspectionSessionController {
     if (category == null) {
       return CaptureResult.cancelled;
     }
-    final result = await _mediaCapture.captureRequiredPhoto(
+    final serviceResult = await _mediaCapture.captureRequiredPhoto(
       inspectionId: draft.inspectionId,
       organizationId: draft.organizationId,
       userId: draft.userId,
@@ -304,10 +304,21 @@ class InspectionSessionController {
           : CapturedMediaType.photo,
       evidenceInstanceId: requirement.key,
     );
-    if (result == null) {
+    
+    // Return cancelled for canceled captures, error for actual errors
+    if (serviceResult.isError) {
+      // Map capture canceled to cancelled result for backward compatibility
+      if (serviceResult.error == MediaCaptureError.captureCanceled) {
+        return CaptureResult.cancelled;
+      }
+      return CaptureResult.error;
+    }
+    
+    if (!serviceResult.isSuccess || serviceResult.result == null) {
       return CaptureResult.cancelled;
     }
 
+    final result = serviceResult.result!;
     final completion = Map<String, bool>.from(_snapshot.completion)
       ..[requirement.key] = true;
 
